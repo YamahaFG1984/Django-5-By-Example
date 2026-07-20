@@ -1,0 +1,866 @@
+<title>Blog 技术设计文档 · TDD</title>
+<style>
+  :root {
+    --bg: #eef2f6;
+    --surface: #ffffff;
+    --surface-2: #e3e9ef;
+    --ink: #142633;
+    --ink-muted: #47596b;
+    --ink-faint: #8496a8;
+    --accent: #1b6e8c;
+    --accent-strong: #124d63;
+    --accent-soft-bg: #dcebf1;
+    --accent-soft-fg: #124d63;
+    --rule: rgba(20, 38, 51, 0.14);
+    --grid-line: rgba(27, 110, 140, 0.09);
+    --shadow: 0 1px 2px rgba(20, 38, 51, 0.06), 0 8px 24px rgba(20, 38, 51, 0.05);
+
+    --chip-p0-bg: #f4dcd6; --chip-p0-fg: #8b3122;
+    --chip-p1-bg: #f3e6c7; --chip-p1-fg: #8a6318;
+    --chip-p2-bg: #e2e8ee; --chip-p2-fg: #48586b;
+
+    --code-bg: #0b141b;
+    --code-fg: #d3e3ea;
+    --code-key: #6fd1e8;
+    --code-str: #d7c48a;
+    --code-muted: #6c8494;
+
+    --font-display: "Source Han Serif SC", "Songti SC", "STSong", "Noto Serif SC", serif;
+    --font-body: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Cascadia Mono", "Source Han Mono SC", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1a22;
+      --surface: #142430;
+      --surface-2: #1b2e3b;
+      --ink: #dce7ee;
+      --ink-muted: #93a7b7;
+      --ink-faint: #62788a;
+      --accent: #4fb3d9;
+      --accent-strong: #7fcbe8;
+      --accent-soft-bg: #16333e;
+      --accent-soft-fg: #8fd4ec;
+      --rule: rgba(220, 231, 238, 0.14);
+      --grid-line: rgba(79, 179, 217, 0.08);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 28px rgba(0, 0, 0, 0.35);
+
+      --chip-p0-bg: #3a2019; --chip-p0-fg: #e8907c;
+      --chip-p1-bg: #3a2e14; --chip-p1-fg: #e8c67c;
+      --chip-p2-bg: #1c2a35; --chip-p2-fg: #9fb4c4;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1a22; --surface: #142430; --surface-2: #1b2e3b;
+    --ink: #dce7ee; --ink-muted: #93a7b7; --ink-faint: #62788a;
+    --accent: #4fb3d9; --accent-strong: #7fcbe8;
+    --accent-soft-bg: #16333e; --accent-soft-fg: #8fd4ec;
+    --rule: rgba(220, 231, 238, 0.14); --grid-line: rgba(79, 179, 217, 0.08);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 28px rgba(0, 0, 0, 0.35);
+    --chip-p0-bg: #3a2019; --chip-p0-fg: #e8907c;
+    --chip-p1-bg: #3a2e14; --chip-p1-fg: #e8c67c;
+    --chip-p2-bg: #1c2a35; --chip-p2-fg: #9fb4c4;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef2f6; --surface: #ffffff; --surface-2: #e3e9ef;
+    --ink: #142633; --ink-muted: #47596b; --ink-faint: #8496a8;
+    --accent: #1b6e8c; --accent-strong: #124d63;
+    --accent-soft-bg: #dcebf1; --accent-soft-fg: #124d63;
+    --rule: rgba(20, 38, 51, 0.14); --grid-line: rgba(27, 110, 140, 0.09);
+    --chip-p0-bg: #f4dcd6; --chip-p0-fg: #8b3122;
+    --chip-p1-bg: #f3e6c7; --chip-p1-fg: #8a6318;
+    --chip-p2-bg: #e2e8ee; --chip-p2-fg: #48586b;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 32px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 32px 100%,
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { color: var(--accent-strong); }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px;
+  }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 700; text-wrap: balance; color: var(--ink); }
+  .mono { font-family: var(--font-mono); }
+
+  .masthead {
+    max-width: 1280px; margin: 0 auto; padding: 56px 32px 40px;
+    display: flex; flex-wrap: wrap; gap: 32px; justify-content: space-between; align-items: flex-end;
+    border-bottom: 1px solid var(--rule);
+  }
+  .masthead-text .eyebrow {
+    font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 10px;
+  }
+  .masthead-text h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.25; margin: 0 0 10px; }
+  .masthead-text p.sub { margin: 0; color: var(--ink-muted); font-size: 16px; max-width: 52ch; }
+
+  .titleblock {
+    border: 1px solid var(--rule); background: var(--surface); box-shadow: var(--shadow);
+    min-width: 300px; border-radius: 3px; overflow: hidden;
+  }
+  .titleblock table { border-collapse: collapse; width: 100%; }
+  .titleblock th, .titleblock td {
+    font-family: var(--font-mono); font-size: 12.5px; text-align: left;
+    padding: 8px 14px; border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  .titleblock tr:last-child th, .titleblock tr:last-child td { border-bottom: none; }
+  .titleblock th { color: var(--ink-faint); font-weight: 500; letter-spacing: 0.04em; }
+  .titleblock td { color: var(--ink); text-align: right; }
+
+  .page-shell {
+    max-width: 1280px; margin: 0 auto; padding: 40px 32px 120px;
+    display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 56px; align-items: start;
+  }
+  @media (max-width: 980px) {
+    .page-shell { grid-template-columns: 1fr; }
+    .toc-wrap { position: static !important; }
+  }
+
+  .toc-wrap { position: sticky; top: 28px; }
+  .toc-wrap .eyebrow {
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 12px;
+  }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--rule); }
+  nav.toc li { margin: 0; }
+  nav.toc a {
+    display: flex; gap: 10px; padding: 7px 0 7px 16px; margin-left: -1px;
+    border-left: 1px solid transparent; color: var(--ink-muted); text-decoration: none; font-size: 14px;
+  }
+  nav.toc a:hover { color: var(--accent); border-left-color: var(--accent); }
+  nav.toc a .n { font-family: var(--font-mono); color: var(--accent); font-size: 12.5px; min-width: 20px; }
+
+  main { min-width: 0; display: flex; flex-direction: column; gap: 64px; }
+  section { scroll-margin-top: 24px; }
+  section > .kicker {
+    font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.1em; color: var(--accent);
+    text-transform: uppercase; margin: 0 0 6px;
+  }
+  section > h2 { font-size: clamp(22px, 3vw, 27px); margin: 0 0 18px; }
+  section > h3 { font-size: 18px; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; max-width: 68ch; color: var(--ink); }
+  section p.lede { color: var(--ink-muted); max-width: 70ch; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; max-width: 68ch; }
+  section li { margin-bottom: 6px; }
+  section li::marker { color: var(--accent); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); box-shadow: var(--shadow); }
+  table.spec { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14.5px; }
+  table.spec th, table.spec td { padding: 11px 16px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+  table.spec thead th {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--ink-faint); background: var(--surface-2); font-weight: 500;
+  }
+  table.spec tbody tr:last-child td { border-bottom: none; }
+  table.spec td.mono, table.spec code { font-family: var(--font-mono); font-size: 13.5px; }
+  table.spec td.num { font-variant-numeric: tabular-nums; }
+
+  .chip { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+    padding: 2px 9px; border-radius: 3px; letter-spacing: 0.02em; white-space: nowrap; }
+  .chip-p0 { background: var(--chip-p0-bg); color: var(--chip-p0-fg); }
+  .chip-p1 { background: var(--chip-p1-bg); color: var(--chip-p1-fg); }
+  .chip-p2 { background: var(--chip-p2-bg); color: var(--chip-p2-fg); }
+  .chip-v  { background: var(--accent-soft-bg); color: var(--accent-soft-fg); }
+  .chip-tsd { background: transparent; color: var(--ink-muted); border: 1px solid var(--ink-faint); font-weight: 500; }
+
+  .callout-tsd { border-left: 3px solid var(--ink-faint); background: var(--surface-2); color: var(--ink);
+    padding: 14px 18px; border-radius: 0 4px 4px 0; font-size: 15px; max-width: 68ch; margin: 0 0 16px; }
+  .callout-tsd p:last-child { margin-bottom: 0; }
+  .callout-tsd .chip-tsd { margin-bottom: 8px; }
+
+  pre.code {
+    background: var(--code-bg); color: var(--code-fg); font-family: var(--font-mono); font-size: 13.5px;
+    line-height: 1.7; padding: 18px 20px; border-radius: 5px; overflow-x: auto; box-shadow: var(--shadow);
+    margin: 0 0 16px;
+  }
+  pre.code .k { color: var(--code-key); }
+  pre.code .s { color: var(--code-str); }
+  pre.code .m { color: var(--code-muted); }
+  .code-cap { font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); margin: -10px 0 18px; letter-spacing: 0.02em; }
+
+  figure.plate {
+    margin: 24px 0; border: 1px solid var(--rule); background: var(--surface); border-radius: 4px;
+    box-shadow: var(--shadow); position: relative; padding: 28px 20px 18px;
+  }
+  figure.plate::before, figure.plate::after,
+  figure.plate .tick-br, figure.plate .tick-bl {
+    content: ""; position: absolute; width: 14px; height: 14px; border: 1.5px solid var(--accent); opacity: 0.55;
+  }
+  figure.plate::before { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+  figure.plate::after { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+  figure.plate .tick-bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+  figure.plate .tick-br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+  figure.plate .diagram-scroll { overflow-x: auto; }
+  figure.plate svg { display: block; min-width: 640px; width: 100%; height: auto; }
+  figure.plate figcaption {
+    margin-top: 14px; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint);
+    letter-spacing: 0.03em; text-align: center;
+  }
+  figure.plate figcaption b { color: var(--accent); font-weight: 600; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft-bg); color: var(--ink);
+    padding: 14px 18px; border-radius: 0 4px 4px 0; font-size: 15px; max-width: 68ch; margin: 0 0 16px; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin: 0 0 16px; }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card { border: 1px solid var(--rule); background: var(--surface); border-radius: 4px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .card h4 { margin: 0 0 8px; font-size: 15px; font-family: var(--font-body); font-weight: 700; }
+  .card p { font-size: 14px; color: var(--ink-muted); margin: 0; max-width: none; }
+
+  footer.doc-footer {
+    max-width: 1280px; margin: 0 auto; padding: 32px 32px 64px; color: var(--ink-faint);
+    font-size: 13.5px; border-top: 1px solid var(--rule);
+  }
+
+  svg text { font-family: var(--font-mono); fill: var(--ink); }
+  svg .lbl-muted { fill: var(--ink-muted); }
+  svg .lbl-accent { fill: var(--accent); font-weight: 600; }
+  svg .box { fill: var(--surface); stroke: var(--accent); stroke-width: 1.4; }
+  svg .box-2 { fill: var(--surface-2); stroke: var(--ink-faint); stroke-width: 1.2; }
+  svg .box-optional { fill: var(--surface-2); stroke: var(--ink-faint); stroke-width: 1.2; stroke-dasharray: 5 4; }
+  svg .edge { stroke: var(--ink-faint); stroke-width: 1.3; fill: none; }
+  svg .edge-accent { stroke: var(--accent); stroke-width: 1.4; fill: none; }
+  svg .edge-dash { stroke: var(--ink-faint); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+</style>
+
+<header class="masthead">
+  <div class="masthead-text">
+    <p class="eyebrow">技术设计文档 · Technical Design Document</p>
+    <h1>Blog 系统技术设计</h1>
+    <p class="sub">承接 <a href="#milestones">《Blog PRD》</a> 的产品需求，按 Django 5.2 最佳实践给出架构、数据模型、权限（RBAC）、搜索、缓存与部署的落地设计。</p>
+  </div>
+  <div class="titleblock" role="table" aria-label="文档信息">
+    <table>
+      <tr><th>文档编号</th><td class="mono">TDD-BLOG-001</td></tr>
+      <tr><th>版本</th><td class="mono">v1.0 · 草稿</td></tr>
+      <tr><th>关联需求</th><td class="mono">blog-prd.md</td></tr>
+      <tr><th>技术栈</th><td class="mono">Django 5.2 · PostgreSQL 16</td></tr>
+      <tr><th>撰写日期</th><td class="mono">2026-07-04</td></tr>
+      <tr><th>覆盖范围</th><td class="mono">V1 – V4（延伸至 V8）</td></tr>
+    </table>
+  </div>
+</header>
+
+<div class="page-shell">
+  <div class="toc-wrap">
+    <p class="eyebrow">目录</p>
+    <nav class="toc" aria-label="章节导航">
+      <ol>
+        <li><a href="#overview"><span class="n">00</span>概述与设计目标</a></li>
+        <li><a href="#architecture"><span class="n">01</span>总体架构</a></li>
+        <li><a href="#data-model"><span class="n">02</span>数据模型设计</a></li>
+        <li><a href="#rbac"><span class="n">03</span>RBAC 权限设计</a></li>
+        <li><a href="#api"><span class="n">04</span>URL 与 API 设计</a></li>
+        <li><a href="#search"><span class="n">05</span>搜索设计</a></li>
+        <li><a href="#cache-async"><span class="n">06</span>缓存与异步任务</a></li>
+        <li><a href="#sequence"><span class="n">07</span>关键请求时序</a></li>
+        <li><a href="#best-practices"><span class="n">08</span>Django 5.2 实践清单</a></li>
+        <li><a href="#nfr"><span class="n">09</span>非功能指标</a></li>
+        <li><a href="#deployment"><span class="n">10</span>部署架构</a></li>
+        <li><a href="#milestones"><span class="n">11</span>里程碑对齐</a></li>
+      </ol>
+    </nav>
+  </div>
+
+  <main>
+
+    <section id="overview">
+      <p class="kicker">00 · Overview</p>
+      <h2>概述与设计目标</h2>
+      <p class="lede">本设计文档面向 <span class="mono">docs/blog-prd.md</span> 中定义的 V1–V4 需求做详细落地，并为 V5–V8（RBAC、搜索升级、缓存/异步、开放 API）预留清晰的扩展点，避免后续迭代推倒重来。</p>
+      <div class="grid-2">
+        <div class="card">
+          <h4>设计原则</h4>
+          <p>能放进数据库层解决的问题不写应用代码；能同步返回的响应不引入队列；能用 Django 内建能力表达的规则不引入第三方框架。</p>
+        </div>
+        <div class="card">
+          <h4>不做的事</h4>
+          <p>本期不引入微服务拆分、不引入 Elasticsearch/Solr；搜索仍以 PostgreSQL 原生能力为主，个性化推荐（V8）留待有真实行为数据后再评估算法选型。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <p class="kicker">01 · System</p>
+      <h2>总体架构</h2>
+      <p>应用层保持无状态、可水平扩展；PostgreSQL 承担数据存储与部分搜索能力，Redis 同时承担缓存与 Celery 消息代理，异步任务与定时任务从请求路径中彻底剥离。</p>
+
+      <figure class="plate">
+        <span class="tick-br"></span><span class="tick-bl"></span>
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 960 640" role="img" aria-labelledby="arch-title arch-desc">
+            <title id="arch-title">系统架构总览</title>
+            <desc id="arch-desc">浏览器请求经 Nginx 到达无状态的 Django 应用层，应用层同步访问 PostgreSQL、Redis 与对象存储；Celery Worker 与 Beat 通过 Redis 处理异步与定时任务，并发送邮件；应用层与 Worker 均上报日志到监控系统。</desc>
+
+            <rect x="380" y="18" width="200" height="52" rx="4" class="box"/>
+            <text x="480" y="40" text-anchor="middle" font-size="13">浏览器 / 移动端</text>
+            <text x="480" y="58" text-anchor="middle" font-size="11" class="lbl-muted">Client</text>
+
+            <line x1="480" y1="70" x2="480" y2="104" class="edge-accent" marker-end="url(#arrow)"/>
+
+            <rect x="360" y="106" width="240" height="52" rx="4" class="box"/>
+            <text x="480" y="128" text-anchor="middle" font-size="13">Nginx</text>
+            <text x="480" y="146" text-anchor="middle" font-size="11" class="lbl-muted">TLS 终止 · 静态/媒体 · 反向代理</text>
+
+            <line x1="480" y1="158" x2="480" y2="192" class="edge-accent" marker-end="url(#arrow)"/>
+
+            <rect x="260" y="194" width="440" height="60" rx="4" class="box"/>
+            <text x="480" y="220" text-anchor="middle" font-size="14" font-weight="700">Django 5.2 应用层</text>
+            <text x="480" y="240" text-anchor="middle" font-size="11" class="lbl-muted">Gunicorn · 多实例 · 无状态 · 同 WSGI/ASGI 双模</text>
+
+            <line x1="330" y1="254" x2="200" y2="322" class="edge" marker-end="url(#arrow)"/>
+            <line x1="480" y1="254" x2="480" y2="322" class="edge" marker-end="url(#arrow)"/>
+            <line x1="630" y1="254" x2="770" y2="322" class="edge" marker-end="url(#arrow)"/>
+
+            <rect x="50" y="324" width="300" height="78" rx="4" class="box"/>
+            <text x="200" y="350" text-anchor="middle" font-size="13" font-weight="700">PostgreSQL 16</text>
+            <text x="200" y="368" text-anchor="middle" font-size="11" class="lbl-muted">pg_trgm · tsvector + GIN 索引</text>
+            <text x="200" y="384" text-anchor="middle" font-size="11" class="lbl-muted">文章 / 评论 / 标签 / 权限</text>
+
+            <rect x="360" y="324" width="240" height="78" rx="4" class="box"/>
+            <text x="480" y="350" text-anchor="middle" font-size="13" font-weight="700">Redis</text>
+            <text x="480" y="368" text-anchor="middle" font-size="11" class="lbl-muted">页面/查询缓存</text>
+            <text x="480" y="384" text-anchor="middle" font-size="11" class="lbl-muted">Celery Broker / Result Backend</text>
+
+            <rect x="640" y="324" width="270" height="78" rx="4" class="box"/>
+            <text x="775" y="350" text-anchor="middle" font-size="13" font-weight="700">对象存储</text>
+            <text x="775" y="368" text-anchor="middle" font-size="11" class="lbl-muted">S3 兼容 · 媒体与图片</text>
+            <text x="775" y="384" text-anchor="middle" font-size="11" class="lbl-muted">封面图 / 正文图床</text>
+
+            <line x1="440" y1="402" x2="300" y2="452" class="edge-dash" marker-end="url(#arrow-m)"/>
+            <line x1="520" y1="402" x2="660" y2="452" class="edge-dash" marker-end="url(#arrow-m)"/>
+
+            <rect x="160" y="454" width="260" height="66" rx="4" class="box-2"/>
+            <text x="290" y="480" text-anchor="middle" font-size="13" font-weight="700">Celery Worker</text>
+            <text x="290" y="498" text-anchor="middle" font-size="11" class="lbl-muted">邮件 / 缓存预热 / 通知</text>
+
+            <rect x="540" y="454" width="260" height="66" rx="4" class="box-2"/>
+            <text x="670" y="480" text-anchor="middle" font-size="13" font-weight="700">Celery Beat</text>
+            <text x="670" y="498" text-anchor="middle" font-size="11" class="lbl-muted">定时发布 / 摘要邮件调度</text>
+
+            <line x1="290" y1="520" x2="290" y2="554" class="edge" marker-end="url(#arrow)"/>
+            <rect x="160" y="556" width="260" height="48" rx="4" class="box-2"/>
+            <text x="290" y="586" text-anchor="middle" font-size="12.5" class="lbl-muted">SMTP 邮件服务</text>
+
+            <line x1="670" y1="520" x2="670" y2="554" class="edge" marker-end="url(#arrow)"/>
+            <rect x="540" y="556" width="260" height="48" rx="4" class="box-2"/>
+            <text x="670" y="586" text-anchor="middle" font-size="12.5" class="lbl-muted">Sentry / 日志采集</text>
+
+            <line x1="700" y1="254" x2="670" y2="556" class="edge-dash"/>
+
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--accent)"/>
+              </marker>
+              <marker id="arrow-m" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--ink-faint)"/>
+              </marker>
+            </defs>
+          </svg>
+        </div>
+        <figcaption><b>图 01</b> — 系统架构总览：同步请求路径（实线）与异步任务路径（虚线）分离</figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>组件</th><th>职责</th><th>关键设计决策</th></tr></thead>
+          <tbody>
+            <tr><td>Nginx</td><td>TLS 终止、静态/媒体文件直出、反向代理</td><td class="mono">Django 只处理业务请求，不经手静态文件 I/O</td></tr>
+            <tr><td>Django 应用层</td><td>业务逻辑、鉴权、序列化</td><td class="mono">Gunicorn 多进程，容器内不持有本地状态，可任意扩缩容</td></tr>
+            <tr><td>PostgreSQL</td><td>唯一数据源，含模糊搜索与全文检索</td><td class="mono">pg_trgm + tsvector 双索引，见 §05</td></tr>
+            <tr><td>Redis</td><td>缓存 + Celery 消息代理/结果后端</td><td class="mono">按 db index 隔离缓存（db0）与队列（db1），互不干扰</td></tr>
+            <tr><td>Celery Worker/Beat</td><td>邮件发送、定时发布、摘要生成</td><td class="mono">与 Web 进程分开部署，慢任务不占用请求处理能力</td></tr>
+            <tr><td>对象存储</td><td>封面图、正文图床</td><td class="mono">通过 <code>django-storages</code> 接入，避免图片落在容器本地磁盘</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="data-model">
+      <p class="kicker">02 · Data</p>
+      <h2>数据模型设计</h2>
+      <p>在现有 <span class="mono">Post / Comment / Tag</span> 基础上，补齐 RBAC 所需的角色关联、内容组织所需的分类、以及收藏与修订历史两类"轻量关联表"。</p>
+
+      <figure class="plate">
+        <span class="tick-br"></span><span class="tick-bl"></span>
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 980 700" role="img" aria-labelledby="er-title er-desc">
+            <title id="er-title">核心数据模型 ER 图</title>
+            <desc id="er-desc">自定义 User 模型关联 Group 角色，字段直接容纳资料信息而不单独拆 Profile 表；Post 关联作者、分类、标签、评论、收藏与修订记录；Comment 与 Category 均支持自关联以表达楼中楼回复与多级分类。</desc>
+
+            <g>
+              <rect x="20" y="30" width="260" height="130" rx="4" class="box"/>
+              <text x="34" y="52" font-size="13" font-weight="700" class="lbl-accent">User（自定义模型）</text>
+              <line x1="20" y1="60" x2="280" y2="60" class="edge"/>
+              <text x="34" y="80" font-size="11.5">id (PK)</text>
+              <text x="34" y="98" font-size="11.5" class="lbl-muted">username / email</text>
+              <text x="34" y="116" font-size="11.5" class="lbl-muted">bio / avatar</text>
+              <text x="34" y="134" font-size="11.5" class="lbl-muted">AUTH_USER_MODEL 指向此表</text>
+            </g>
+
+            <g>
+              <rect x="350" y="30" width="260" height="130" rx="4" class="box"/>
+              <text x="364" y="52" font-size="13" font-weight="700" class="lbl-accent">Group（角色）</text>
+              <line x1="350" y1="60" x2="610" y2="60" class="edge"/>
+              <text x="364" y="80" font-size="11.5">id (PK)</text>
+              <text x="364" y="98" font-size="11.5" class="lbl-muted">name</text>
+              <text x="364" y="116" font-size="11.5" class="lbl-muted">超级管理员 / 主编</text>
+              <text x="364" y="134" font-size="11.5" class="lbl-muted">作者 / 审核员</text>
+            </g>
+
+            <g>
+              <rect x="680" y="30" width="260" height="130" rx="4" class="box-optional"/>
+              <text x="694" y="52" font-size="13" font-weight="700" class="lbl-muted">Profile（已取消）</text>
+              <line x1="680" y1="60" x2="940" y2="60" class="edge-dash"/>
+              <text x="694" y="80" font-size="11.5" class="lbl-muted">bio / avatar</text>
+              <text x="694" y="98" font-size="11.5" class="lbl-muted">已并入 User，不单独建表</text>
+              <text x="694" y="116" font-size="10.5" class="lbl-muted">— TSD 建议</text>
+            </g>
+
+            <g>
+              <rect x="20" y="250" width="260" height="150" rx="4" class="box"/>
+              <text x="34" y="272" font-size="13" font-weight="700" class="lbl-accent">Post</text>
+              <line x1="20" y1="280" x2="280" y2="280" class="edge"/>
+              <text x="34" y="300" font-size="11.5">id (PK)</text>
+              <text x="34" y="318" font-size="11.5" class="lbl-muted">title / slug / body</text>
+              <text x="34" y="336" font-size="11.5" class="lbl-muted">status / publish</text>
+              <text x="34" y="354" font-size="11.5" class="lbl-muted">author_id (FK → User)</text>
+              <text x="34" y="372" font-size="11.5" class="lbl-muted">category_id (FK)</text>
+            </g>
+
+            <g>
+              <rect x="350" y="250" width="260" height="150" rx="4" class="box"/>
+              <text x="364" y="272" font-size="13" font-weight="700" class="lbl-accent">Category</text>
+              <line x1="350" y1="280" x2="610" y2="280" class="edge"/>
+              <text x="364" y="300" font-size="11.5">id (PK)</text>
+              <text x="364" y="318" font-size="11.5" class="lbl-muted">name / slug</text>
+              <text x="364" y="336" font-size="11.5" class="lbl-muted">parent_id (FK → self)</text>
+              <path d="M 600 350 q 30 0 30 25 q 0 25 -30 25" class="edge" fill="none" marker-end="url(#arrow2)"/>
+              <text x="640" y="380" font-size="10.5" class="lbl-muted">自关联</text>
+            </g>
+
+            <g>
+              <rect x="680" y="250" width="260" height="150" rx="4" class="box"/>
+              <text x="694" y="272" font-size="13" font-weight="700" class="lbl-accent">Tag</text>
+              <line x1="680" y1="280" x2="940" y2="280" class="edge"/>
+              <text x="694" y="300" font-size="11.5">id (PK)</text>
+              <text x="694" y="318" font-size="11.5" class="lbl-muted">name / slug</text>
+              <text x="694" y="336" font-size="11.5" class="lbl-muted">（django-taggit）</text>
+            </g>
+
+            <g>
+              <rect x="20" y="490" width="260" height="150" rx="4" class="box"/>
+              <text x="34" y="512" font-size="13" font-weight="700" class="lbl-accent">Comment</text>
+              <line x1="20" y1="520" x2="280" y2="520" class="edge"/>
+              <text x="34" y="540" font-size="11.5">id (PK)</text>
+              <text x="34" y="558" font-size="11.5" class="lbl-muted">post_id (FK → Post)</text>
+              <text x="34" y="576" font-size="11.5" class="lbl-muted">parent_id (FK → self)</text>
+              <text x="34" y="594" font-size="11.5" class="lbl-muted">name / body / active</text>
+              <path d="M 260 590 q 30 0 30 25 q 0 25 -30 25" class="edge" fill="none" marker-end="url(#arrow2)"/>
+              <text x="300" y="620" font-size="10.5" class="lbl-muted">楼中楼</text>
+            </g>
+
+            <g>
+              <rect x="350" y="490" width="260" height="150" rx="4" class="box"/>
+              <text x="364" y="512" font-size="13" font-weight="700" class="lbl-accent">Bookmark（收藏）</text>
+              <line x1="350" y1="520" x2="610" y2="520" class="edge"/>
+              <text x="364" y="540" font-size="11.5">user_id + post_id</text>
+              <text x="364" y="558" font-size="11.5" class="lbl-muted">CompositePrimaryKey</text>
+              <text x="364" y="576" font-size="11.5" class="lbl-muted">created</text>
+            </g>
+
+            <g>
+              <rect x="680" y="490" width="260" height="150" rx="4" class="box"/>
+              <text x="694" y="512" font-size="13" font-weight="700" class="lbl-accent">PostRevision（修订）</text>
+              <line x1="680" y1="520" x2="940" y2="520" class="edge"/>
+              <text x="694" y="540" font-size="11.5">id (PK)</text>
+              <text x="694" y="558" font-size="11.5" class="lbl-muted">post_id (FK → Post)</text>
+              <text x="694" y="576" font-size="11.5" class="lbl-muted">snapshot (JSON)</text>
+              <text x="694" y="594" font-size="11.5" class="lbl-muted">created</text>
+            </g>
+
+            <line x1="150" y1="160" x2="150" y2="248" class="edge-accent" marker-end="url(#arrow2)"/>
+            <text x="158" y="210" font-size="10.5" class="lbl-muted">1—N</text>
+
+            <line x1="280" y1="95" x2="350" y2="95" class="edge" marker-end="url(#arrow2)"/>
+            <text x="290" y="88" font-size="10.5" class="lbl-muted">M—N</text>
+
+            <path d="M 220 30 C 240 -10, 720 -10, 740 30" class="edge-dash" fill="none"/>
+            <text x="440" y="8" font-size="10.5" class="lbl-muted">不再拆分 1—1 表</text>
+
+            <line x1="280" y1="325" x2="350" y2="325" class="edge-accent" marker-end="url(#arrow2)"/>
+            <text x="290" y="318" font-size="10.5" class="lbl-muted">N—1</text>
+
+            <line x1="610" y1="325" x2="680" y2="325" class="edge-accent" marker-end="url(#arrow2)"/>
+            <text x="620" y="318" font-size="10.5" class="lbl-muted">M—N</text>
+
+            <line x1="150" y1="400" x2="150" y2="488" class="edge-accent" marker-end="url(#arrow2)"/>
+            <text x="158" y="450" font-size="10.5" class="lbl-muted">1—N</text>
+
+            <path d="M 90 400 C 90 460, 400 470, 420 488" class="edge-dash" fill="none" marker-end="url(#arrow2)"/>
+            <path d="M 90 160 C 60 320, 380 480, 420 520" class="edge-dash" fill="none" marker-end="url(#arrow2)"/>
+            <text x="230" y="450" font-size="10.5" class="lbl-muted">User + Post → Bookmark</text>
+
+            <path d="M 280 350 C 620 400, 700 440, 800 488" class="edge-dash" fill="none" marker-end="url(#arrow2)"/>
+            <text x="560" y="440" font-size="10.5" class="lbl-muted">Post 1—N PostRevision</text>
+
+            <defs>
+              <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--ink-faint)"/>
+              </marker>
+            </defs>
+          </svg>
+        </div>
+        <figcaption><b>图 02</b> — 核心数据模型 ER 图（为清晰起见省略次要外键，如修订记录的操作人字段，完整字段见下表）</figcaption>
+      </figure>
+
+      <div class="callout-tsd">
+        <p><span class="chip chip-tsd">TSD 建议</span></p>
+        <p><b>自定义 User 模型必须在项目第一次 migrate 之前引入。</b>《Two Scoops of Django》把这条列为最容易被忽视、但事后代价最高的决策——一旦有了历史数据，再从 <span class="mono">auth.User</span> 切到自定义模型需要手工搬迁用户表和所有外键，几乎等同于重建。本设计据此调整：不再单独设计 <span class="mono">Profile</span>（1:1 表），而是直接建立 <span class="mono">accounts.User(AbstractUser)</span>，把 <span class="mono">bio</span>、<span class="mono">avatar</span> 等资料字段并入同一张表，减少一次 join。这一步需要排在 V4 引入 RBAC 之前完成。</p>
+      </div>
+
+      <h3>关键实体设计说明</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>实体</th><th>设计要点</th><th>对应能力</th></tr></thead>
+          <tbody>
+            <tr><td>User</td><td>自定义模型（继承 AbstractUser），不单独拆 Profile 表</td><td><span class="chip chip-tsd">TSD 建议</span></td></tr>
+            <tr><td>Post</td><td>状态机字段 + 分类（新增）+ 标签（沿用 taggit）+ 搜索向量列</td><td class="mono">GeneratedField 自动维护 tsvector 列</td></tr>
+            <tr><td>Category</td><td>自关联树形结构，最多建议 2 级，避免导航过深</td><td class="mono">UniqueConstraint(fields=["slug","parent"])</td></tr>
+            <tr><td>Comment</td><td>新增 <code>parent_id</code> 自关联支持楼中楼；<code>active</code> 默认值下推到数据库</td><td class="mono">db_default=False，配合审核工作流</td></tr>
+            <tr><td>Bookmark</td><td>纯粹的"用户收藏文章"关联，无自增 id 意义，直接用联合主键</td><td class="mono">models.CompositePrimaryKey("user", "post")</td></tr>
+            <tr><td>PostRevision</td><td>每次发布/编辑写入一条快照（JSON），支持回滚与审计</td><td><span class="chip chip-tsd">TSD 建议</span>：显式写入，不用 signal</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <pre class="code"><span class="m"># accounts/models.py —— 自定义 User 模型（TSD 建议：项目起步即引入）</span>
+<span class="k">class</span> User(AbstractUser):
+    bio = models.TextField(blank=<span class="k">True</span>)
+    avatar = models.ImageField(upload_to=<span class="s">"avatars/"</span>, blank=<span class="k">True</span>)
+
+<span class="m"># mysite/settings.py</span>
+AUTH_USER_MODEL = <span class="s">"accounts.User"</span>
+
+<span class="m"># blog/models.py —— 关键片段</span>
+<span class="k">class</span> Bookmark(models.Model):
+    pk = models.CompositePrimaryKey(<span class="s">"user"</span>, <span class="s">"post"</span>)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey(<span class="s">"blog.Post"</span>, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=<span class="k">True</span>)
+
+<span class="k">class</span> PostQuerySet(models.QuerySet):
+    <span class="m"># TSD 建议：把过滤逻辑写成可链式调用的 QuerySet，而不是塞在 Manager 方法里</span>
+    <span class="k">def</span> published(self):
+        <span class="k">return</span> self.filter(status=Post.Status.PUBLISHED)
+
+    <span class="k">def</span> by_tag(self, tag_slug):
+        <span class="k">return</span> self.filter(tags__slug=tag_slug)
+
+<span class="k">class</span> Post(models.Model):
+    <span class="m">...</span>
+    objects = PostQuerySet.as_manager()
+    search_vector = models.GeneratedField(
+        expression=SearchVector(<span class="s">"title"</span>, weight=<span class="s">"A"</span>) + SearchVector(<span class="s">"body"</span>, weight=<span class="s">"B"</span>),
+        output_field=SearchVectorField(),
+        db_persist=<span class="k">True</span>,
+    )
+
+    <span class="k">def</span> save(self, *args, **kwargs):
+        <span class="m"># TSD 建议：显式调用，不用 post_save 信号——调用链在这里一眼可见</span>
+        is_update = self.pk <span class="k">and</span> Post.objects.filter(pk=self.pk).exists()
+        super().save(*args, **kwargs)
+        <span class="k">if</span> is_update:
+            PostRevision.objects.create(post=self, snapshot=self.to_snapshot())
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[<span class="s">"slug"</span>, <span class="s">"publish"</span>],
+                name=<span class="s">"unique_slug_per_publish_date"</span>,
+            )
+        ]</pre>
+      <p class="code-cap">调用 <span class="mono">Post.objects.published().by_tag("django")</span> 即可链式组合，比在 Manager 上堆叠专用方法更灵活（TSD 建议）；search_vector 由 GeneratedField 自动维护；修订记录改为在 <span class="mono">save()</span> 内显式创建。</p>
+    </section>
+
+    <section id="rbac">
+      <p class="kicker">03 · Access</p>
+      <h2>RBAC 权限设计</h2>
+      <p>沿用 Django 内建的 <span class="mono">auth.Group / Permission</span> 做角色级权限，行级（对象级）权限用 <span class="mono">django-guardian</span> 补充——避免自研一套权限框架。</p>
+
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>角色</th><th>可见范围</th><th>关键权限</th><th>典型场景</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip chip-p0">超级管理员</span></td><td>全站</td><td class="mono">is_superuser</td><td>系统配置、用户与角色管理</td></tr>
+            <tr><td><span class="chip chip-p1">主编</span></td><td>全部文章/评论</td><td class="mono">blog.publish_post<br>blog.moderate_comment</td><td>审核他人文章、下线违规内容</td></tr>
+            <tr><td><span class="chip chip-p1">作者</span></td><td>仅自己的文章</td><td class="mono">blog.add_post<br>blog.change_post（对象级）</td><td>撰写草稿、编辑自己未发布/已发布内容</td></tr>
+            <tr><td><span class="chip chip-p2">审核员</span></td><td>评论队列</td><td class="mono">blog.moderate_comment</td><td>只处理评论审核，不接触文章发布</td></tr>
+            <tr><td><span class="chip chip-p2">普通读者</span></td><td>公开内容 + 自己的互动记录</td><td class="mono">blog.add_comment</td><td>评论、收藏、点赞</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <pre class="code"><span class="m"># blog/permissions.py —— 对象级权限校验</span>
+<span class="k">class</span> PostEditPermission(PermissionRequiredMixin):
+    permission_required = <span class="s">"blog.change_post"</span>
+
+    <span class="k">def</span> has_permission(self):
+        post = self.get_object()
+        user = self.request.user
+        <span class="k">if</span> user.groups.filter(name=<span class="s">"主编"</span>).exists():
+            <span class="k">return</span> <span class="k">True</span>
+        <span class="k">return</span> post.author_id == user.id <span class="k">and</span> super().has_permission()</pre>
+      <p class="code-cap">主编拥有跨作者的编辑权限；普通作者仅当权限点 + 对象归属同时满足才放行。</p>
+
+      <div class="callout">
+        <p><b>设计取舍</b>：不引入独立的 <span class="mono">Role</span> 模型，直接复用 Django <span class="mono">Group</span>——角色数量少（5 个）且不需要动态创建角色，用内建能力足够，避免过度设计。若未来角色需要按团队/项目动态创建，再评估自定义 Role 模型。</p>
+      </div>
+    </section>
+
+    <section id="api">
+      <p class="kicker">04 · Interface</p>
+      <h2>URL 与 API 设计</h2>
+      <p>前台页面沿用现有 FBV 路由；新增能力（收藏、点赞、开放 API）统一走 <span class="mono">/api/v1/</span>，使用 Django REST Framework，按角色收窄可见字段与可执行动作。</p>
+
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>路径</th><th>方法</th><th>说明</th><th>权限</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">/api/v1/posts/</td><td class="mono">GET</td><td>文章列表（分页、标签/分类筛选）</td><td>公开</td></tr>
+            <tr><td class="mono">/api/v1/posts/{slug}/</td><td class="mono">GET</td><td>文章详情</td><td>公开（已发布）/ 作者本人（草稿）</td></tr>
+            <tr><td class="mono">/api/v1/posts/{slug}/bookmark/</td><td class="mono">POST · DELETE</td><td>收藏 / 取消收藏</td><td>登录用户</td></tr>
+            <tr><td class="mono">/api/v1/posts/{id}/comments/</td><td class="mono">POST</td><td>提交评论（进入待审核队列）</td><td>登录用户</td></tr>
+            <tr><td class="mono">/api/v1/comments/{id}/moderate/</td><td class="mono">PATCH</td><td>审核通过 / 驳回</td><td>审核员 / 主编</td></tr>
+            <tr><td class="mono">/api/v1/search/</td><td class="mono">GET</td><td>全文检索（见 §05）</td><td>公开</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <pre class="code"><span class="m"># blog/api/viewsets.py</span>
+<span class="k">class</span> PostViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = PostSerializer
+    lookup_field = <span class="s">"slug"</span>
+
+    <span class="k">def</span> get_queryset(self):
+        user = self.request.user
+        <span class="k">if</span> user.is_authenticated <span class="k">and</span> user.groups.filter(name__in=[<span class="s">"主编"</span>, <span class="s">"作者"</span>]).exists():
+            <span class="k">return</span> Post.objects.filter(Q(status=Post.Status.PUBLISHED) | Q(author=user))
+        <span class="k">return</span> Post.published.all()</pre>
+    </section>
+
+    <section id="search">
+      <p class="kicker">05 · Search</p>
+      <h2>搜索设计</h2>
+      <p>沿用现有 <span class="mono">TrigramSimilarity</span> 做标题模糊匹配，新增标题+正文的加权全文检索（<span class="mono">SearchVector/SearchRank</span>），两者互为补充：全文检索负责"语义相关"，Trigram 负责"拼写容错"。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>能力</th><th>算法</th><th>索引</th><th>适用场景</th></tr></thead>
+          <tbody>
+            <tr><td>标题模糊匹配</td><td class="mono">TrigramSimilarity</td><td class="mono">GIN(title gin_trgm_ops)</td><td>拼写有误差的搜索框输入</td></tr>
+            <tr><td>标题+正文全文检索</td><td class="mono">SearchVector + SearchRank</td><td class="mono">GIN(search_vector)</td><td>关键词语义匹配，标题权重 A &gt; 正文权重 B</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code"><span class="m"># blog/migrations/000X_search_index.py</span>
+migrations.AddIndex(
+    model_name=<span class="s">"post"</span>,
+    index=GinIndex(fields=[<span class="s">"search_vector"</span>], name=<span class="s">"post_search_vector_gin"</span>),
+)</pre>
+    </section>
+
+    <section id="cache-async">
+      <p class="kicker">06 · Runtime</p>
+      <h2>缓存与异步任务</h2>
+      <h3>缓存策略</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>缓存对象</th><th>Key 设计</th><th>失效时机</th></tr></thead>
+          <tbody>
+            <tr><td>文章列表页</td><td class="mono">post_list:{tag}:{category}:{page}</td><td>任意 Post 保存/删除时按 pattern 批量失效</td></tr>
+            <tr><td>文章详情页</td><td class="mono">post_detail:{slug}</td><td>该 Post 或其评论变更时失效</td></tr>
+            <tr><td>侧边栏统计</td><td class="mono">sidebar_stats</td><td>定时（5 分钟）刷新，非强一致</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Celery 任务</h3>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>任务</th><th>触发方式</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">send_share_email</td><td>视图内 <span class="mono">.delay()</span></td><td>邮件分享文章，失败自动重试 3 次</td></tr>
+            <tr><td class="mono">notify_moderators</td><td>评论创建信号</td><td>新评论入待审核队列时通知审核员</td></tr>
+            <tr><td class="mono">publish_scheduled_posts</td><td>Celery Beat（每分钟）</td><td>扫描 <span class="mono">publish&lt;=now</span> 的定时发布文章</td></tr>
+            <tr><td class="mono">send_newsletter_digest</td><td>Celery Beat（每周）</td><td>汇总本周已发布文章，发送订阅摘要</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="sequence">
+      <p class="kicker">07 · Flow</p>
+      <h2>关键请求时序：编辑已发布文章</h2>
+      <p>以"作者/主编编辑一篇已发布文章"为例，展示 RBAC 校验与缓存失效如何嵌入同一次请求。</p>
+
+      <figure class="plate">
+        <span class="tick-br"></span><span class="tick-bl"></span>
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 940 560" role="img" aria-labelledby="seq-title seq-desc">
+            <title id="seq-title">编辑已发布文章请求时序图</title>
+            <desc id="seq-desc">浏览器发起 PATCH 请求，Django 视图向 RBAC 权限层校验角色与对象归属，权限不足则直接返回 403；权限通过后写入数据库、删除相关缓存 key，再返回 200。</desc>
+
+            <g font-size="12">
+              <rect x="30" y="20" width="120" height="34" rx="3" class="box-2"/><text x="90" y="42" text-anchor="middle">浏览器</text>
+              <rect x="230" y="20" width="120" height="34" rx="3" class="box-2"/><text x="290" y="42" text-anchor="middle">Django 视图</text>
+              <rect x="430" y="20" width="130" height="34" rx="3" class="box-2"/><text x="495" y="42" text-anchor="middle">RBAC 权限层</text>
+              <rect x="640" y="20" width="120" height="34" rx="3" class="box-2"/><text x="700" y="42" text-anchor="middle">数据库</text>
+              <rect x="820" y="20" width="100" height="34" rx="3" class="box-2"/><text x="870" y="42" text-anchor="middle">缓存</text>
+            </g>
+
+            <line x1="90" y1="54" x2="90" y2="520" class="edge"/>
+            <line x1="290" y1="54" x2="290" y2="520" class="edge"/>
+            <line x1="495" y1="54" x2="495" y2="520" class="edge"/>
+            <line x1="700" y1="54" x2="700" y2="520" class="edge"/>
+            <line x1="870" y1="54" x2="870" y2="520" class="edge"/>
+
+            <line x1="90" y1="90" x2="290" y2="90" class="edge-accent" marker-end="url(#arrow3)"/>
+            <text x="100" y="82" font-size="11.5">PATCH /posts/42</text>
+
+            <line x1="290" y1="130" x2="495" y2="130" class="edge-accent" marker-end="url(#arrow3)"/>
+            <text x="300" y="122" font-size="11.5">has_perm("blog.change_post", obj)</text>
+
+            <rect x="440" y="150" width="220" height="46" rx="3" class="box-2" opacity="0.7"/>
+            <text x="495" y="168" text-anchor="middle" font-size="11">校验角色 + 对象归属</text>
+            <text x="495" y="184" text-anchor="middle" font-size="10.5" class="lbl-muted">主编 或 (作者 且 author==user)</text>
+
+            <line x1="495" y1="216" x2="290" y2="216" class="edge-dash" marker-end="url(#arrow3)"/>
+            <text x="330" y="210" font-size="11.5">允许</text>
+
+            <path d="M 495 226 C 620 250, 200 260, 90 270" class="edge-dash" fill="none" marker-end="url(#arrow3)"/>
+            <text x="560" y="256" font-size="10.5" class="lbl-muted">若权限不足 → 403 Forbidden（提前返回）</text>
+
+            <line x1="290" y1="310" x2="700" y2="310" class="edge-accent" marker-end="url(#arrow3)"/>
+            <text x="300" y="302" font-size="11.5">UPDATE post SET title=…, updated=now()</text>
+
+            <line x1="700" y1="350" x2="290" y2="350" class="edge-dash" marker-end="url(#arrow3)"/>
+            <text x="330" y="342" font-size="11.5">OK</text>
+
+            <line x1="290" y1="390" x2="870" y2="390" class="edge-accent" marker-end="url(#arrow3)"/>
+            <text x="300" y="382" font-size="11.5">DEL post_detail:42, post_list:*</text>
+
+            <line x1="290" y1="440" x2="90" y2="440" class="edge-dash" marker-end="url(#arrow3)"/>
+            <text x="120" y="432" font-size="11.5">200 OK</text>
+
+            <defs>
+              <marker id="arrow3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+          </svg>
+        </div>
+        <figcaption><b>图 03</b> — 权限校验通过后才写库，写库成功后立即失效相关缓存 key，保证读到的内容与权限判断始终一致</figcaption>
+      </figure>
+    </section>
+
+    <section id="best-practices">
+      <p class="kicker">08 · Conventions</p>
+      <h2>Django 5.2 最佳实践清单</h2>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>特性</th><th>引入版本</th><th>本项目应用点</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">CompositePrimaryKey</td><td class="mono">5.2</td><td>Bookmark 收藏表，替代"自增 id + unique_together"</td></tr>
+            <tr><td class="mono">GeneratedField</td><td class="mono">5.0+</td><td>Post.search_vector 由数据库自动维护，免信号同步</td></tr>
+            <tr><td class="mono">db_default</td><td class="mono">5.0</td><td>Comment.active、Post.status 默认值下推数据库层</td></tr>
+            <tr><td class="mono">LoginRequiredMiddleware</td><td class="mono">5.1</td><td>个人主页、收藏等需登录页面统一拦截，替代逐视图加装饰器</td></tr>
+            <tr><td class="mono">{% querystring %}</td><td class="mono">5.1</td><td>分页/标签筛选保留查询参数（已在 V3 使用）</td></tr>
+            <tr><td class="mono">admin.ShowFacets</td><td class="mono">5.0</td><td>PostAdmin 列表页展示筛选计数，加快人工审核效率</td></tr>
+            <tr><td class="mono">异步 ORM（aget/acreate）</td><td class="mono">4.1+，5.x 完善</td><td>Webhook 接收端点使用 async view，避免阻塞线程池</td></tr>
+            <tr><td class="mono">UniqueConstraint(condition=…)</td><td class="mono">长期支持</td><td>显式表达"同日 slug 唯一"，替代隐式 unique_for_date</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="nfr">
+      <p class="kicker">09 · Quality</p>
+      <h2>非功能指标</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h4>性能</h4>
+          <p>列表/详情页 P95 &lt; 200ms（命中缓存）；搜索接口 P95 &lt; 400ms；数据库连接池上限按实例数 × 20 设置。</p>
+        </div>
+        <div class="card">
+          <h4>安全</h4>
+          <p>评论内容强制转义防 XSS；表单 CSRF 保护默认开启；生产密钥全部走 Secret 管理，不落 git；RBAC 遵循最小权限原则。</p>
+        </div>
+        <div class="card">
+          <h4>可观测性</h4>
+          <p>结构化日志（JSON）+ Sentry 错误采集；关键任务（邮件发送、定时发布）失败需触发告警，而非静默重试耗尽。</p>
+        </div>
+        <div class="card">
+          <h4>可维护性</h4>
+          <p>所有 Schema 变更走 migration，大表加索引评估是否需要 <span class="mono">CONCURRENTLY</span>，避免锁表影响线上写入。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="deployment">
+      <p class="kicker">10 · Ship</p>
+      <h2>部署架构</h2>
+      <p>在现有 <span class="mono">docker-compose</span> 基础上拆分为独立服务，密钥改由环境变量注入而非硬编码，新增 worker/beat 两个长驻进程。</p>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>服务</th><th>镜像/命令</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">web</td><td class="mono">gunicorn mysite.wsgi</td><td>多实例，滚动发布，健康检查探活</td></tr>
+            <tr><td class="mono">worker</td><td class="mono">celery -A mysite worker</td><td>独立扩缩容，和 web 分开部署</td></tr>
+            <tr><td class="mono">beat</td><td class="mono">celery -A mysite beat</td><td>单实例，避免定时任务重复触发</td></tr>
+            <tr><td class="mono">db / redis</td><td>托管服务优先</td><td>生产环境建议使用云厂商托管实例，而非自建容器</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout-tsd">
+        <p><span class="chip chip-tsd">TSD 建议</span></p>
+        <p>当前 <span class="mono">mysite/settings.py</span> 是单文件配置。改为 <span class="mono">settings/base.py + dev.py + production.py</span> 三段式，公共配置放 base，环境差异（<span class="mono">DEBUG</span>、<span class="mono">ALLOWED_HOSTS</span>、缓存/邮件后端）分别覆盖，全部敏感值继续走 <span class="mono">python-decouple</span> 读环境变量，不因为拆分文件就把密钥写死在某一段里。</p>
+      </div>
+    </section>
+
+    <section id="milestones">
+      <p class="kicker">11 · Roadmap</p>
+      <h2>里程碑对齐</h2>
+      <div class="table-wrap">
+        <table class="spec">
+          <thead><tr><th>版本</th><th>本设计覆盖内容</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip chip-v">V4</span></td><td>RBAC 权限体系、评论审核工作流、日志监控告警（§03 §09）</td></tr>
+            <tr><td><span class="chip chip-v">V5</span></td><td>全文检索升级、页面缓存、Celery 异步任务（§05 §06）</td></tr>
+            <tr><td><span class="chip chip-v">V6</span></td><td>分类目录、定时发布、评论楼中楼、收藏（§02 §06）</td></tr>
+            <tr><td><span class="chip chip-v">V7</span></td><td>开放 REST API、管理员数据看板（§04）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="doc-footer">
+  Blog TDD v1.0 · 对应 <span class="mono">docs/blog-prd.md</span> · Django 5.2 · PostgreSQL 16
+</footer>

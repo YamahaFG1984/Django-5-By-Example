@@ -1,0 +1,1391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>myshop 项目深读笔记 · Django 5 By Example 源码深读</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20x%3D%2250%22%20y%3D%2262%22%20font-size%3D%2262%22%20text-anchor%3D%22middle%22%3E%F0%9F%9B%92%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5 By Example · 项目三 / 共四个</span>
+      <h1>🛒&nbsp; myshop 项目深读笔记</h1>
+      <p>购物车、Stripe 支付与 Webhook、优惠券与 Redis 推荐、国际化 —— 一套真实电商链路从下单到收款的完整实现。</p>
+    </div>
+    <nav>
+      <a href="#ch08"><span class="n">08</span>商城、购物车与 Celery 异步任务</a><a href="#ch09"><span class="n">09</span>Stripe 支付、Webhook 与 PDF 发票</a><a href="#ch10"><span class="n">10</span>优惠券系统与基于 Redis 的商品推荐</a><a href="#ch11"><span class="n">11</span>国际化、本地化与多语言商品</a>
+    </nav>
+    <div class="series">
+      <div class="label">全书四个项目</div>
+      <a href="notes-01-blog.html">📝 Blog 项目深读笔记</a><a href="notes-02-bookmarks.html">🔖 Bookmarks 项目深读笔记</a><a href="notes-03-myshop.html" class="current">🛒 myshop 项目深读笔记</a><a href="notes-04-educa.html">🎓 educa 项目深读笔记</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">源码深读 · 逐章教学笔记</span>
+      <h1>myshop 项目深读笔记</h1>
+      <p class="sub">购物车、Stripe 支付与 Webhook、优惠券与 Redis 推荐、国际化 —— 一套真实电商链路从下单到收款的完整实现。</p>
+      <div class="meta">
+        <span>覆盖 Chapter 08–11</span>
+        <span>基于官方配套代码仓库逐行阅读整理</span>
+        <span>含 4 张手绘架构示意图</span>
+      </div>
+    </div>
+    
+<section class="chapter" id="ch08">
+  <div class="chapter-head">
+    <span class="chnum">08</span>
+    <h2 class="chtitle">商城、购物车与 Celery 异步任务</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 320" role="img" aria-label="图 08 · 购物车全程只活在 session 里，下单才落库；Celery 已接线代码但缺 Broker 配置，派发会报错"><defs>
+          <marker id="c08-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c08-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c08-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="170" height="60" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="54.0" text-anchor="middle" font-size="12.5">Cart（session）</text>
+<text class="lbl" x="105.0" y="72.5" text-anchor="middle" font-size="10.5">字典存 {id: {qty, price}}</text>
+<text class="lbl" x="105.0" y="84.5" text-anchor="middle" font-size="10.5">不落库，价格快照</text>
+<rect class="box" x="240" y="30" width="170" height="60" rx="4"></rect>
+<text class="lbl-strong" x="325.0" y="54.0" text-anchor="middle" font-size="12.5">Product</text>
+<text class="lbl" x="325.0" y="72.5" text-anchor="middle" font-size="10.5">数据库</text>
+<line class="edge" class="edge-dashed" x1="190" y1="60" x2="240" y2="60" marker-end="url(#c08-m)"></line>
+<text class="lbl" x="215.0" y="55.0" text-anchor="middle" font-size="10">__iter__ 批量查询</text>
+<rect class="box-a" x="460" y="30" width="210" height="60" rx="4"></rect>
+<text class="lbl-strong" x="565.0" y="54.0" text-anchor="middle" font-size="12.5">order_create()</text>
+<text class="lbl" x="565.0" y="72.5" text-anchor="middle" font-size="10.5">Order + OrderItem（价格</text>
+<text class="lbl" x="565.0" y="84.5" text-anchor="middle" font-size="10.5">再次快照）→ cart.clear()</text>
+<line class="edge" x1="410" y1="60" x2="460" y2="60" marker-end="url(#c08-m)"></line>
+<text class="lbl" x="435.0" y="55.0" text-anchor="middle" font-size="10">结算</text>
+<rect class="box" x="460" y="130" width="210" height="56" rx="4"></rect>
+<text class="lbl-strong" x="565.0" y="152.0" text-anchor="middle" font-size="12.5">order_created.delay()</text>
+<text class="lbl" x="565.0" y="170.5" text-anchor="middle" font-size="10.5">异步任务派发</text>
+<line class="edge" x1="565" y1="90" x2="565" y2="130" marker-end="url(#c08-m)"></line>
+<rect class="box-w" x="460" y="220" width="210" height="60" rx="4"></rect>
+<text class="lbl-strong" x="565.0" y="244.0" text-anchor="middle" font-size="12.5">Celery Broker</text>
+<text class="lbl" x="565.0" y="262.5" text-anchor="middle" font-size="10.5">settings 与 docker-compose</text>
+<text class="lbl" x="565.0" y="274.5" text-anchor="middle" font-size="10.5">均未配置 → 报错</text>
+<line class="edge-w" class="edge-dashed" x1="565" y1="186" x2="565" y2="220" marker-end="url(#c08-mw)"></line>
+<rect class="box" x="200" y="220" width="210" height="60" rx="4"></rect>
+<text class="lbl-strong" x="305.0" y="244.0" text-anchor="middle" font-size="12.5">worker: send_mail()</text>
+<text class="lbl" x="305.0" y="262.5" text-anchor="middle" font-size="10.5">console backend（开发环境）</text>
+<line class="edge-w" class="edge-dashed" x1="410" y1="250" x2="460" y2="250" marker-end="url(#c08-mw)"></line></svg><figcaption class="cap">图 08 · 购物车全程只活在 session 里，下单才落库；Celery 已接线代码但缺 Broker 配置，派发会报错</figcaption></figure>
+  <p>Chapter08 另起炉灶，开启本书<strong>第三个项目 myshop</strong>（在线商城），不再是 Bookmarks 的延续。这一章的核心是三样东西：<strong>商品/分类模型</strong>、<strong>基于 session 的购物车</strong>（不落库）、<strong>Celery 异步发邮件</strong>。</p>
+<h2>一、项目结构与新依赖</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ Pillow~=11.2       # ImageField 需要
++ flower==2.0.1       # Celery 任务监控 Web 面板
++ celery==5.4.0        # 异步任务队列
+</code></pre></div>
+<p>三个新 app：<code>shop</code>（商品/分类）、<code>cart</code>（购物车）、<code>orders</code>（订单）。<code>settings.py</code> 里能看到几处新东西：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">TEMPLATES = [{
+    ...
+    'OPTIONS': {
+        'context_processors': [
+            ...
+            'cart.context_processors.cart',   # 让 cart 在所有模板里都能直接用
+        ],
+    },
+}]
+
+CART_SESSION_ID = 'cart'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+</code></pre></div>
+<h2>二、商品与分类模型</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># shop/models.py
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+    class Meta:
+        ordering = ['name']
+        indexes = [models.Index(fields=['name'])]
+        verbose_name = 'category'
+        verbose_name_plural = 'categories'
+    def get_absolute_url(self):
+        return reverse('shop:product_list_by_category', args=[self.slug])
+
+class Product(models.Model):
+    category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200)
+    image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    available = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['id', 'slug']),
+            models.Index(fields=['name']),
+            models.Index(fields=['-created']),
+        ]
+    def get_absolute_url(self):
+        return reverse('shop:product_detail', args=[self.id, self.slug])
+</code></pre></div>
+<p>值得注意的细节：</p>
+<ul>
+<li><code>verbose_name_plural = 'categories'</code>——英文复数不能简单加 s（category → categories），Django admin 侧边栏、表头默认会自动给 <code>verbose_name</code> 加 s，遇到这种不规则复数必须手动指定，否则 admin 里会显示成 "Categorys"。</li>
+<li><code>Product.slug</code> <strong>没有</strong> <code>unique=True</code>（对比 <code>Category.slug</code> 是 <code>unique=True</code>）——因为 <code>product_detail</code> 这个 URL 用的是 <code>&lt;int:id&gt;/&lt;slug:slug&gt;/</code>，真正定位记录靠的是 <code>id</code>，<code>slug</code> 只是让 URL 好看/利于 SEO，所以允许不同商品重名 slug；而 <code>Category</code> 的详情页 URL <code>product_list_by_category</code> 完全靠 <code>slug</code> 定位（<code>&lt;slug:category_slug&gt;/</code>，没有 <code>id</code>），所以分类的 slug 必须唯一。这是"URL 设计决定字段约束"的一个好例子。</li>
+<li><code>Product.price</code> 用 <code>DecimalField</code> 而不是 <code>FloatField</code>——涉及金额永远该用 <code>DecimalField</code>，因为浮点数在做金额加减乘除时会有精度误差（<code>0.1 + 0.2 != 0.3</code> 这种经典问题），这是处理货币金额的铁律。</li>
+</ul>
+<h2>三、购物车：完全不落库，全靠 session</h2>
+<p>这是本章<strong>设计上最值得琢磨</strong>的地方——<code>cart/models.py</code> 是空的！购物车压根不是一张数据库表，而是一个<strong>读写 session 字典</strong>的普通 Python 类：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># cart/cart.py
+class Cart:
+    def __init__(self, request):
+        self.session = request.session
+        cart = self.session.get(settings.CART_SESSION_ID)
+        if not cart:
+            cart = self.session[settings.CART_SESSION_ID] = {}
+        self.cart = cart
+
+    def add(self, product, quantity=1, override_quantity=False):
+        product_id = str(product.id)
+        if product_id not in self.cart:
+            self.cart[product_id] = {'quantity': 0, 'price': str(product.price)}
+        if override_quantity:
+            self.cart[product_id]['quantity'] = quantity
+        else:
+            self.cart[product_id]['quantity'] += quantity
+        self.save()
+
+    def save(self):
+        self.session.modified = True
+
+    def __iter__(self):
+        product_ids = self.cart.keys()
+        products = Product.objects.filter(id__in=product_ids)
+        cart = self.cart.copy()
+        for product in products:
+            cart[str(product.id)]['product'] = product
+        for item in cart.values():
+            item['price'] = Decimal(item['price'])
+            item['total_price'] = item['price'] * item['quantity']
+            yield item
+
+    def __len__(self):
+        return sum(item['quantity'] for item in self.cart.values())
+
+    def get_total_price(self):
+        return sum(Decimal(item['price']) * item['quantity'] for item in self.cart.values())
+</code></pre></div>
+<p>几个精心设计的细节：</p>
+<ul>
+<li><strong>价格存的是字符串</strong>（<code>'price': str(product.price)</code>）——Django session 底层默认用 JSON 序列化（<code>django.contrib.sessions</code> 的 <code>JSONSerializer</code>），而 <code>Decimal</code> 类型不能直接 JSON 序列化，所以存进 session 前要 <code>str()</code>，取出来再 <code>Decimal()</code> 转回去。这也顺带解释了为什么购物车里存的是<strong>下单那一刻的价格快照</strong>，而不是每次都去查 <code>Product.price</code>——即使商品之后涨价了，已经在购物车里的商品价格也不会跟着变，这其实是电商场景里"该有的行为"（虽然本书目前还没有专门为这点写注释，但代码结构自然达成了）。</li>
+<li><code>self.session.modified = True</code>——Django session 默认只在<strong>顶层键</strong>被整体赋值时才知道要重新保存 session；这里是在字典<strong>内部</strong>做的嵌套修改（<code>self.cart[product_id][...] = ...</code>），Django 检测不到这种深层变化，所以必须手动标记 <code>modified = True</code> 强制触发 session 重新写入，否则购物车的修改根本不会持久化。这是使用 Django session 存复杂数据结构时一个经典的坑。</li>
+<li><code>__iter__</code> 是<strong>生成器</strong>协议的应用：先按 session 里存的所有 <code>product_id</code> 一次性批量查数据库（<code>filter(id__in=product_ids)</code>，避免 N+1），再把 <code>Product</code> 对象和 <code>Decimal</code> 价格"贴"回每个 cart item 里，最后逐个 <code>yield</code>——这样上层代码（视图、模板）能直接 <code>for item in cart:</code> 遍历，item 既有 <code>product</code>（模型实例）又有 <code>price</code>/<code>quantity</code>/<code>total_price</code>（计算好的数值），使用起来非常自然，把"session 字典"和"数据库对象"缝合成了一个统一视图。</li>
+<li><strong>购物车不需要登录</strong>——全程没有 <code>@login_required</code>，因为购物车挂在 session 上而不是某个 User 上，这是电商网站"先逛后登录/游客下单"的常见诉求。</li>
+</ul>
+<h3><code>context_processors.py</code>——让购物车在所有模板里都能用</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def cart(request):
+    return {'cart': Cart(request)}
+</code></pre></div>
+<p>配合 <code>settings.py</code> 里注册的 <code>'cart.context_processors.cart'</code>，每个模板渲染时都会自动往 context 里注入一个 <code>cart</code> 变量——这就是为什么 <code>shop/base.html</code>（所有页面公用的头部）里能直接写 <code>{% with total_items=cart|length %}</code> 显示购物车图标和总件数，而不需要每个视图都手动传 <code>cart</code> 进 context。这是 context processor 的标准用法：把"几乎每个页面都要用"的数据从"每个视图手动传"变成"全局自动可用"。</p>
+<h2>四、购物车视图：三个纯 session 操作</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@require_POST
+def cart_add(request, product_id):
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    form = CartAddProductForm(request.POST)
+    if form.is_valid():
+        cd = form.cleaned_data
+        cart.add(product=product, quantity=cd['quantity'], override_quantity=cd['override'])
+    return redirect('cart:cart_detail')
+</code></pre></div>
+<p><code>CartAddProductForm</code> 里藏了个小机关：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class CartAddProductForm(forms.Form):
+    quantity = forms.TypedChoiceField(choices=PRODUCT_QUANTITY_CHOICES, coerce=int)
+    override = forms.BooleanField(required=False, initial=False, widget=forms.HiddenInput)
+</code></pre></div>
+<p><code>override</code> 是个<strong>隐藏字段</strong>——同一张表单在两个场景复用：商品详情页"加入购物车"时 <code>override</code> 默认 <code>False</code>（新增数量，累加到已有基础上）；购物车页面"更新数量"时后端渲染表单会显式传 <code>initial={'override': True}</code>（<code>cart_detail</code> 视图里那句 <code>CartAddProductForm(initial={'quantity': item['quantity'], 'override': True})</code>），提交后是<strong>覆盖</strong>而不是累加当前数量。一个表单、一个视图函数，靠一个隐藏布尔值区分"添加"和"修改"两种语义，是个很紧凑的设计。</p>
+<p><code>@require_POST</code> 用在 <code>cart_add</code>/<code>cart_remove</code> 上，是因为这两个操作会修改状态（购物车内容），不该允许用 GET 触发（防止链接预抓取、CSRF 类问题意外清空/修改购物车）。</p>
+<h2>五、订单：购物车 → 数据库的落地时刻</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># orders/models.py
+class Order(models.Model):
+    first_name = models.CharField(max_length=50)
+    ...
+    paid = models.BooleanField(default=False)
+    def get_total_cost(self):
+        return sum(item.get_cost() for item in self.items.all())
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
+    product = models.ForeignKey('shop.Product', related_name='order_items', on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=1)
+    def get_cost(self):
+        return self.price * self.quantity
+</code></pre></div>
+<p><code>OrderItem</code> 自己也存了一份 <code>price</code>（而不是通过 <code>product.price</code> 现查）——这是购物车"价格快照"设计的延续，且这里的理由更硬：<strong>订单一旦生成，历史订单的金额永远不能因为商品后续改价而跟着变</strong>，所以 <code>OrderItem.price</code> 必须是下单那一刻从购物车里搬过来的固定值，是电商订单系统里典型的"反规范化换正确性"设计。</p>
+<p><code>orders/views.py</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def order_create(request):
+    cart = Cart(request)
+    if request.method == 'POST':
+        form = OrderCreateForm(request.POST)
+        if form.is_valid():
+            order = form.save()
+            for item in cart:
+                OrderItem.objects.create(
+                    order=order, product=item['product'],
+                    price=item['price'], quantity=item['quantity'],
+                )
+            cart.clear()
+            order_created.delay(order.id)
+            return render(request, 'orders/order/created.html', {'order': order})
+    else:
+        form = OrderCreateForm()
+    return render(request, 'orders/order/create.html', {'cart': cart, 'form': form})
+</code></pre></div>
+<p>流程很清楚：表单校验通过 → 建 <code>Order</code> → 遍历购物车里每个 item 建对应 <code>OrderItem</code>（把购物车快照的价格原样搬过去）→ <code>cart.clear()</code> 清空 session 购物车 → <strong><code>order_created.delay(order.id)</code></strong> 派发异步任务 → 渲染"感谢下单"页面。</p>
+<h2>六、Celery：异步发确认邮件</h2>
+<p>这是本章引入的新基础设施。<code>myshop/celery.py</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">import os
+from celery import Celery
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myshop.settings')
+app = Celery('myshop')
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
+</code></pre></div>
+<p><code>myshop/__init__.py</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">from .celery import app as celery_app
+__all__ = ['celery_app']
+</code></pre></div>
+<p>这个 <code>__init__.py</code> 里的 import 是<strong>必须的</strong>，且是 Celery 官方推荐的标准接线方式：确保 Django 项目启动（比如跑 <code>manage.py</code> 任何命令）时 <code>celery_app</code> 一定会被创建，这样 <code>@shared_task</code> 装饰的任务才能正确关联到这个 Celery 实例上。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># orders/tasks.py
+@shared_task
+def order_created(order_id):
+    order = Order.objects.get(id=order_id)
+    subject = f'Order nr. {order.id}'
+    message = (f'Dear {order.first_name},\n\n'
+               f'You have successfully placed an order.'
+               f'Your order ID is {order.id}.')
+    mail_sent = send_mail(subject, message, 'admin@myshop.com', [order.email])
+    return mail_sent
+</code></pre></div>
+<p><code>@shared_task</code> 而不是 <code>@app.task</code>——<code>shared_task</code> 是给"可复用 app"用的装饰器写法，不需要在任务定义处直接导入某个具体的 Celery 实例，任务会在真正执行时才绑定到当前项目的 Celery app 上，这样 <code>orders</code> 这个 app 理论上可以被拷到别的项目里用而不用改这行代码。</p>
+<p><strong>为什么发邮件要放到 Celery 异步任务而不是直接在视图里同步调 <code>send_mail</code>？</strong> 因为发邮件涉及连接外部 SMTP 服务器，网络延迟不可控（慢的时候可能几秒甚至超时）——如果放在 <code>order_create</code> 视图同步执行，用户提交订单后浏览器要一直等邮件发送成功才能看到"谢谢下单"页面，体验很差，一旦邮件服务商抽风还可能导致整个下单请求超时失败。用 <code>.delay()</code> 把这个任务丢进消息队列，视图立刻继续渲染确认页返回给用户，真正发邮件的动作在后台 worker 进程里异步进行，两者解耦。</p>
+<h3>一处配置缺口：没有配置消息代理（Broker）</h3>
+<p>逐个文件核对过，<code>settings.py</code> 里<strong>没有任何 <code>CELERY_BROKER_URL</code>（或 <code>CELERY_*</code> 相关）配置</strong>，<code>docker-compose.yml</code> 里也<strong>没有</strong> RabbitMQ/Redis 这类消息代理服务，<code>requirements.txt</code> 里也没有对应的客户端库（比如 <code>redis</code>）。而 Celery <strong>必须</strong>依赖一个消息代理才能把 <code>.delay()</code> 派发的任务从 Web 进程传递给 worker 进程——单靠这个仓库里的代码，<code>order_created.delay(order.id)</code> 这行会在找不到 broker 时报连接错误。</p>
+<p>这说明书的正文（讲义部分）大概率会讲到"启动 RabbitMQ/Redis 作为 broker，并设置 <code>CELERY_BROKER_URL</code>，再单独起一个 <code>celery -A myshop worker</code> 进程"，但<strong>这一章配套仓库的代码没有把这部分接线完整落到 <code>docker-compose.yml</code>/<code>settings.py</code> 里</strong>。跟着这一章的代码直接 <code>docker compose up</code> 是能跑起来商城本身的（浏览商品、加购物车、下单都不受影响，因为这些操作本身不依赖 Celery），只有真正触发 <code>.delay()</code> 那一刻会报错。这是继续深读代码时要留意的一个"代码仓库落后于书本正文"的例子，和之前 Chapter03/07 里 <code>prompts/task.md</code> 草稿是同一类问题的另一种表现——书和配套仓库不完全同步。</p>
+<h2>七、模板与前端</h2>
+<ul>
+<li><code>shop/base.html</code>：<code>{% with total_items=cart|length %}</code> 用了自定义的 <code>Cart.__len__</code>（返回商品总件数之和，不是种类数）；购物车为空时用 <code>{% elif not order %}</code> 判断——因为下单成功页 <code>created.html</code> 里 <code>cart</code> 这个 context 变量其实已经不存在了（视图渲染 <code>created.html</code> 时只传了 <code>order</code>，没传 <code>cart</code>），加这个 <code>not order</code> 判断是为了避免"下单成功页"上仍然显示一句"购物车是空的"这种奇怪文案。</li>
+<li><code>product/detail.html</code>：<code>{% if product.image %}...{% else %}{% static "img/no_image.png" %}{% endif %}</code>——给没上传图的商品准备了一张占位图，这个模式在 <code>product/list.html</code> 和 <code>cart/detail.html</code> 里重复了三次，是个可以抽成模板 include 或自定义模板标签的小优化点，不过对教学项目来说影响不大。</li>
+<li><code>orders/order/create.html</code>：结算页把购物车明细和收货信息表单放在同一页，<code>form.as_p</code> 直接渲染 <code>OrderCreateForm</code> 的六个字段，提交后端做校验、创建订单、清空购物车、派发异步任务，一气呵成。</li>
+</ul>
+<h2>八、端到端流程</h2>
+<p>浏览商品（<code>shop:product_list</code> / <code>product_list_by_category</code>）→ 商品详情页选数量提交 <code>cart:cart_add</code>（POST，session 里累加）→ 购物车页可继续调整数量或删除（<code>cart_add</code> 覆盖模式 / <code>cart_remove</code>）→ 点击"Checkout"进入 <code>orders:order_create</code> 填收货信息 → 提交后创建 <code>Order</code> + 逐条 <code>OrderItem</code>（价格来自购物车快照）→ 清空 session 购物车 → 派发 <code>order_created</code> Celery 任务（需要 broker，当前仓库配置缺失）→ 展示"Thank you"页。</p>
+<h2>九、与 Bookmarks 项目的设计对比</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Bookmarks（Ch04-07）</th>
+<th>myshop（Ch08）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>核心数据存储</td>
+<td>全部在数据库（含"临时性"的浏览计数用 Redis）</td>
+<td>购物车<strong>完全不落库</strong>，只存 session；下单那一刻才落库</td>
+</tr>
+<tr>
+<td>用户体系</td>
+<td>贯穿始终，几乎每个操作都要登录</td>
+<td>购物车/浏览商品全程不需要登录，下单表单直接收集联系方式</td>
+</tr>
+<tr>
+<td>价格/金额字段</td>
+<td>无</td>
+<td>首次出现 <code>DecimalField</code>，且反复出现"快照价格"设计（购物车 session、<code>OrderItem.price</code>）</td>
+</tr>
+<tr>
+<td>异步任务</td>
+<td>无</td>
+<td>首次引入 Celery（<code>.delay()</code> 异步发邮件）</td>
+</tr>
+<tr>
+<td>已知代码缺口</td>
+<td><code>add_to_class</code>/<code>ABSOLUTE_URL_OVERRIDES</code>（因未用自定义 User 模型）</td>
+<td>Celery broker 未接线（<code>settings.py</code>/<code>docker-compose.yml</code>/<code>requirements.txt</code> 均缺失）</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch09">
+  <div class="chapter-head">
+    <span class="chnum">09</span>
+    <h2 class="chtitle">Stripe 支付、Webhook 与 PDF 发票</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 380" role="img" aria-label="图 09 · Checkout 托管支付；浏览器跳转与服务端 Webhook 是并行的两条独立通知路径"><defs>
+          <marker id="c09-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c09-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c09-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="55.0" text-anchor="middle" font-size="12.5">浏览器</text>
+<rect class="box" x="220" y="30" width="170" height="50" rx="4"></rect>
+<text class="lbl-strong" x="305.0" y="49.0" text-anchor="middle" font-size="12.5">payment_process()</text>
+<text class="lbl" x="305.0" y="67.5" text-anchor="middle" font-size="10.5">创建 Checkout Session</text>
+<rect class="box-a" x="440" y="30" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="540.0" y="49.0" text-anchor="middle" font-size="12.5">Stripe</text>
+<text class="lbl" x="540.0" y="67.5" text-anchor="middle" font-size="10.5">托管支付页（不经手卡号）</text>
+<line class="edge" x1="170" y1="55" x2="220" y2="55" marker-end="url(#c09-m)"></line>
+<text class="lbl" x="195.0" y="50.0" text-anchor="middle" font-size="10">POST /pay</text>
+<line class="edge" x1="390" y1="55" x2="440" y2="55" marker-end="url(#c09-m)"></line>
+<text class="lbl" x="415.0" y="50.0" text-anchor="middle" font-size="10">303 redirect</text>
+<rect class="box" x="20" y="130" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="155.0" text-anchor="middle" font-size="12.5">用户输入卡信息</text>
+<line class="edge" class="edge-dashed" x1="95" y1="80" x2="95" y2="130" marker-end="url(#c09-m)"></line>
+<path class="edge" d="M95,130 Q260,100 440,100" marker-end="url(#c09-m)"></path>
+<text class="lbl" x="20" y="205" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">支付完成后两条独立路径</text>
+<rect class="box" x="20" y="220" width="220" height="60" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="244.0" text-anchor="middle" font-size="12.5">浏览器跳转</text>
+<text class="lbl" x="130.0" y="262.5" text-anchor="middle" font-size="10.5">success_url → payment_completed</text>
+<text class="lbl" x="130.0" y="274.5" text-anchor="middle" font-size="10.5">仅展示提示页，不改数据</text>
+<rect class="box-a" x="300" y="220" width="340" height="60" rx="4"></rect>
+<text class="lbl-strong" x="470.0" y="244.0" text-anchor="middle" font-size="12.5">Stripe 服务端 Webhook</text>
+<text class="lbl" x="470.0" y="262.5" text-anchor="middle" font-size="10.5">POST checkout.session.completed</text>
+<text class="lbl" x="470.0" y="274.5" text-anchor="middle" font-size="10.5">签名校验（Stripe-Signature）</text>
+<path class="edge" class="edge-dashed" d="M540,55 Q430,160 130,220" marker-end="url(#c09-m)"></path>
+<text class="lbl" x="335.0" y="132.5" text-anchor="middle" font-size="10">浏览器重定向</text>
+<path class="edge" d="M540,80 Q560,160 470,220" marker-end="url(#c09-m)"></path>
+<text class="lbl" x="505.0" y="145.0" text-anchor="middle" font-size="10">服务端回调</text>
+<rect class="box-a" x="300" y="310" width="340" height="55" rx="4"></rect>
+<text class="lbl-strong" x="470.0" y="330.5" text-anchor="middle" font-size="11">order.paid=True + stripe_id</text>
+<text class="lbl-strong" x="470.0" y="344.5" text-anchor="middle" font-size="11">→ payment_completed.delay()（生成 PDF 发票）</text>
+<line class="edge" x1="470" y1="280" x2="470" y2="310" marker-end="url(#c09-m)"></line>
+<text class="lbl" x="20" y="355" text-anchor="start" font-size="10.5">唯一真相来源是 Webhook；浏览器跳转仅用于展示，不能反推支付真的成功</text></svg><figcaption class="cap">图 09 · Checkout 托管支付；浏览器跳转与服务端 Webhook 是并行的两条独立通知路径</figcaption></figure>
+  <p>Chapter09 引入了完整的 <strong>Stripe 支付流程</strong>——结算不再是"提交表单就完事"，而是要走"下单 → 跳转 Stripe 托管支付页 → Stripe 异步回调确认支付"这一整套真实电商支付链路，外加 PDF 发票生成和后台管理增强。</p>
+<h2>一、本章定位与新依赖</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ stripe==9.3.0
++ python-decouple==3.8
++ WeasyPrint==61.2
+</code></pre></div>
+<p><code>Dockerfile</code> 也相应新增了一大串系统级 C 库依赖（<code>libcairo2</code>、<code>libpango-1.0-0</code>、<code>libpangocairo-1.0-0</code>、<code>libgdk-pixbuf2.0-0</code> 等）——这些不是 Python 包，是 <strong>WeasyPrint 把 HTML/CSS 渲染成 PDF 时依赖的底层图形渲染库</strong>（Cairo/Pango 是 Linux 桌面级排版渲染引擎），这也是"深读代码"该养成的习惯：看到 <code>requirements.txt</code> 加了某个包，如果这个包做的是"渲染/图形/多媒体处理"这类工作，往往意味着 Dockerfile 也得跟着加系统依赖，纯 <code>pip install</code> 是不够的。</p>
+<p><code>settings.py</code> 新增：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">from decouple import config
+...
+INSTALLED_APPS += ['payment.apps.PaymentConfig']
+STATIC_ROOT = BASE_DIR / 'static'
+
+# Stripe settings
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_API_VERSION = '2024-04-10'
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET')
+</code></pre></div>
+<p>三个 Stripe 密钥全部走 <code>python-decouple</code> 从环境变量读取，不硬编码进代码库——这是继续沿用 Bookmarks 项目 Chapter05 里管理 Google OAuth 密钥的同一套做法。<code>docker-compose.yml</code> 里对应加了：</p>
+<div class="codewrap"><div class="langtag">yaml</div><pre><code class="language-yaml">environment:
+  - STRIPE_PUBLISHABLE_KEY=key
+  - STRIPE_SECRET_KEY=secret
+  - STRIPE_WEBHOOK_SECRET=secret-hook
+</code></pre></div>
+<p>这三个值只是占位符（<code>key</code>/<code>secret</code>/<code>secret-hook</code>），跑真实支付时需要替换成 Stripe 后台真正的测试/生产密钥。</p>
+<h2>二、结算流程改道：从"直接完成"变成"先建单再付款"</h2>
+<p>对比 Chapter08，<code>orders/views.py</code> 的 <code>order_create</code> 有个关键改动：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">cart.clear()
+order_created.delay(order.id)
+# set the order in the session
+request.session['order_id'] = order.id
+# redirect for payment
+return redirect('payment:process')
+</code></pre></div>
+<p>Chapter08 时提交结算表单后直接渲染 <code>orders/order/created.html</code>（"谢谢下单"页），Chapter09 改成把 <code>order.id</code> 存进 session 后<strong>跳转到支付页</strong>——这意味着"订单创建成功"和"订单已付款"被拆成了两个独立阶段（<code>Order.paid</code> 字段默认 <code>False</code>，直到 Stripe webhook 确认付款才会被置为 <code>True</code>）。</p>
+<p><strong>顺带发现一处死代码</strong>：<code>orders/order/created.html</code> 这个模板文件依然留在项目里，但搜遍整个代码库已经<strong>没有任何 Python 代码再渲染它</strong>——<code>order_create</code> 视图现在总是重定向到 <code>payment:process</code>，不会走到渲染 <code>created.html</code> 这条分支了。这是一处典型的"重构后忘记清理"的遗留文件，属于继续深读代码时值得留意的细节。</p>
+<h2>三、<code>payment</code> 应用：Stripe Checkout 集成</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># payment/views.py
+stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_version = settings.STRIPE_API_VERSION
+
+def payment_process(request):
+    order_id = request.session.get('order_id')
+    order = get_object_or_404(Order, id=order_id)
+
+    if request.method == 'POST':
+        success_url = request.build_absolute_uri(reverse('payment:completed'))
+        cancel_url = request.build_absolute_uri(reverse('payment:canceled'))
+
+        session_data = {
+            'mode': 'payment',
+            'client_reference_id': order.id,
+            'success_url': success_url,
+            'cancel_url': cancel_url,
+            'line_items': [],
+        }
+        for item in order.items.all():
+            session_data['line_items'].append({
+                'price_data': {
+                    'unit_amount': int(item.price * Decimal('100')),
+                    'currency': 'usd',
+                    'product_data': {'name': item.product.name},
+                },
+                'quantity': item.quantity,
+            })
+
+        session = stripe.checkout.Session.create(**session_data)
+        return redirect(session.url, code=303)
+    else:
+        return render(request, 'payment/process.html', locals())
+</code></pre></div>
+<p>几个关键点：</p>
+<ul>
+<li><strong>本项目本身不处理任何银行卡信息</strong>——<code>payment_process</code> 只是调用 <code>stripe.checkout.Session.create()</code> 在 Stripe 那边创建一个"结账会话"，然后把用户<strong>重定向到 Stripe 托管的支付页面</strong>（<code>session.url</code>）。真正输入卡号、CVV 的表单是 Stripe 的域名下渲染的，这是电商接入第三方支付网关的标准做法——<strong>永远不要自己接触/存储用户的银行卡数据</strong>，一是安全风险极高，二是自己处理卡数据需要通过 PCI-DSS 合规认证，成本极高，绝大多数中小站点都靠这种"跳转到支付方托管页面"的集成方式规避这个问题。</li>
+<li><code>unit_amount': int(item.price * Decimal('100'))</code>——Stripe API 要求金额以<strong>最小货币单位</strong>（美元是"分"）传整数，不能传浮点小数。<code>item.price</code> 是 <code>Decimal</code>，乘以 <code>Decimal('100')</code> 转成"分"再转 <code>int</code>，全程避免了浮点数精度问题（如果直接用 <code>float</code> 乘 100 再取整，理论上可能因为浮点误差算错一分钱）。</li>
+<li><code>client_reference_id': order.id</code>——这是把"我方系统的订单 ID"塞进 Stripe 会话里的关键字段，后面 webhook 收到 Stripe 的回调事件时，就是靠这个字段反查到底是哪一笔本地订单。</li>
+<li><code>redirect(session.url, code=303)</code>——显式指定 <code>303 See Other</code> 而不是默认的 <code>302</code>。原因：当前请求是<strong>表单 POST 过来的</strong>，如果用 302，某些浏览器/中间代理在处理重定向时会保留原始请求方法（继续用 POST 访问新地址），303 明确规定"用 GET 请求重定向目标"，避免浏览器把这次 POST 请求的表单数据也带到 Stripe 的 URL 上去。</li>
+</ul>
+<p><code>payment_completed</code>/<code>payment_canceled</code> 两个视图非常简单，只是渲染静态提示页——<strong>它们只是"用户浏览器被 Stripe 重定向回来时看到的页面"，跟订单是否真的被标记为已付款是两码事</strong>（下一节会讲这一点为什么重要）。</p>
+<h2>四、Webhook：真正标记订单已付款的地方</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># payment/webhooks.py
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError:
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError:
+        return HttpResponse(status=400)
+
+    if event.type == 'checkout.session.completed':
+        session = event.data.object
+        if session.mode == 'payment' and session.payment_status == 'paid':
+            try:
+                order = Order.objects.get(id=session.client_reference_id)
+            except Order.DoesNotExist:
+                return HttpResponse(status=404)
+            order.paid = True
+            order.stripe_id = session.payment_intent
+            order.save()
+            payment_completed.delay(order.id)
+
+    return HttpResponse(status=200)
+</code></pre></div>
+<p>这是本章<strong>安全设计上最值得细讲</strong>的一段代码：</p>
+<ul>
+<li><strong>为什么这个视图要 <code>@csrf_exempt</code>？</strong> 因为这个 URL 不是给"登录用户在自己浏览器里"提交表单用的，是<strong>Stripe 的服务器直接向本网站发起的服务器对服务器 HTTP 请求</strong>——Stripe 服务器没有、也不可能带上本站签发的 CSRF token，Django 的 CSRF 保护机制本身就是为了防"第三方网站伪造本站用户的请求"，这里的请求方向恰恰相反（是本站信任的第三方主动来通知），所以必须显式豁免。</li>
+<li><strong>但豁免了 CSRF 不代表不设防</strong>——<code>stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)</code> 这一步是<strong>验证这个请求真的是 Stripe 发来的，而不是别人伪造的</strong>：Stripe 会用只有 Stripe 和你共享的 <code>STRIPE_WEBHOOK_SECRET</code> 对请求体做签名，放在 <code>Stripe-Signature</code> 请求头里，<code>construct_event</code> 会重新计算签名并比对，任何一点篡改（金额、订单 ID、签名本身）都会导致 <code>SignatureVerificationError</code>。<strong>这一步验证如果被跳过，会是个严重的安全漏洞</strong>——任何知道 webhook URL 的人都能直接 POST 一个伪造的"支付成功"事件，把任意订单标记为已付款而不用真的付一分钱。这是本项目里<strong>唯一一处"服务器信任外部输入前必须验证来源"的关键校验点</strong>，值得和之前 Chapter06 的 SSRF 隐患对照着看——一边是"该校验没校验"，一边是"确实做了校验"的正面例子。</li>
+<li><strong><code>session.mode == 'payment' and session.payment_status == 'paid'</code> 双重判断</strong>——Stripe 的 <code>checkout.session.completed</code> 事件在多种场景都会触发（比如 <code>mode='subscription'</code> 的订阅类支付），这里显式限定只处理"一次性付款模式且确实付款成功"的事件，避免把不相关的会话类型误判成订单付款。</li>
+<li><strong>异步任务 <code>payment_completed.delay(order.id)</code></strong>——和 Chapter08 的 <code>order_created</code> 是同一个模式：webhook 处理逻辑本身要尽快返回 <code>200</code>（Stripe 对 webhook 响应有超时限制，长时间不响应会被判定失败并重试），而"生成 PDF + 发邮件"这种耗时操作丢给 Celery 后台执行。</li>
+</ul>
+<h2>五、<code>Order.stripe_id</code> 与 <code>get_stripe_url</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># orders/models.py
+stripe_id = models.CharField(max_length=250, blank=True)
+
+def get_stripe_url(self):
+    if not self.stripe_id:
+        return ''
+    if '_test_' in settings.STRIPE_SECRET_KEY:
+        path = '/test/'
+    else:
+        path = '/'
+    return f'https://dashboard.stripe.com{path}payments/{self.stripe_id}'
+</code></pre></div>
+<p><code>stripe_id</code> 存的是 webhook 里拿到的 <code>session.payment_intent</code>（Stripe 那笔支付的唯一标识），<code>get_stripe_url</code> 借助 <code>STRIPE_SECRET_KEY</code> 里是否包含 <code>_test_</code> 字样（Stripe 的测试密钥形如 <code>sk_test_...</code>，正式密钥是 <code>sk_live_...</code>）来判断该拼测试环境还是正式环境的 Dashboard 链接——这样管理员在后台点这个链接，能直接跳到 Stripe 控制台查看这笔支付的详情，不用先手动判断当前是测试还是生产环境。</p>
+<h2>六、PDF 发票：WeasyPrint</h2>
+<p>同一段 PDF 生成逻辑在两个地方几乎一模一样地出现：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># orders/views.py —— 管理员手动下载
+@staff_member_required
+def admin_order_pdf(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    html = render_to_string('orders/order/pdf.html', {'order': order})
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'filename=order_{order.id}.pdf'
+    weasyprint.HTML(string=html).write_pdf(
+        response, stylesheets=[weasyprint.CSS(finders.find('css/pdf.css'))],
+    )
+    return response
+</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># payment/tasks.py —— 支付成功后自动发邮件附件
+@shared_task
+def payment_completed(order_id):
+    order = Order.objects.get(id=order_id)
+    subject = f'My Shop - Invoice no. {order.id}'
+    message = 'Please, find attached the invoice for your recent purchase.'
+    email = EmailMessage(subject, message, 'admin@myshop.com', [order.email])
+    html = render_to_string('orders/order/pdf.html', {'order': order})
+    out = BytesIO()
+    stylesheets = [weasyprint.CSS(finders.find('css/pdf.css'))]
+    weasyprint.HTML(string=html).write_pdf(out, stylesheets=stylesheets)
+    email.attach(f'order_{order.id}.pdf', out.getvalue(), 'application/pdf')
+    email.send()
+</code></pre></div>
+<p>两处的核心手法一致：<code>render_to_string</code> 把一个普通 Django 模板（<code>orders/order/pdf.html</code>，纯 HTML + 单独一份 <code>pdf.css</code>）渲染成字符串，再交给 <code>weasyprint.HTML(string=html).write_pdf(...)</code> 转成 PDF 二进制——<strong>用 Django 模板系统生成 PDF 内容，而不是用专门的 PDF 绘图 API 一行行摆坐标</strong>，这是个很讨巧的做法：设计 PDF 排版就跟写一个网页一样，用 HTML/CSS 布局，WeasyPrint 负责把这套网页渲染结果转换成分页的 PDF。</p>
+<p>两处唯一的区别是<strong>输出目标</strong>：<code>admin_order_pdf</code> 把 PDF 直接写进 HTTP <code>response</code>（用户点击链接直接下载/预览）；<code>payment_completed</code> 里把 PDF 写进内存里的 <code>BytesIO()</code> 缓冲区，再作为邮件附件发送，都没有真的把 PDF 文件存到磁盘上——生成即用即弃，不占用服务器存储。</p>
+<p><code>finders.find('css/pdf.css')</code>——用的是 Django 静态文件查找器（staticfiles finder），能在开发环境（<code>DEBUG=True</code>，直接从各 app 的 <code>static/</code> 目录查找）和生产环境（<code>collectstatic</code> 之后从 <code>STATIC_ROOT</code> 查找）下都能定位到这个 CSS 文件的真实磁盘路径，因为 WeasyPrint 需要的是文件系统路径而不是一个 URL。</p>
+<h2>七、Admin 后台增强</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># orders/admin.py
+def export_to_csv(modeladmin, request, queryset):
+    ...
+    writer = csv.writer(response)
+    fields = [f for f in opts.get_fields() if not f.many_to_many and not f.one_to_many]
+    writer.writerow([field.verbose_name for field in fields])
+    for obj in queryset:
+        ...
+    return response
+export_to_csv.short_description = 'Export to CSV'
+
+def order_payment(obj):
+    url = obj.get_stripe_url()
+    if obj.stripe_id:
+        return mark_safe(f'&lt;a href=&quot;{url}&quot; target=&quot;_blank&quot;&gt;{obj.stripe_id}&lt;/a&gt;')
+    return ''
+
+def order_detail(obj):
+    return mark_safe(f'&lt;a href=&quot;{reverse(&quot;orders:admin_order_detail&quot;, args=[obj.id])}&quot;&gt;View&lt;/a&gt;')
+
+def order_pdf(obj):
+    return mark_safe(f'&lt;a href=&quot;{reverse(&quot;orders:admin_order_pdf&quot;, args=[obj.id])}&quot;&gt;PDF&lt;/a&gt;')
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = [..., order_payment, ..., order_detail, order_pdf]
+    actions = [export_to_csv]
+</code></pre></div>
+<ul>
+<li><code>export_to_csv</code> 是一个<strong>自定义 admin action</strong>——<code>opts.get_fields()</code> 动态反射出模型的所有字段（排除多对多和反向一对多这类不能直接塞进一行 CSV 单元格的关系字段），批量导出管理员在 admin 列表页勾选的订单为 CSV，这是运营/财务导数据的常见需求，不用为此单独写一个视图。</li>
+<li><code>order_payment</code>/<code>order_detail</code>/<code>order_pdf</code> 是三个<strong>当作"伪字段"塞进 <code>list_display</code> 的函数</strong>——<code>mark_safe</code> 把拼出来的 <code>&lt;a&gt;</code> 标签当 HTML 直接渲染（不转义），让 admin 列表页里直接出现"跳转 Stripe 控制台"、"查看详情"、"下载 PDF"三个可点击链接。这是 Django admin 里"在列表页里塞自定义交互元素"的标准手法。</li>
+<li><code>admin_order_detail</code>/<code>admin_order_pdf</code> 两个视图用的是 <code>@staff_member_required</code> 而不是之前熟悉的 <code>@login_required</code>——这是权限层级的差异：<code>@login_required</code> 只要求"已登录"，<code>@staff_member_required</code> 额外要求 <code>user.is_staff=True</code>，因为这两个视图暴露的是<strong>所有客户的订单详情</strong>，必须限制只有后台管理人员能访问，而不是任何注册用户都能看。</li>
+</ul>
+<h2>八、端到端流程</h2>
+<ol>
+<li>结算表单提交 → 创建 <code>Order</code> + 逐条 <code>OrderItem</code>（价格快照） → 清空购物车 → 派发 <code>order_created</code> 异步任务（下单确认邮件） → <code>order.id</code> 存入 session → 跳转 <code>payment:process</code>。</li>
+<li>用户在结算摘要页点击"Pay now" → 后端用订单明细在 Stripe 创建 Checkout Session → <code>303</code> 跳转到 Stripe 托管的支付表单页（本站不接触卡号）。</li>
+<li>用户在 Stripe 页面完成支付：</li>
+<li><strong>浏览器侧</strong>：Stripe 把用户重定向回 <code>success_url</code>（<code>payment:completed</code>），展示"支付成功"静态提示页。</li>
+<li><strong>服务器侧（独立、异步）</strong>：Stripe 服务器直接 POST 一个 <code>checkout.session.completed</code> 事件到 <code>payment:stripe-webhook</code> → 验证签名 → 查到对应 <code>Order</code> → 标记 <code>paid=True</code>、写入 <code>stripe_id</code> → 派发 <code>payment_completed</code> 异步任务（生成 PDF 发票并作为邮件附件发送）。</li>
+</ol>
+<p><strong>这两条路径互相独立、没有先后保证</strong>——浏览器跳转和服务器 webhook 是 Stripe 并行触发的两个通知渠道，<code>payment_completed.html</code> 只是个"提示用户"的页面，真正代表"这笔钱确实到账了"的状态变更，永远只发生在 webhook 处理成功之后。这也是为什么电商系统的标准实践是"<strong>永远以 webhook/服务器端回调作为支付状态的唯一真相来源，而不是相信浏览器跳转本身</strong>"——如果用户在跳转回 <code>success_url</code> 之前直接关闭了浏览器标签页，只要 Stripe 那边的支付确实成功了，webhook 依然会把订单标记为已付款；反过来，如果只靠"用户跳回了 success_url 就认为付款成功"，则完全可能被伪造（自己在浏览器里手动访问一下 <code>success_url</code> 就行，压根不需要真的付钱）——这也是为什么 <code>payment_completed</code>/<code>payment_canceled</code> 两个视图里没有一行代码去改 <code>order.paid</code>。</p>
+<h2>九、Chapter08 → Chapter09 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter08</th>
+<th>Chapter09</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>支付能力</td>
+<td>无（下单即"完成"）</td>
+<td>Stripe Checkout 托管支付 + Webhook 异步确认</td>
+</tr>
+<tr>
+<td>订单状态流转</td>
+<td>提交即视为完成，渲染感谢页</td>
+<td>提交→跳转支付→（webhook 异步）标记 <code>paid</code></td>
+</tr>
+<tr>
+<td>新增字段</td>
+<td>无</td>
+<td><code>Order.stripe_id</code> + <code>get_stripe_url()</code></td>
+</tr>
+<tr>
+<td>发票/单据</td>
+<td>无</td>
+<td>WeasyPrint 生成 PDF（人工下载 + 邮件附件两处复用）</td>
+</tr>
+<tr>
+<td>Admin 能力</td>
+<td>基础字段列表 + inline</td>
+<td>+ CSV 导出 action、Stripe 链接列、详情/PDF 链接列</td>
+</tr>
+<tr>
+<td>安全关注点</td>
+<td>SSRF（Chapter06 遗留）、Celery broker 缺失</td>
+<td>Webhook 签名校验（<strong>正面范例</strong>）、<code>created.html</code> 死代码</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch10">
+  <div class="chapter-head">
+    <span class="chnum">10</span>
+    <h2 class="chtitle">优惠券系统与基于 Redis 的商品推荐</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 360" role="img" aria-label="图 10 · 优惠券折扣全程做“下单快照”；推荐系统用 Redis Sorted Set 做无 ML 的协同过滤"><defs>
+          <marker id="c10-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c10-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c10-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">优惠券</text>
+<rect class="box" x="20" y="36" width="190" height="56" rx="4"></rect>
+<text class="lbl-strong" x="115.0" y="58.0" text-anchor="middle" font-size="12.5">coupon_apply()</text>
+<text class="lbl" x="115.0" y="76.5" text-anchor="middle" font-size="10.5">code__iexact +</text>
+<text class="lbl" x="115.0" y="88.5" text-anchor="middle" font-size="10.5">有效期 + active 校验</text>
+<rect class="box-w" x="250" y="36" width="190" height="56" rx="4"></rect>
+<text class="lbl-strong" x="345.0" y="58.0" text-anchor="middle" font-size="12.5">session['coupon_id']</text>
+<text class="lbl" x="345.0" y="76.5" text-anchor="middle" font-size="10.5">无效码静默清空</text>
+<text class="lbl" x="345.0" y="88.5" text-anchor="middle" font-size="10.5">（无用户提示）</text>
+<rect class="box-a" x="480" y="36" width="200" height="56" rx="4"></rect>
+<text class="lbl-strong" x="580.0" y="58.0" text-anchor="middle" font-size="12.5">Order.discount</text>
+<text class="lbl" x="580.0" y="76.5" text-anchor="middle" font-size="10.5">下单时复制百分比</text>
+<text class="lbl" x="580.0" y="88.5" text-anchor="middle" font-size="10.5">（快照，防止券变动影响历史单）</text>
+<line class="edge" x1="210" y1="64" x2="250" y2="64" marker-end="url(#c10-m)"></line>
+<line class="edge" x1="440" y1="64" x2="480" y2="64" marker-end="url(#c10-m)"></line>
+<text class="lbl" x="460.0" y="59.0" text-anchor="middle" font-size="10">结算</text>
+<line x1="20" y1="120" x2="700" y2="120" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="142" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">Redis 推荐：products_bought()</text>
+<rect class="box" x="20" y="156" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="178.0" text-anchor="middle" font-size="12.5">订单支付成功</text>
+<text class="lbl" x="105.0" y="196.5" text-anchor="middle" font-size="10.5">webhook 触发</text>
+<rect class="box-a" x="230" y="156" width="220" height="56" rx="4"></rect>
+<text class="lbl-strong" x="340.0" y="178.0" text-anchor="middle" font-size="12.5">product:{id}:purchased_with</text>
+<text class="lbl" x="340.0" y="196.5" text-anchor="middle" font-size="10.5">Sorted Set，成员=商品ID</text>
+<text class="lbl" x="340.0" y="208.5" text-anchor="middle" font-size="10.5">分数=一起购买次数</text>
+<line class="edge" x1="190" y1="184" x2="230" y2="184" marker-end="url(#c10-m)"></line>
+<text class="lbl" x="20" y="232" text-anchor="start" font-size="10.5">两两组合 ZINCRBY +1，构造“商品共现矩阵”的一行</text>
+<text class="lbl" x="20" y="256" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">suggest_products_for()</text>
+<rect class="box" x="20" y="270" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="292.0" text-anchor="middle" font-size="12.5">单商品</text>
+<text class="lbl" x="105.0" y="310.5" text-anchor="middle" font-size="10.5">ZRANGE 取本商品</text>
+<text class="lbl" x="105.0" y="322.5" text-anchor="middle" font-size="10.5">共现列表 Top N</text>
+<rect class="box-a" x="230" y="270" width="220" height="56" rx="4"></rect>
+<text class="lbl-strong" x="340.0" y="292.0" text-anchor="middle" font-size="12.5">多商品（购物车）</text>
+<text class="lbl" x="340.0" y="310.5" text-anchor="middle" font-size="10.5">ZUNIONSTORE 合并 +</text>
+<text class="lbl" x="340.0" y="322.5" text-anchor="middle" font-size="10.5">ZREM 剔除已在购物车</text>
+<rect class="box" x="490" y="270" width="190" height="56" rx="4"></rect>
+<text class="lbl-strong" x="585.0" y="290.25" text-anchor="middle" font-size="12.5">DB 补详情 + Python</text>
+<text class="lbl-strong" x="585.0" y="305.75" text-anchor="middle" font-size="12.5">按 Redis 分数重排序</text>
+<line class="edge" x1="190" y1="298" x2="230" y2="298" marker-end="url(#c10-m)"></line>
+<line class="edge" x1="450" y1="298" x2="490" y2="298" marker-end="url(#c10-m)"></line></svg><figcaption class="cap">图 10 · 优惠券折扣全程做“下单快照”；推荐系统用 Redis Sorted Set 做无 ML 的协同过滤</figcaption></figure>
+  <p>Chapter10 给商城加了两个独立但都基于 Redis 的功能：<strong>优惠券折扣</strong>（数据库存储券，session 记录当前生效的券）和<strong>"购买了这个的人也买了"式商品推荐</strong>（纯 Redis 排序集合实现的协同过滤）。</p>
+<h2>一、新依赖与配置</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ redis==5.0.4
+</code></pre></div>
+<p><code>settings.py</code> 新增：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">INSTALLED_APPS += ['coupons.apps.CouponsConfig']
+
+# Redis settings
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 1
+</code></pre></div>
+<p><code>REDIS_DB = 1</code>——注意这里用的是 Redis 的第 1 号逻辑数据库（Redis 默认提供 0-15 共 16 个相互隔离的逻辑库，同一个 Redis 实例可以给不同用途分库使用，避免键名冲突）。这个项目目前只有推荐系统用 Redis，选 <code>db=1</code> 更多是给未来扩展留出 <code>db=0</code> 的余地（对比 Bookmarks 项目 Chapter07 用的是 <code>REDIS_DB = 0</code>，两个项目各自独立部署，不存在真正的冲突，但这仍是一个值得注意的编号习惯）。</p>
+<p><code>myshop/urls.py</code> 新增 <code>path('coupons/', include('coupons.urls', namespace='coupons'))</code>。</p>
+<h2>二、<code>coupons</code> 应用：优惠券模型与校验</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># coupons/models.py
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    discount = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Percentage vaule (0 to 100)',
+    )
+    active = models.BooleanField()
+</code></pre></div>
+<p><code>discount</code> 用整数存百分比（0-100），配上 <code>MinValueValidator</code>/<code>MaxValueValidator</code> 在模型层就把范围锁死——即便管理员在 admin 后台手滑输入了 150 或 -20，<code>full_clean()</code>/表单校验会直接拒绝，不会有折扣率把订单价格算成负数这种荒谬情况。<code>active</code> 字段没给 <code>default</code>，意味着 admin 新建一张券时必须显式勾选，防止运营人员创建后忘了激活就以为已经生效（或者反过来，误以为默认是关闭的）。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># coupons/views.py
+@require_POST
+def coupon_apply(request):
+    now = timezone.now()
+    form = CouponApplyForm(request.POST)
+    if form.is_valid():
+        code = form.cleaned_data['code']
+        try:
+            coupon = Coupon.objects.get(
+                code__iexact=code,
+                valid_from__lte=now,
+                valid_to__gte=now,
+                active=True,
+            )
+            request.session['coupon_id'] = coupon.id
+        except Coupon.DoesNotExist:
+            request.session['coupon_id'] = None
+    return redirect('cart:cart_detail')
+</code></pre></div>
+<p>四个条件一次性在数据库层过滤完：<code>code__iexact</code>（大小写不敏感匹配，用户输入 <code>SAVE10</code> 或 <code>save10</code> 都能命中）、<code>valid_from__lte=now</code> 和 <code>valid_to__gte=now</code>（必须在有效期内）、<code>active=True</code>（未被停用）——四个条件全部满足才算一张真正可用的券。找不到匹配的券时，直接把 <code>session['coupon_id']</code> 设成 <code>None</code> 并静默重定向回购物车页，<strong>没有通过 <code>messages</code> 框架给用户任何"优惠码无效"的提示</strong>——用户输错码或用了过期码，页面上唯一的反馈是"折扣行没有出现"，这是一个可以改进的 UX 细节（比如像 Bookmarks 项目 Chapter05 那样接入 <code>django.contrib.messages</code> 给出明确错误提示），但目前的实现没有这层反馈。</p>
+<h2>三、购物车/订单里的折扣计算</h2>
+<p><code>cart/cart.py</code> 新增：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def __init__(self, request):
+    ...
+    self.coupon_id = self.session.get('coupon_id')
+
+@property
+def coupon(self):
+    if self.coupon_id:
+        try:
+            return Coupon.objects.get(id=self.coupon_id)
+        except Coupon.DoesNotExist:
+            pass
+    return None
+
+def get_discount(self):
+    if self.coupon:
+        return (self.coupon.discount / Decimal(100)) * self.get_total_price()
+    return Decimal(0)
+
+def get_total_price_after_discount(self):
+    return self.get_total_price() - self.get_discount()
+</code></pre></div>
+<p><code>coupon</code> 做成 <code>@property</code>——每次访问 <code>cart.coupon</code> 都会重新查一次数据库（而不是缓存结果），这样如果优惠券在用户浏览购物车的过程中被管理员在后台停用/过期，<code>cart.coupon</code> 立刻会返回 <code>None</code>，折扣立刻消失，不会出现"券已失效但购物车还按旧折扣算价"的不一致状态。<code>get_discount()</code> 用 <code>Decimal(100)</code> 而不是普通整数 <code>100</code> 做除法——延续了整个项目"金额计算全程用 <code>Decimal</code>，绝不引入 <code>float</code>"的一贯纪律。</p>
+<p><strong>下单那一刻的折扣同样要做"快照"</strong>，<code>orders/views.py</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">order = form.save(commit=False)
+if cart.coupon:
+    order.coupon = cart.coupon
+    order.discount = cart.coupon.discount
+order.save()
+</code></pre></div>
+<p><code>Order</code> 新增两个字段：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">coupon = models.ForeignKey(Coupon, related_name='orders', null=True, blank=True, on_delete=models.SET_NULL)
+discount = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+</code></pre></div>
+<p><code>order.discount</code> 是从 <code>coupon.discount</code> <strong>复制</strong>过来的一份独立整数，而不是每次都通过 <code>order.coupon.discount</code> 现查——这是本书里第三次出现"下单时把易变数据做快照"的设计（前两次是 <code>OrderItem.price</code> 和购物车 session 里的 <code>price</code>）：即便这张优惠券以后被管理员改了折扣比例甚至删除，历史订单的折扣记录必须保持不变。<code>on_delete=models.SET_NULL</code>（配合 <code>null=True</code>）也印证了这个意图——优惠券被删除后，<code>order.coupon</code> 变成 <code>NULL</code>，但 <code>order.discount</code> 这个整数字段完全不受影响，订单金额计算依然正确。</p>
+<p><code>Order.get_total_cost()</code> 现在拆成了三层：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def get_total_cost_before_discount(self):
+    return sum(item.get_cost() for item in self.items.all())
+
+def get_discount(self):
+    total_cost = self.get_total_cost_before_discount()
+    if self.discount:
+        return total_cost * (self.discount / Decimal(100))
+    return Decimal(0)
+
+def get_total_cost(self):
+    return self.get_total_cost_before_discount() - self.get_discount()
+</code></pre></div>
+<p>这套"折扣前小计 / 折扣金额 / 折扣后总计"三段式计算，在购物车页、结算页、支付摘要页、PDF 发票、admin 订单详情<strong>五个模板里原样复用</strong>（<code>{% if cart.coupon %}</code>/<code>{% if order.coupon %}</code> 判断块几乎逐字重复），是这一章模板层面最明显的重复模式。</p>
+<h3>Stripe 侧同步应用折扣</h3>
+<p><code>payment/views.py</code> 新增：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">if order.coupon:
+    stripe_coupon = stripe.Coupon.create(
+        name=order.coupon.code,
+        percent_off=order.discount,
+        duration='once',
+    )
+    session_data['discounts'] = [{'coupon': stripe_coupon.id}]
+</code></pre></div>
+<p>这里有个容易被忽略但很关键的点：<strong>折扣计算了两遍，而且是有意为之的</strong>——本地数据库/模板层已经按 <code>order.discount</code> 算出了"折后总价"给用户看，但真正决定 Stripe 收多少钱的是 Stripe 自己的 Checkout Session。所以这里没有直接把折后总价传给 Stripe，而是把订单明细（原价）和"这张券打几折"分别传过去，<strong>让 Stripe 在它自己的系统里重新计算一遍折扣</strong>（<code>stripe.Coupon.create(percent_off=order.discount, duration='once')</code> 现场在 Stripe 那边创建一张一次性生效的优惠券对象）。这样做的好处是 Stripe 的支付页面上用户能清楚看到"原价多少、优惠多少、实付多少"的明细，而不是本地暗中算好一个折后价直接甩给 Stripe——用户体验和账目透明度都更好，也符合支付合规审计里"金额构成要清晰可追溯"的要求。</p>
+<h2>四、商品推荐系统：<code>shop/recommender.py</code></h2>
+<p>这是本章<strong>技术含量最高的部分</strong>——一个完全基于 Redis 有序集合（Sorted Set）实现的"购买了 A 的人也购买了 B"协同过滤推荐，不涉及任何机器学习库。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class Recommender:
+    def get_product_key(self, id):
+        return f'product:{id}:purchased_with'
+
+    def products_bought(self, products):
+        product_ids = [p.id for p in products]
+        for product_id in product_ids:
+            for with_id in product_ids:
+                if product_id != with_id:
+                    r.zincrby(self.get_product_key(product_id), 1, with_id)
+</code></pre></div>
+<ul>
+<li>每个商品 ID 对应一个独立的 Redis 有序集合，键名 <code>product:{id}:purchased_with</code>，集合成员是"和它一起被买过的其他商品 ID"，分数是"一起被买过的次数"。</li>
+<li><code>products_bought</code> 在<strong>一笔订单支付成功后</strong>被调用一次（在 <code>payment/webhooks.py</code> 里，见下），传入这笔订单买了哪些商品。双重循环遍历"每个商品 × 每个商品"的所有组合（排除自己和自己配对），给每一对商品互相在对方的 Sorted Set 里加一分——这本质上是在离线维护一张<strong>商品共现频次的稀疏矩阵</strong>，但用 Redis 的数据结构天然就是"矩阵的一行"（每个商品自己的 Sorted Set），完全不需要专门的矩阵库或离线批处理任务，每次订单支付成功时增量更新即可。</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def suggest_products_for(self, products, max_results=6):
+    product_ids = [p.id for p in products]
+    if len(products) == 1:
+        suggestions = r.zrange(self.get_product_key(product_ids[0]), 0, -1, desc=True)[:max_results]
+    else:
+        flat_ids = ''.join([str(id) for id in product_ids])
+        tmp_key = f'tmp_{flat_ids}'
+        keys = [self.get_product_key(id) for id in product_ids]
+        r.zunionstore(tmp_key, keys)
+        r.zrem(tmp_key, *product_ids)
+        suggestions = r.zrange(tmp_key, 0, -1, desc=True)[:max_results]
+        r.delete(tmp_key)
+    suggested_products_ids = [int(id) for id in suggestions]
+    suggested_products = list(Product.objects.filter(id__in=suggested_products_ids))
+    suggested_products.sort(key=lambda x: suggested_products_ids.index(x.id))
+    return suggested_products
+</code></pre></div>
+<p>这是整章最精巧的一段：</p>
+<ul>
+<li><strong>单商品场景</strong>（商品详情页，"看了这个的人也看了"）：直接 <code>zrange</code> 取这一个商品对应 Sorted Set 里分数最高的几个 ID，就是它的推荐列表。</li>
+<li><strong>多商品场景</strong>（购物车页，"根据你购物车里的所有商品综合推荐"）：这里不能简单地对每个商品各自的推荐列表取交集或者简单拼接，而是用 <code>r.zunionstore(tmp_key, keys)</code>——<strong>Redis 原生的多 Sorted Set 求并集并把对应分数相加</strong>的操作，把购物车里每个商品各自的"共现列表"合并成一个临时的综合排行榜（同一个候选商品如果在多个购物车商品的共现列表里都出现，分数会累加，天然体现"这个商品和购物车里好几件商品都常被一起买"这个更强的推荐信号）。</li>
+<li><code>r.zrem(tmp_key, *product_ids)</code>——合并之后必须把"购物车里已经有的商品自己"从推荐结果里剔除，不然会出现"给你推荐你购物车里已经有的东西"这种没有意义的推荐。</li>
+<li><code>r.delete(tmp_key)</code>——<code>tmp_key</code> 只是这一次计算过程中的临时中间结果（键名里嵌入了具体商品 ID 组合，理论上不会长期占用内存，但显式删除更干净，避免每次不同购物车组合都新建一个从不清理的临时键，长期攒着造成 Redis 内存泄漏）。</li>
+<li>和 Chapter07 图片排行榜那次一样的<strong>手动重排序</strong>问题再次出现：<code>Product.objects.filter(id__in=suggested_products_ids)</code> 不保证按传入 ID 顺序返回，所以还是要 <code>.sort(key=lambda x: suggested_products_ids.index(x.id))</code> 在 Python 层按 Redis 给出的分数顺序重新排一遍——这是这本书里第二次用一模一样的手法解决"跨存储排序对齐"问题，值得作为一个可复用的模式记住。</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def clear_purchases(self):
+    for id in Product.objects.values_list('id', flat=True):
+        r.delete(self.get_product_key(id))
+</code></pre></div>
+<p>清空所有推荐数据的运维工具方法，目前没有被任何视图调用，应该是留给命令行/管理任务手动调用重置推荐数据用的。</p>
+<h3>推荐数据从哪里"学习"</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># payment/webhooks.py —— stripe_webhook 里，订单确认支付成功之后
+product_ids = order.items.values_list('product_id')
+products = Product.objects.filter(id__in=product_ids)
+r = Recommender()
+r.products_bought(products)
+</code></pre></div>
+<p>关键设计：<strong>推荐系统的"学习"信号绑定在支付成功（webhook 确认）这一刻，而不是下单提交、也不是加入购物车</strong>。这个选择是有意义的——只有真正完成支付的订单才代表"用户确实一起买了这些东西"这个可信的行为信号，如果绑定在"加入购物车"甚至"提交结算表单"，会混入大量后来放弃支付、取消订单的噪声数据，污染推荐的准确性。这也是为什么这段代码出现在 <code>stripe_webhook</code> 里而不是 <code>order_create</code> 视图里的原因。</p>
+<h3>推荐结果展示的两个位置</h3>
+<ul>
+<li>商品详情页（<code>shop/views.py</code> 的 <code>product_detail</code>）：<code>r.suggest_products_for([product], 4)</code>，单商品场景，"看了这个的人也买了"。</li>
+<li>购物车页（<code>cart/views.py</code> 的 <code>cart_detail</code>）：<code>r.suggest_products_for(cart_products, max_results=4)</code>（购物车为空时 <code>recommended_products = []</code>），多商品综合推荐，"购买了这些商品的人也买了"。</li>
+</ul>
+<p>两处模板（<code>product/detail.html</code>、<code>cart/detail.html</code>）都用了几乎一样的 <code>.recommendations</code> 区块结构渲染推荐商品的图片+名称+链接，是又一处"同一 UI 模式跨页面复用"的例子。</p>
+<h2>五、端到端流程</h2>
+<p><strong>应用优惠券</strong>：购物车页填写券码提交 → <code>coupon_apply</code> 校验券码合法性/有效期/是否激活 → 命中就把 <code>coupon.id</code> 写进 <code>session['coupon_id']</code>，未命中静默清空（无错误提示）→ 重定向回购物车页 → 购物车页通过 <code>cart.coupon</code> 这个 property 实时反查显示折扣明细。</p>
+<p><strong>下单支付</strong>：结算提交时把当前 <code>cart.coupon</code>/折扣百分比复制进 <code>Order.coupon</code>/<code>Order.discount</code>（快照）→ 支付页把订单明细 + 折扣百分比一起传给 Stripe，让 Stripe 现场创建一次性优惠券并在它自己的支付页上展示折扣明细 → webhook 确认支付成功后，除了原有的"标记已付款、发邮件"，额外调用 <code>Recommender.products_bought()</code> 把这笔订单的商品组合喂给推荐系统，供以后的购物车/商品详情页做推荐。</p>
+<h2>六、Chapter09 → Chapter10 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter09</th>
+<th>Chapter10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>折扣能力</td>
+<td>无</td>
+<td>优惠券系统（数据库存储 + session 记录当前生效券 + 下单时快照）</td>
+</tr>
+<tr>
+<td>金额计算</td>
+<td>单一总价</td>
+<td>三段式（折扣前小计 / 折扣金额 / 折扣后总计），五处模板复用</td>
+</tr>
+<tr>
+<td>Stripe 集成深度</td>
+<td>仅创建 Checkout Session</td>
+<td>+ 现场创建一次性 <code>stripe.Coupon</code>，把折扣显式传给 Stripe</td>
+</tr>
+<tr>
+<td>商品推荐</td>
+<td>无</td>
+<td>基于 Redis Sorted Set 的"一起购买"协同过滤（单品/多品两种场景）</td>
+</tr>
+<tr>
+<td>Redis 用途</td>
+<td>Bookmarks 项目用于浏览计数/排行榜（另一个项目）</td>
+<td>myshop 项目首次引入 Redis，专用于推荐系统（<code>REDIS_DB=1</code>）</td>
+</tr>
+<tr>
+<td>已知薄弱点</td>
+<td>Webhook 未接线 broker（Ch08 遗留，Ch09 已解决）；<code>created.html</code> 死代码</td>
+<td>优惠码无效时无用户可见反馈（静默失败）</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch11">
+  <div class="chapter-head">
+    <span class="chnum">11</span>
+    <h2 class="chtitle">国际化、本地化与多语言商品</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 340" role="img" aria-label="图 11 · URL 语言前缀由中间件驱动；商品/分类字段拆进独立翻译表，一条主记录对应多条语言行"><defs>
+          <marker id="c11-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c11-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c11-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="49.0" text-anchor="middle" font-size="12.5">/en/cart/</text>
+<text class="lbl" x="95.0" y="67.5" text-anchor="middle" font-size="10.5">i18n_patterns</text>
+<text class="lbl" x="95.0" y="79.5" text-anchor="middle" font-size="10.5">路径本身被翻译</text>
+<rect class="box" x="220" y="30" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="295.0" y="55.0" text-anchor="middle" font-size="12.5">/es/cart/</text>
+<rect class="box-a" x="460" y="30" width="220" height="50" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="49.0" text-anchor="middle" font-size="12.5">LocaleMiddleware</text>
+<text class="lbl" x="570.0" y="67.5" text-anchor="middle" font-size="10.5">设置 request.LANGUAGE_CODE</text>
+<path class="edge" d="M170,55 Q320,40 460,55" marker-end="url(#c11-m)"></path>
+<line class="edge" x1="370" y1="55" x2="460" y2="55" marker-end="url(#c11-m)"></line>
+<rect class="box-w" x="20" y="110" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="129.0" text-anchor="middle" font-size="12.5">payment/webhook/</text>
+<text class="lbl" x="120.0" y="147.5" text-anchor="middle" font-size="10.5">刻意放在 i18n_patterns 之外</text>
+<text class="lbl" x="120.0" y="159.5" text-anchor="middle" font-size="10.5">（Stripe 回调地址必须固定）</text>
+<line x1="20" y1="180" x2="700" y2="180" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="202" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">django-parler：一份主记录 + N 份翻译行</text>
+<rect class="box" x="20" y="216" width="150" height="54" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="237.0" text-anchor="middle" font-size="12.5">Product</text>
+<text class="lbl" x="95.0" y="255.5" text-anchor="middle" font-size="10.5">id=7</text>
+<rect class="box" x="230" y="200" width="210" height="24" rx="4"></rect>
+<text class="lbl-strong" x="335.0" y="212.0" text-anchor="middle" font-size="10">ProductTranslation(en)</text>
+<rect class="box" x="230" y="232" width="210" height="24" rx="4"></rect>
+<text class="lbl-strong" x="335.0" y="244.0" text-anchor="middle" font-size="10">ProductTranslation(es)</text>
+<rect class="box" x="230" y="264" width="210" height="24" rx="4"></rect>
+<text class="lbl-strong" x="335.0" y="276.0" text-anchor="middle" font-size="10">ProductTranslation(…)</text>
+<line class="edge" x1="170" y1="235" x2="230" y2="212" marker-end="url(#c11-m)"></line>
+<line class="edge" x1="170" y1="240" x2="230" y2="244" marker-end="url(#c11-m)"></line>
+<line class="edge" x1="170" y1="245" x2="230" y2="276" marker-end="url(#c11-m)"></line>
+<text class="lbl" x="470" y="216" text-anchor="start" font-size="10.5">查询需带
+translations__language_code=&lt;当前语言&gt;</text></svg><figcaption class="cap">图 11 · URL 语言前缀由中间件驱动；商品/分类字段拆进独立翻译表，一条主记录对应多条语言行</figcaption></figure>
+  <p>Chapter11 是纯粹的"让商城支持多语言"这一章：UI 文案翻译（i18n）、地区相关表单校验（l10n，本章示例是美国邮编）、以及<strong>商品/分类内容本身的多语言</strong>（用 <code>django-parler</code> 让同一件商品能有英文、西班牙文两套 name/slug/description）。</p>
+<h2>一、新依赖与整体配置</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ django-rosetta==0.10.0
++ django-parler==2.3
++ django-localflavor==4.0
+</code></pre></div>
+<ul>
+<li><strong><code>django-rosetta</code></strong>：给 admin 后台加一个"翻译管理界面"，可以直接在浏览器里编辑 <code>.po</code> 翻译文件的每一条词条，不用手动打开文本文件或跑 <code>msgfmt</code>。</li>
+<li><strong><code>django-parler</code></strong>：让 Django 模型的某些字段拥有"每种语言一份独立取值"的能力（本章用来翻译 <code>Category.name</code>/<code>Product.name</code> 等）。</li>
+<li><strong><code>django-localflavor</code></strong>：提供各国/地区特化的表单字段（本章用它的 <code>USZipCodeField</code> 校验美国邮编格式）。</li>
+</ul>
+<p><code>settings.py</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">from django.utils.translation import gettext_lazy as _
+...
+INSTALLED_APPS += ['localflavor', 'parler', 'rosetta']
+MIDDLEWARE += ['django.middleware.locale.LocaleMiddleware']
+
+LANGUAGE_CODE = 'en'
+LANGUAGES = [
+    ('en', _('English')),
+    ('es', _('Spanish')),
+]
+LOCALE_PATHS = [BASE_DIR / 'locale']
+
+# django-parler settings
+PARLER_LANGUAGES = {
+    None: ({'code': 'en'}, {'code': 'es'}),
+    'default': {'fallback': 'en', 'hide_untranslated': False},
+}
+</code></pre></div>
+<ul>
+<li><code>LocaleMiddleware</code> <strong>必须</strong>加进 <code>MIDDLEWARE</code>——它负责在每个请求进来时，根据 URL 前缀（本章用的方案）或浏览器 <code>Accept-Language</code> 头，判断这次请求该用哪种语言，然后把结果写进 <code>request.LANGUAGE_CODE</code>，后续模板渲染、<code>gettext</code> 调用都靠这个值决定输出哪种语言的文案。</li>
+<li><code>LANGUAGES</code> 显式列出这个项目支持哪些语言——不写这个的话 Django 会假设支持它内置的几十种语言，这里限定成只有英语和西班牙语两种。</li>
+<li><code>PARLER_LANGUAGES</code> 是给 <code>django-parler</code> 单独配置的（和 <code>LANGUAGES</code> 概念上对应但是独立的一份配置），<code>fallback: 'en'</code> 表示如果某条商品数据没有西班牙语翻译，显示英文兜底而不是空白；<code>hide_untranslated: False</code> 表示未翻译的对象仍然会出现在查询结果里（用回退语言显示），而不是被直接隐藏。</li>
+</ul>
+<h2>二、URL 层：<code>i18n_patterns</code> 与语言前缀</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># myshop/urls.py
+urlpatterns = i18n_patterns(
+    path('admin/', admin.site.urls),
+    path(_('cart/'), include('cart.urls', namespace='cart')),
+    path(_('orders/'), include('orders.urls', namespace='orders')),
+    path(_('payment/'), include('payment.urls', namespace='payment')),
+    path(_('coupons/'), include('coupons.urls', namespace='coupons')),
+    path('rosetta/', include('rosetta.urls')),
+    path('', include('shop.urls', namespace='shop')),
+)
+
+urlpatterns += [
+    path('payment/webhook/', webhooks.stripe_webhook, name='stripe-webhook'),
+]
+</code></pre></div>
+<ul>
+<li><code>i18n_patterns()</code> 把传进去的所有路由自动加上<strong>语言代码前缀</strong>（比如 <code>/en/cart/</code>、<code>/es/cart/</code>），并且会根据当前语言自动选择正确的语言版本——这是本章实现"每种语言一个独立 URL 空间"的核心机制，用户访问 <code>/es/</code> 开头的网址，<code>LocaleMiddleware</code> 就会把整段会话的语言切到西班牙语。</li>
+<li><strong>更值得注意的是 <code>path(_('cart/'), ...)</code> 里的这个 <code>_()</code></strong> ——不仅仅是页面文案会翻译，<strong>连 URL 路径本身的单词也会被翻译</strong>！<code>cart/urls.py</code>、<code>orders/urls.py</code> 等各 app 内部的 URL（比如 <code>path(_('create/'), ...)</code>）同理。查 <code>es/LC_MESSAGES/django.po</code> 能找到对应词条把 <code>cart/</code> 翻成西班牙语路径片段——这样西班牙语用户看到的购物车页面 URL 会是本地化过的路径而不是英文单词，这是很多欧洲电商网站常见的 SEO/本地化实践（搜索引擎更容易判断这是一个西班牙语页面）。</li>
+<li><strong><code>stripe_webhook</code> 这条路由被特意放在 <code>i18n_patterns()</code> 之外</strong>，直接追加到 <code>urlpatterns</code> 里，且没有语言前缀，固定是 <code>payment/webhook/</code>。原因很直接：调用这个 URL 的是 <strong>Stripe 的服务器</strong>，不是浏览器里的真人用户，Stripe 后台配置的 webhook 地址是写死的一个固定 URL，不可能，也不应该跟着"当前用户选择的语言"变来变去——如果这条路由也被 <code>i18n_patterns()</code> 包裹，Stripe 的回调请求就得精确匹配某个语言前缀（比如 <code>/en/payment/webhook/</code>），一旦这个前缀因为语言配置调整而改变，webhook 就直接失效。<strong>这是一个很值得记住的模式：面向机器/第三方服务的固定端点要放在 <code>i18n_patterns()</code> 之外。</strong></li>
+</ul>
+<h2>三、<code>django-parler</code>：让模型字段本身支持多语言</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># shop/models.py
+class Category(TranslatableModel):
+    translations = TranslatedFields(
+        name=models.CharField(max_length=200),
+        slug=models.SlugField(max_length=200, unique=True),
+    )
+    ...
+
+class Product(TranslatableModel):
+    translations = TranslatedFields(
+        name=models.CharField(max_length=200),
+        slug=models.SlugField(max_length=200),
+        description=models.TextField(blank=True),
+    )
+    category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    ...
+</code></pre></div>
+<p>这是本章<strong>架构层面最值得琢磨</strong>的改动。之前 <code>Category</code>/<code>Product</code> 是普通 <code>models.Model</code>，<code>name</code>/<code>slug</code>/<code>description</code> 直接是模型上的字段；现在改成继承 <code>TranslatableModel</code>，并且把"需要按语言区分的字段"统一搬进一个 <code>translations = TranslatedFields(...)</code> 声明块里，而"不需要翻译的字段"（<code>category</code>、<code>image</code>、<code>price</code>、<code>available</code>、<code>created</code>、<code>updated</code>）依然留在类体里正常声明。</p>
+<p><code>django-parler</code> 的实现原理是：对每一个 <code>TranslatableModel</code>，它在背后自动生成一张<strong>独立的翻译表</strong>（比如 <code>Product</code> 对应 <code>ProductTranslation</code>，包含 <code>master</code>（指回 <code>Product</code> 的外键）+ <code>language_code</code> + <code>name</code>/<code>slug</code>/<code>description</code>），一件商品有几种语言的翻译，这张表里就有几行记录。<code>product.name</code> 这种访问方式在运行时会自动根据当前语言去翻译表里查对应那一行——这是"一份主记录 + N 份按语言拆分的翻译记录"模式，跟很多 CMS/多语言电商系统的数据库设计思路是一致的（相比另一种常见方案——给每个字段直接加 <code>name_en</code>/<code>name_es</code> 这种语言后缀列——<code>django-parler</code> 这种方式在未来增加第三种语言时不需要改表结构，只需要多插入一批翻译行）。</p>
+<p>注意 <code>Meta</code> 里原来的 <code>ordering</code>/<code>indexes</code> 大多被<strong>注释掉</strong>了：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class Meta:
+    # ordering = ['name']
+    # indexes = [
+    #     models.Index(fields=['name']),
+    # ]
+    verbose_name = 'category'
+    verbose_name_plural = 'categories'
+</code></pre></div>
+<p>这是因为 <code>name</code> 现在已经不是 <code>Category</code> 表自己的字段了，而是躺在关联的翻译表里——普通的 <code>Meta.ordering = ['name']</code>/<code>models.Index(fields=['name'])</code> 直接指向一个本表不存在的字段，会报错，所以作者把它们注释掉而不是删除（保留痕迹说明"这里本来是有排序/索引的，多语言化之后需要用 parler 提供的专门方式重新实现，暂未处理"）——这其实是引入 <code>django-parler</code> 之后一个<strong>尚未被填平的技术债</strong>：分类列表现在没有确定的排序方式了，产品明细页的"按创建时间索引"还保留着（因为 <code>created</code> 不是翻译字段），但"按名称索引/排序"这个能力被牺牲掉了。</p>
+<h3>Admin 适配</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># shop/admin.py
+@admin.register(Category)
+class CategoryAdmin(TranslatableAdmin):
+    list_display = ['name', 'slug']
+    def get_prepopulated_fields(self, request, obj=None):
+        return {'slug': ('name',)}
+</code></pre></div>
+<p><code>TranslatableAdmin</code>（<code>django-parler</code> 提供）取代了普通的 <code>admin.ModelAdmin</code>，后台编辑页会自动出现"语言切换标签页"，让管理员分别填写每种语言版本的字段。有意思的是 <code>prepopulated_fields</code>（原来是类属性 <code>prepopulated_fields = {'slug': ('name',)}</code>）在这里变成了一个<strong>方法</strong> <code>get_prepopulated_fields</code>——这是因为 <code>TranslatableAdmin</code> 内部对 <code>prepopulated_fields</code> 的静态类属性处理方式和多语言字段有冲突（翻译字段是动态生成的，admin 基类要求通过方法在运行时提供，而不是在类定义时就写死），这是接入第三方"字段级多语言"方案时经常要面对的一类适配细节：不能假设第三方库和 Django admin 的每一个原生特性都无缝兼容，遇到冲突时通常需要按对方文档要求的方式改写。</p>
+<h3>视图层查询方式的变化</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># shop/views.py
+def product_list(request, category_slug=None):
+    ...
+    if category_slug:
+        language = request.LANGUAGE_CODE
+        category = get_object_or_404(
+            Category,
+            translations__language_code=language,
+            translations__slug=category_slug,
+        )
+        ...
+
+def product_detail(request, id, slug):
+    language = request.LANGUAGE_CODE
+    product = get_object_or_404(
+        Product,
+        id=id,
+        translations__language_code=language,
+        translations__slug=slug,
+        available=True,
+    )
+</code></pre></div>
+<p>因为 <code>slug</code> 现在存在翻译表里，原来简单的 <code>Category.objects.get(slug=category_slug)</code> 就不够用了——必须显式带上 <code>translations__language_code=request.LANGUAGE_CODE</code> 这个条件，通过 Django ORM 的跨表查询语法（<code>translations__</code> 前缀是 parler 生成的翻译表的反向关联名）同时限定"语言代码"和"该语言下的 slug"两个条件，才能查到正确的一条记录。这也解释了为什么 <code>product_detail</code> URL 里的 <code>slug</code> 参数现在天然是"当前语言版本"的 slug（一件商品的英文 slug 和西班牙语 slug 可以完全不同，比如 <code>/en/2/blue-shirt/</code> 和 <code>/es/2/camisa-azul/</code>），如果不带语言条件查询，很可能用一种语言的 URL slug 却匹配到另一种语言下面完全不相关的记录，或者根本查不到。</p>
+<h2>四、UI 文案国际化（i18n）</h2>
+<p>模板层大量使用 <code>{% load i18n %}</code> 后的 <code>{% translate %}</code>/<code>{% blocktranslate %}</code> 标签：</p>
+<div class="codewrap"><div class="langtag">django</div><pre><code class="language-django">{% load i18n static %}
+{% translate &quot;My shop&quot; %}
+{% translate &quot;Your cart&quot; %}:
+{% blocktranslate with total=cart.get_total_price count items=total_items %}
+  {{ items }} item, ${{ total }}
+{% plural %}
+  {{ items }} items, ${{ total }}
+{% endblocktranslate %}
+</code></pre></div>
+<ul>
+<li><code>{% translate "..." %}</code> 用于单个简单字符串。</li>
+<li><code>{% blocktranslate %}...{% endblocktranslate %}</code> 用于<strong>带变量插值、甚至带单复数变化</strong>的句子——上面这段就是"购物车里有 1 件商品"和"购物车里有 N 件商品"两种单复数表达（<code>count</code> + <code>{% plural %}</code> 语法），因为不同语言的单复数规则不一样（英语只有单数/复数两态，有些语言有更多态），Django 的 i18n 系统能通过 <code>.po</code> 文件里的 <code>Plural-Forms</code> 规则正确处理。</li>
+<li>语言切换器：</li>
+</ul>
+<div class="codewrap"><div class="langtag">django</div><pre><code class="language-django">{% get_current_language as LANGUAGE_CODE %}
+{% get_available_languages as LANGUAGES %}
+{% get_language_info_list for LANGUAGES as languages %}
+&lt;ul class=&quot;languages&quot;&gt;
+  {% for language in languages %}
+    &lt;li&gt;
+      &lt;a href=&quot;/{{ language.code }}/&quot; {% if language.code == LANGUAGE_CODE %}class=&quot;selected&quot;{% endif %}&gt;
+        {{ language.name_local }}
+      &lt;/a&gt;
+    &lt;/li&gt;
+  {% endfor %}
+&lt;/ul&gt;
+</code></pre></div>
+<p><code>{% get_language_info_list %}</code> 这几个 i18n 模板标签直接从 <code>settings.LANGUAGES</code> 读取配置，动态生成语言切换链接列表，<code>language.name_local</code> 显示的是"该语言用自己的文字写出的名字"（比如西班牙语显示"Español"而不是"Spanish"），是比较地道的多语言站点惯例。<strong>这里语言切换链接是硬编码 <code>/{{ language.code }}/</code>（直接跳回首页）</strong>，而不是"切换语言但停留在当前页面"，是一个可以改进但本章没做的细节。</p>
+<h2>五、<code>orders/forms.py</code>：地区特化表单字段（l10n）</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">from localflavor.us.forms import USZipCodeField
+
+class OrderCreateForm(forms.ModelForm):
+    postal_code = USZipCodeField()
+    class Meta:
+        model = Order
+        fields = ['first_name', 'last_name', 'email', 'address', 'postal_code', 'city']
+</code></pre></div>
+<p><code>USZipCodeField</code> 是 <code>django-localflavor</code> 提供的现成校验字段，专门校验美国邮编格式（5 位数字，或"5位-4位"的 ZIP+4 格式）——这是 i18n（界面语言）和 l10n（本地化格式规则，比如邮编、电话号码、身份证号）的区别所在：这里国际化的是界面文案，但这个表单字段本身只针对美国邮编格式做校验，<strong>并没有随着 <code>LANGUAGES</code> 切到西班牙语就换成对应国家的邮编规则</strong>——如果商城真的要面向说西班牙语的用户（很可能是拉美或西班牙本土用户），这里的邮编校验逻辑实际上还停留在"只认美国格式"的阶段，这是"翻译了界面文字，但没有真正做地区适配"的一个典型局限，值得作为语言支持和地区支持是两件独立事情的例子。</p>
+<p><code>Order</code>/<code>OrderItem</code> 模型字段也加上了可翻译的 <code>verbose_name</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">first_name = models.CharField(_('first name'), max_length=50)
+last_name = models.CharField(_('last name'), max_length=50)
+email = models.EmailField(_('e-mail'))
+...
+</code></pre></div>
+<p>这样表单标签（<code>form.as_p</code> 渲染出来的 <code>&lt;label&gt;</code>）在不同语言下也会显示对应语言的字段名。</p>
+<h2>六、<code>django-rosetta</code>：浏览器里编辑翻译</h2>
+<p><code>path('rosetta/', include('rosetta.urls'))</code> 挂载后，管理员登录 admin 后可以访问 <code>/rosetta/</code> 直接在网页表单里逐条编辑 <code>.po</code> 文件里的翻译词条，保存后立即生效（内部帮你跑了编译 <code>.po → .mo</code> 的步骤），不需要开发者手动用命令行工具维护翻译文件。<code>locale/es/LC_MESSAGES/django.po</code> 文件本身也印证了这一点——文件头部写着 <code>X-Translated-Using: django-rosetta 0.9.8</code>，说明这些翻译词条本身就是通过 Rosetta 界面维护产出的。</p>
+<h2>七、终于补上的 Redis 服务</h2>
+<p>顺带一提一处<strong>跨章节的遗留问题在本章被修复</strong>：<code>docker-compose.yml</code> 新增了：</p>
+<div class="codewrap"><div class="langtag">yaml</div><pre><code class="language-yaml">cache:
+  image: redis:7.2.4
+  restart: always
+  volumes:
+    - ./data/cache:/data
+</code></pre></div>
+<p>Chapter10 就已经引入了基于 Redis 的商品推荐系统（<code>shop/recommender.py</code>），但当时的 <code>docker-compose.yml</code> 里始终<strong>没有</strong>配套的 Redis 服务——直到这一章才补上。这是继续深读代码时又一次印证的"仓库配置滞后于代码功能一个章节"的模式（此前 Chapter08 的 Celery broker 也是类似情况，虽然那个直到目前为止依然没有被补上）。</p>
+<h2>八、<code>prompts/task.md</code>——又一份与本章主题无关的练习草稿</h2>
+<p>和之前几章一样，这不是本章正文实现，是作者留的 AI 提示词草稿，内容和 i18n 完全无关——问的是"如何给 <code>Product</code> 加一个按克计重的 <code>weight</code> 字段，并根据订单总重量计算运费，同时让 Stripe 收款金额包含运费"。这份草稿本身描述的 <code>Product</code>/<code>Order</code> 模型代码还是 Chapter10 版本（<code>Product</code> 还不是 <code>TranslatableModel</code>），说明这份草稿是在本章开发之前、独立于 i18n 这条主线写的一次探索性提问，目前完全没有被落实到代码里。继续深读后续章节时，如果看到"运费计算"相关功能出现，可以回头对照这份草稿。</p>
+<h2>九、端到端流程</h2>
+<p>用户访问首页 → <code>LocaleMiddleware</code> 根据 URL 前缀（或浏览器语言）决定 <code>request.LANGUAGE_CODE</code> → 所有 <code>{% translate %}</code>/<code>{% blocktranslate %}</code> 标签按此语言输出文案，商品/分类的 <code>name</code>/<code>description</code>/<code>slug</code> 通过 <code>translations__language_code</code> 查询对应语言的翻译记录 → 用户点击顶部语言切换链接 → 跳转到另一语言前缀的首页，重新走一遍上述流程，同一件商品会展示为不同语言的名称和描述、不同的 slug 路径。管理员可以在 admin 后台的多语言标签页里为每件商品逐语言填写内容，或用 Rosetta 界面维护界面文案的翻译词条。</p>
+<h2>十、Chapter10 → Chapter11 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter10</th>
+<th>Chapter11</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>界面语言</td>
+<td>仅英语（硬编码字符串）</td>
+<td>英语/西班牙语双语（<code>{% translate %}</code>/<code>{% blocktranslate %}</code> + <code>.po</code> 翻译文件）</td>
+</tr>
+<tr>
+<td>商品/分类数据</td>
+<td>单一语言字段（普通 <code>CharField</code>）</td>
+<td><code>TranslatableModel</code> + <code>TranslatedFields</code>，每种语言独立一份 name/slug/description</td>
+</tr>
+<tr>
+<td>URL 结构</td>
+<td>无语言前缀</td>
+<td><code>i18n_patterns()</code> 加语言前缀，且路径片段本身也被翻译</td>
+</tr>
+<tr>
+<td>表单校验</td>
+<td>通用字段</td>
+<td>引入地区特化字段（<code>USZipCodeField</code>），但语言切换未联动地区规则</td>
+</tr>
+<tr>
+<td>翻译维护方式</td>
+<td>无</td>
+<td>Rosetta 后台可视化编辑 <code>.po</code> 文件</td>
+</tr>
+<tr>
+<td>遗留问题状态</td>
+<td>Redis 服务未接入 <code>docker-compose.yml</code>（推荐系统需要）</td>
+<td><strong>已修复</strong>：新增 <code>cache</code> (Redis) 服务</td>
+</tr>
+<tr>
+<td>新增遗留问题</td>
+<td>—</td>
+<td><code>Category</code>/<code>Product</code> 的 <code>ordering</code>/<code>按名称索引</code> 被注释掉，多语言化后未重新实现</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+    <div class="footdoc">
+      由 Claude 对照 Django 5 By Example 官方代码仓库逐章阅读整理生成 · 图示为教学示意，非源码逐行还原
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1767 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>educa 项目深读笔记 · Django 5 By Example 源码深读</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20x%3D%2250%22%20y%3D%2262%22%20font-size%3D%2262%22%20text-anchor%3D%22middle%22%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5 By Example · 项目四 / 共四个</span>
+      <h1>🎓&nbsp; educa 项目深读笔记</h1>
+      <p>课程内容模型、CBV 与拖拽排序、学生报名与多级缓存、REST API、WebSocket 实时聊天，直到 Nginx + uWSGI + Daphne 的生产部署。</p>
+    </div>
+    <nav>
+      <a href="#ch12"><span class="n">12</span>灵活内容模型与课程结构</a><a href="#ch13"><span class="n">13</span>课程管理 CBV、动态内容表单与拖拽排序</a><a href="#ch14"><span class="n">14</span>学生报名系统与多级缓存</a><a href="#ch15"><span class="n">15</span>用 Django REST Framework 暴露 API</a><a href="#ch16"><span class="n">16</span>用 Django Channels 实现课程实时聊天室</a><a href="#ch17"><span class="n">17</span>生产部署（Nginx + uWSGI + Daphne）</a>
+    </nav>
+    <div class="series">
+      <div class="label">全书四个项目</div>
+      <a href="notes-01-blog.html">📝 Blog 项目深读笔记</a><a href="notes-02-bookmarks.html">🔖 Bookmarks 项目深读笔记</a><a href="notes-03-myshop.html">🛒 myshop 项目深读笔记</a><a href="notes-04-educa.html" class="current">🎓 educa 项目深读笔记</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">源码深读 · 逐章教学笔记</span>
+      <h1>educa 项目深读笔记</h1>
+      <p class="sub">课程内容模型、CBV 与拖拽排序、学生报名与多级缓存、REST API、WebSocket 实时聊天，直到 Nginx + uWSGI + Daphne 的生产部署。</p>
+      <div class="meta">
+        <span>覆盖 Chapter 12–17</span>
+        <span>基于官方配套代码仓库逐行阅读整理</span>
+        <span>含 6 张手绘架构示意图</span>
+      </div>
+    </div>
+    
+<section class="chapter" id="ch12">
+  <div class="chapter-head">
+    <span class="chnum">12</span>
+    <h2 class="chtitle">灵活内容模型与课程结构</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 360" role="img" aria-label="图 12 · Subject→Course→Module→Content 四层结构；Content 靠 GenericForeignKey 挂四种内容类型"><defs>
+          <marker id="c12-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c12-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c12-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="140" height="50" rx="4"></rect>
+<text class="lbl-strong" x="90.0" y="55.0" text-anchor="middle" font-size="12.5">Subject</text>
+<rect class="box" x="200" y="30" width="140" height="50" rx="4"></rect>
+<text class="lbl-strong" x="270.0" y="49.0" text-anchor="middle" font-size="12.5">Course</text>
+<text class="lbl" x="270.0" y="67.5" text-anchor="middle" font-size="10.5">owner: auth.User</text>
+<rect class="box" x="380" y="30" width="140" height="50" rx="4"></rect>
+<text class="lbl-strong" x="450.0" y="49.0" text-anchor="middle" font-size="12.5">Module</text>
+<text class="lbl" x="450.0" y="67.5" text-anchor="middle" font-size="10.5">order: OrderField</text>
+<text class="lbl" x="450.0" y="79.5" text-anchor="middle" font-size="10.5">(for_fields=['course'])</text>
+<rect class="box-a" x="560" y="30" width="140" height="50" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="49.0" text-anchor="middle" font-size="12.5">Content</text>
+<text class="lbl" x="630.0" y="67.5" text-anchor="middle" font-size="10.5">order: OrderField</text>
+<text class="lbl" x="630.0" y="79.5" text-anchor="middle" font-size="10.5">(for_fields=['module'])</text>
+<line class="edge" x1="160" y1="55" x2="200" y2="55" marker-end="url(#c12-m)"></line>
+<line class="edge" x1="340" y1="55" x2="380" y2="55" marker-end="url(#c12-m)"></line>
+<line class="edge" x1="520" y1="55" x2="560" y2="55" marker-end="url(#c12-m)"></line>
+<rect class="box-a" x="500" y="130" width="200" height="40" rx="4"></rect>
+<text class="lbl-strong" x="600.0" y="150.0" text-anchor="middle" font-size="12.5">ContentType + object_id</text>
+<line class="edge" x1="630" y1="80" x2="600" y2="130" marker-end="url(#c12-m)"></line>
+<rect class="box" x="380" y="210" width="80" height="46" rx="4"></rect>
+<text class="lbl-strong" x="420.0" y="233.0" text-anchor="middle" font-size="11">Text</text>
+<line class="edge" class="edge-dashed" x1="420" y1="170" x2="420" y2="210" marker-end="url(#c12-m)"></line>
+<rect class="box" x="470" y="210" width="80" height="46" rx="4"></rect>
+<text class="lbl-strong" x="510.0" y="233.0" text-anchor="middle" font-size="11">File</text>
+<line class="edge" class="edge-dashed" x1="510" y1="170" x2="510" y2="210" marker-end="url(#c12-m)"></line>
+<rect class="box" x="560" y="210" width="80" height="46" rx="4"></rect>
+<text class="lbl-strong" x="600.0" y="233.0" text-anchor="middle" font-size="11">Image</text>
+<line class="edge" class="edge-dashed" x1="600" y1="170" x2="600" y2="210" marker-end="url(#c12-m)"></line>
+<rect class="box" x="650" y="210" width="80" height="46" rx="4"></rect>
+<text class="lbl-strong" x="690.0" y="233.0" text-anchor="middle" font-size="11">Video</text>
+<line class="edge" class="edge-dashed" x1="690" y1="170" x2="690" y2="210" marker-end="url(#c12-m)"></line>
+<text class="lbl" x="380" y="200" text-anchor="start" font-size="10">ItemBase 抽象基类：owner 用 %(class)s_related 避免反向访问器重名</text>
+<rect class="box-a" x="20" y="130" width="300" height="90" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="169.0" text-anchor="middle" font-size="12.5">OrderField.pre_save()</text>
+<text class="lbl" x="170.0" y="187.5" text-anchor="middle" font-size="10.5">同组内 (for_fields 过滤) 取最大 order + 1</text>
+<text class="lbl" x="170.0" y="199.5" text-anchor="middle" font-size="10.5">为空才生效；ObjectDoesNotExist → 0</text>
+<line class="edge" x1="170" y1="80" x2="170" y2="130" marker-end="url(#c12-m)"></line></svg><figcaption class="cap">图 12 · Subject→Course→Module→Content 四层结构；Content 靠 GenericForeignKey 挂四种内容类型</figcaption></figure>
+  <p>Chapter12 开启本书<strong>第四个、也是最后一个项目 educa</strong>（在线教育平台）。这一章还没有涉及太多视图/前端交互，核心是把<strong>数据模型设计</strong>打磨到位：课程如何拆成模块，模块里的内容如何支持"文本/文件/图片/视频"四种完全不同的类型，以及"排序"这件小事背后藏着一个可复用的自定义字段类型。</p>
+<h2>一、项目结构</h2>
+<p>新项目 <code>educa</code>，单一 app <code>courses</code>。<code>requirements.txt</code> 精简回最基础的四行（<code>asgiref</code>、<code>Django</code>、<code>sqlparse</code>、<code>Pillow</code>），没有携带前几个项目的任何依赖——这是全新项目的起点。<code>settings.py</code> 也是标准的 <code>startproject</code> 生成物，<code>INSTALLED_APPS</code> 里 <code>'courses.apps.CoursesConfig'</code> 被放在了列表<strong>最前面</strong>（不是常见的排在 Django 内置 app 之后），这是个无关紧要的小细节，但也提示这本书里每个项目的脚手架代码并非完全一致的模板套用。</p>
+<p><code>urls.py</code> 直接用 Django 内置的 <code>LoginView</code>/<code>LogoutView</code>（不像 Bookmarks 项目那样通过 <code>include('django.contrib.auth.urls')</code>，而是显式手写两条 <code>path</code>）——这是同一个需求的另一种写法，只注册了登录/登出两条，没有注册密码重置等其它认证相关 URL，说明这一章暂时只需要"登录才能进后台管理内容"这个最基本的能力。</p>
+<h2>二、核心数据模型：课程 → 模块 → 内容</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class Subject(models.Model):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+    class Meta:
+        ordering = ['title']
+
+class Course(models.Model):
+    owner = models.ForeignKey(User, related_name='courses_created', on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, related_name='courses', on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+    overview = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['-created']
+
+class Module(models.Model):
+    course = models.ForeignKey(Course, related_name='modules', on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    order = OrderField(blank=True, for_fields=['course'])
+    class Meta:
+        ordering = ['order']
+</code></pre></div>
+<p>三层结构很直白：<code>Subject</code>（学科分类，比如"数学"、"编程"）→ <code>Course</code>（某学科下的一门课，有 <code>owner</code> 记录是谁创建的）→ <code>Module</code>（一门课拆成若干模块/章节，比如"第一章：变量与类型"）。这里首次出现的 <code>owner = models.ForeignKey(User, ...)</code>（直接用 Django 内置 <code>auth.User</code>，没有自定义 User 模型，也没有 Profile）——继续沿用了 Bookmarks 项目"不上自定义 User 模型"的做法，是否会在后续章节重新踩到 <code>add_to_class</code>/<code>ABSOLUTE_URL_OVERRIDES</code> 那类补丁，值得留意后续章节。</p>
+<h2>三、<code>Content</code> 模型：用 GenericForeignKey 装下四种完全不同的内容类型</h2>
+<p>这是本章<strong>设计上最核心</strong>的部分——一个模块里的"内容条目"可能是一段文字、一个文件、一张图片或一个视频链接，这四种东西的字段结构完全不同（文字有 <code>content</code> 文本字段，文件/图片有 <code>FileField</code>，视频只有一个 <code>URLField</code>），但又需要在同一个模块下统一排序、统一展示。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ItemBase(models.Model):
+    owner = models.ForeignKey(User, related_name='%(class)s_related', on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    class Meta:
+        abstract = True
+    def __str__(self):
+        return self.title
+
+class Text(ItemBase):
+    content = models.TextField()
+
+class File(ItemBase):
+    file = models.FileField(upload_to='files')
+
+class Image(ItemBase):
+    file = models.FileField(upload_to='images')
+
+class Video(ItemBase):
+    url = models.URLField()
+
+
+class Content(models.Model):
+    module = models.ForeignKey(Module, related_name='contents', on_delete=models.CASCADE)
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        limit_choices_to={'model__in': ('text', 'video', 'image', 'file')},
+    )
+    object_id = models.PositiveIntegerField()
+    item = GenericForeignKey('content_type', 'object_id')
+    order = OrderField(blank=True, for_fields=['module'])
+    class Meta:
+        ordering = ['order']
+</code></pre></div>
+<p>几个关键设计点：</p>
+<ul>
+<li><strong><code>ItemBase</code> 是抽象基类</strong>（<code>Meta.abstract = True</code>）——<code>Text</code>/<code>File</code>/<code>Image</code>/<code>Video</code> 四个具体模型各自继承它，每个都会生成<strong>独立的数据库表</strong>（<code>courses_text</code>、<code>courses_file</code>、<code>courses_image</code>、<code>courses_video</code>），而不是共用一张表。这和之前 Bookmarks 项目里 <code>Profile</code> 那种"实体继承"（<code>ForeignKey</code>/<code>OneToOneField</code> 关联）不同，抽象基类不会产生额外的表和 JOIN 开销，纯粹是"把公共字段定义写一遍，四个子类各自拷贝一份"的代码复用手段。</li>
+<li><strong><code>owner</code> 字段用了 <code>related_name='%(class)s_related'</code></strong>——这是抽象基类里定义 <code>related_name</code> 时的标准写法，<code>%(class)s</code> 会在每个具体子类生成表时被替换成小写的类名，所以最终 <code>Text.owner</code> 的反向访问器是 <code>user.text_related</code>，<code>File.owner</code> 是 <code>user.file_related</code>，以此类推。如果四个子类都直接写死 <code>related_name='items_related'</code>，Django 会因为四张表都试图在 <code>User</code> 上注册同一个反向访问器名字而报错——<code>%(class)s</code> 占位符正是为了解决"一个抽象基类被多个子类继承、且都需要不同 <code>related_name</code>"这个问题而存在的。</li>
+<li><strong><code>Content.content_type</code> + <code>object_id</code> + <code>item = GenericForeignKey(...)</code></strong>——这是本书第二次用 contenttypes 框架实现多态关联（第一次是 Bookmarks 项目 Chapter07 的 <code>Action.target</code>，用来指向"任意模型的一条动态记录"）。这里的用法更进一步：<strong>通过 <code>limit_choices_to</code> 把可选的目标模型限制在 <code>Text</code>/<code>Video</code>/<code>Image</code>/<code>File</code> 这四种</strong>，防止 admin 后台不小心把 <code>content_type</code> 关联到项目里其他风马牛不相及的模型上（比如 <code>Course</code> 或 <code>Subject</code> 自己）。</li>
+<li>这套"抽象基类定义公共字段 + <code>ContentType</code> 框架做多态关联"的组合拳，是解决"同一个位置可能放不同类型内容"这类需求的经典 Django 模式，比"给 <code>Content</code> 表加四个可空外键字段（<code>text_id</code>、<code>file_id</code>、<code>image_id</code>、<code>video_id</code>），每次只有一个非空"的笨拙方案优雅得多——后者每加一种新内容类型就要改 <code>Content</code> 表结构，前者只需要新增一个 <code>ItemBase</code> 子类即可，<code>Content</code> 表本身完全不用动。</li>
+</ul>
+<h2>四、<code>OrderField</code>：一个自定义模型字段</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/fields.py
+class OrderField(models.PositiveIntegerField):
+    def __init__(self, for_fields=None, *args, **kwargs):
+        self.for_fields = for_fields
+        super().__init__(*args, **kwargs)
+
+    def pre_save(self, model_instance, add):
+        if getattr(model_instance, self.attname) is None:
+            try:
+                qs = self.model.objects.all()
+                if self.for_fields:
+                    query = {
+                        field: getattr(model_instance, field)
+                        for field in self.for_fields
+                    }
+                    qs = qs.filter(**query)
+                last_item = qs.latest(self.attname)
+                value = getattr(last_item, self.attname) + 1
+            except ObjectDoesNotExist:
+                value = 0
+            setattr(model_instance, self.attname, value)
+            return value
+        else:
+            return super().pre_save(model_instance, add)
+</code></pre></div>
+<p><code>Module.order = OrderField(blank=True, for_fields=['course'])</code>、<code>Content.order = OrderField(blank=True, for_fields=['module'])</code>——这是一个<strong>自定义 Django 模型字段类</strong>（继承 <code>models.PositiveIntegerField</code>），专门用来实现"新建一条记录时自动算出它排在同类记录的第几位"这件事，是本章技术含量最高的一段代码：</p>
+<ul>
+<li><strong>为什么重写 <code>pre_save</code> 而不是在 <code>save()</code> 方法或表单里手动算？</strong> <code>pre_save()</code> 是 Django 字段类的一个钩子方法，在<strong>每次保存该字段所在的模型实例之前</strong>自动被调用，返回值就是这次要写入数据库的字段值。把"自动编号"的逻辑做成字段类本身的行为，意味着<strong>任何用到这个字段的模型都能免费获得这个能力</strong>——<code>Module</code> 和 <code>Content</code> 两个毫不相关的模型都直接声明 <code>order = OrderField(...)</code> 就自动有了"新建时自动排到最后"的行为，不需要在每个模型的 <code>save()</code> 里各自重复实现一遍。这是"自定义字段类型"这个 Django 扩展点的典型应用场景：把一种可复用的字段级行为封装成字段类，而不是散落在多个模型的业务逻辑里。</li>
+<li><strong><code>for_fields</code> 参数——"在哪个范围内排序"</strong>。<code>Module</code> 传的是 <code>for_fields=['course']</code>，意味着"模块的顺序编号只在同一门课程内部计算"（A 课程的模块从 0 开始编号，B 课程的模块也从 0 开始编号，互不影响）；<code>Content</code> 传的是 <code>for_fields=['module']</code>，同理是"内容条目的顺序只在同一个模块内部计算"。<code>pre_save</code> 里 <code>qs.filter(**query)</code> 这一步就是用 <code>for_fields</code> 里列出的字段名，动态构造出"和当前正在保存的这条记录同属一组"的过滤条件（比如 <code>Module.objects.filter(course=&lt;当前课程&gt;)</code>），再用 <code>.latest(self.attname)</code> 找出这一组里 <code>order</code> 值最大的那条，加一即为新记录的顺序号。</li>
+<li><strong><code>getattr(model_instance, self.attname) is None</code> 这个判断很关键</strong>——只有在<strong>用户没有手动指定 <code>order</code> 值</strong>的情况下才会触发自动编号逻辑；如果调用方显式传了 <code>order=5</code>，就会走 <code>else</code> 分支直接用 <code>super().pre_save()</code> 的默认行为（原样存这个值）。这保证了"自动编号"只是一个<strong>默认行为</strong>而不是强制覆盖，未来如果要支持手动拖拽调整顺序（写死某个具体的 <code>order</code> 值），这个字段类完全不需要改动。</li>
+<li><code>except ObjectDoesNotExist: value = 0</code>——如果这是这门课程的第一个模块（或这个模块的第一条内容），<code>.latest()</code> 会因为查询结果为空而抛 <code>ObjectDoesNotExist</code>，这时候顺理成章地把顺序号设成 <code>0</code>，作为这一组里的第一条记录。</li>
+</ul>
+<h2>五、Admin 后台</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ModuleInline(admin.StackedInline):
+    model = Module
+
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ['title', 'subject', 'created']
+    list_filter = ['created', 'subject']
+    search_fields = ['title', 'overview']
+    prepopulated_fields = {'slug': ('title',)}
+    inlines = [ModuleInline]
+</code></pre></div>
+<p><code>ModuleInline</code> 用的是 <code>StackedInline</code>（每条模块记录用一整块表单区域展示，字段上下堆叠排列），而不是像 Chapter09 <code>OrderItemInline</code> 那样用 <code>TabularInline</code>（每条记录一行紧凑展示）——选择哪种主要取决于内联记录里的字段数量和长度：<code>Module</code> 有 <code>description</code> 这种可能较长的文本字段，用 <code>StackedInline</code> 每条记录能有更宽裕的展示空间；<code>OrderItem</code> 只有寥寥几个短字段，适合用 <code>TabularInline</code> 紧凑地列成表格。这一 app 目前只注册了 <code>Subject</code> 和 <code>Course</code>（带 <code>Module</code> 内联），<code>Content</code> 和四个具体内容类型模型都还没有注册到 admin——说明本章的重点仍停留在打好数据模型的地基，内容的编辑界面留给后续章节实现。</p>
+<h2>六、<code>Subject</code> 的初始数据：Fixture</h2>
+<div class="codewrap"><div class="langtag">json</div><pre><code class="language-json">[
+  {&quot;model&quot;: &quot;courses.subject&quot;, &quot;pk&quot;: 1, &quot;fields&quot;: {&quot;title&quot;: &quot;Mathematics&quot;, &quot;slug&quot;: &quot;mathematics&quot;}},
+  {&quot;model&quot;: &quot;courses.subject&quot;, &quot;pk&quot;: 2, &quot;fields&quot;: {&quot;title&quot;: &quot;Music&quot;, &quot;slug&quot;: &quot;music&quot;}},
+  {&quot;model&quot;: &quot;courses.subject&quot;, &quot;pk&quot;: 3, &quot;fields&quot;: {&quot;title&quot;: &quot;Physics&quot;, &quot;slug&quot;: &quot;physics&quot;}},
+  {&quot;model&quot;: &quot;courses.subject&quot;, &quot;pk&quot;: 4, &quot;fields&quot;: {&quot;title&quot;: &quot;Programming&quot;, &quot;slug&quot;: &quot;programming&quot;}}
+]
+</code></pre></div>
+<p><code>courses/fixtures/subjects.json</code> 是 Django <strong>fixture</strong> 机制的标准用法——预置几条基础学科分类数据，配合 <code>python manage.py loaddata subjects</code> 命令一次性导入，避免每次搭建新环境（开发机、CI、演示环境）都要手动在 admin 里逐条录入这几个学科。这是本书目前为止第一次使用 fixture 机制做初始数据播种（之前几个项目都是纯手动在 admin 里建数据）。</p>
+<h2>七、模板与前端</h2>
+<p><code>base.html</code> 的结构和之前几个项目的基础模板高度相似（<code>{% load static %}</code>、顶部导航、<code>{% block content %}</code>、POST 表单实现登出），但多了一个之前项目里没有见过的通用钩子：</p>
+<div class="codewrap"><div class="langtag">django</div><pre><code class="language-django">&lt;script&gt;
+  document.addEventListener('DOMContentLoaded', (event) =&gt; {
+    {% block domready %}
+    {% endblock %}
+  })
+&lt;/script&gt;
+</code></pre></div>
+<p>这其实是 Bookmarks 项目 Chapter06 里就出现过的 <code>{% block domready %}</code> 约定（当时用于图片点赞的 AJAX 逻辑），这里从项目一开始就把这个钩子模式<strong>预先搭进了基础模板</strong>，意味着后续章节大概率会大量使用 AJAX/JS 交互（这本书官方目录后续确实会讲到课程模块的拖拽排序——这正是 <code>OrderField</code> 这个字段今天先做好铺垫的原因：模型层已经支持"顺序"这个概念，后面只需要一个视图接收前端拖拽后的新顺序、批量更新 <code>order</code> 值即可）。</p>
+<p><code>registration/login.html</code>/<code>logged_out.html</code> 两个模板结构上和之前项目里见过的版本几乎一致，是这本书里反复复用的标准认证模板样式。</p>
+<h2>八、Chapter11(myshop) → Chapter12(educa) 项目切换小结</h2>
+<p>Chapter12 不是接着 myshop 项目往下写，而是另起一个全新项目，几个值得对比的设计选择：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>myshop（Ch08-11）</th>
+<th>educa（Ch12）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内容多态性需求</td>
+<td>无（商品字段结构固定）</td>
+<td><code>Content</code> 用 <code>GenericForeignKey</code> 关联四种完全不同结构的内容类型</td>
+</tr>
+<tr>
+<td>排序需求</td>
+<td>无显式排序字段（除了 <code>-created</code>）</td>
+<td>自定义 <code>OrderField</code> 字段类型，两处复用（<code>Module</code>、<code>Content</code>）</td>
+</tr>
+<tr>
+<td>代码复用手段</td>
+<td>无抽象基类</td>
+<td><code>ItemBase</code> 抽象基类 + <code>%(class)s</code> related_name 占位符</td>
+</tr>
+<tr>
+<td>初始数据</td>
+<td>全靠手动 admin 录入</td>
+<td>引入 Django fixture 机制（<code>subjects.json</code>）</td>
+</tr>
+<tr>
+<td>User 模型策略</td>
+<td>沿用默认 <code>auth.User</code></td>
+<td>同样沿用默认 <code>auth.User</code>（<code>Course.owner</code>/<code>ItemBase.owner</code>）</td>
+</tr>
+<tr>
+<td>前端交互铺垫</td>
+<td>无</td>
+<td>基础模板预置 <code>{% block domready %}</code>，为后续 AJAX/拖拽功能做准备</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch13">
+  <div class="chapter-head">
+    <span class="chnum">13</span>
+    <h2 class="chtitle">课程管理 CBV、动态内容表单与拖拽排序</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 360" role="img" aria-label="图 13 · OwnerMixin 系列拼出权限收窄的 CRUD 视图；内容表单靠字符串反射动态生成"><defs>
+          <marker id="c13-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c13-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c13-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">Mixin 组合出四个 CRUD 视图</text>
+<rect class="box" x="20" y="36" width="150" height="46" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="53.0" text-anchor="middle" font-size="12.5">OwnerMixin</text>
+<text class="lbl" x="95.0" y="71.5" text-anchor="middle" font-size="10.5">get_queryset 过滤 owner</text>
+<rect class="box" x="190" y="36" width="170" height="46" rx="4"></rect>
+<text class="lbl-strong" x="275.0" y="51.25" text-anchor="middle" font-size="12.5">LoginRequiredMixin</text>
+<text class="lbl-strong" x="275.0" y="66.75" text-anchor="middle" font-size="12.5">+ PermissionRequiredMixin</text>
+<rect class="box-a" x="400" y="36" width="170" height="60" rx="4"></rect>
+<text class="lbl-strong" x="485.0" y="60.0" text-anchor="middle" font-size="12.5">OwnerCourseMixin</text>
+<text class="lbl" x="485.0" y="78.5" text-anchor="middle" font-size="10.5">= 上面两者组合</text>
+<text class="lbl" x="485.0" y="90.5" text-anchor="middle" font-size="10.5">+ model / fields / success_url</text>
+<path class="edge" d="M170,59 Q280,40 400,66" marker-end="url(#c13-m)"></path>
+<line class="edge" x1="360" y1="59" x2="400" y2="66" marker-end="url(#c13-m)"></line>
+<rect class="box" x="400" y="120" width="260" height="46" rx="4"></rect>
+<text class="lbl-strong" x="530.0" y="143.0" text-anchor="middle" font-size="9.5">ManageCourseListView / CourseCreateView / CourseUpdateView / CourseDeleteView</text>
+<line class="edge" x1="485" y1="96" x2="530" y2="120" marker-end="url(#c13-m)"></line>
+<line x1="20" y1="190" x2="700" y2="190" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="212" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">ContentCreateUpdateView：运行时动态解析模型</text>
+<rect class="box" x="20" y="226" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="248.0" text-anchor="middle" font-size="12.5">URL: model_name</text>
+<text class="lbl" x="105.0" y="266.5" text-anchor="middle" font-size="10.5">'text' / 'image' /</text>
+<text class="lbl" x="105.0" y="278.5" text-anchor="middle" font-size="10.5">'video' / 'file'</text>
+<rect class="box-a" x="230" y="226" width="190" height="56" rx="4"></rect>
+<text class="lbl-strong" x="325.0" y="248.0" text-anchor="middle" font-size="12.5">apps.get_model()</text>
+<text class="lbl" x="325.0" y="266.5" text-anchor="middle" font-size="10.5">白名单校验 + 反射取模型类</text>
+<rect class="box-a" x="460" y="226" width="220" height="56" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="248.0" text-anchor="middle" font-size="12.5">modelform_factory()</text>
+<text class="lbl" x="570.0" y="266.5" text-anchor="middle" font-size="10.5">exclude=[owner, order,</text>
+<text class="lbl" x="570.0" y="278.5" text-anchor="middle" font-size="10.5">created, updated]</text>
+<line class="edge" x1="190" y1="254" x2="230" y2="254" marker-end="url(#c13-m)"></line>
+<line class="edge" x1="420" y1="254" x2="460" y2="254" marker-end="url(#c13-m)"></line>
+<text class="lbl" x="20" y="310" text-anchor="start" font-size="10.5">同一个视图类服务四种模型；id 是否存在决定新建 / 编辑分支</text></svg><figcaption class="cap">图 13 · OwnerMixin 系列拼出权限收窄的 CRUD 视图；内容表单靠字符串反射动态生成</figcaption></figure>
+  <p>Chapter13 是 educa 项目<strong>管理端</strong>的核心一章：用一整套基于类的通用视图（Class-Based Views）+ 自定义 Mixin 实现课程的增删改查、用 Formset 批量编辑模块、用<strong>运行时动态解析模型</strong>的方式统一处理四种不同内容类型的表单，最后用 AJAX + 拖拽库实现模块/内容的排序调整——直接用上了 Chapter12 埋下的 <code>OrderField</code>。</p>
+<h2>一、新依赖</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ django-braces==1.15.0
+</code></pre></div>
+<p><code>django-braces</code> 提供了一批可以直接和 Django 内置 CBV 组合的 Mixin，本章用到两个：<code>CsrfExemptMixin</code>（跳过 CSRF 校验）、<code>JsonRequestResponseMixin</code>（自动把请求体当 JSON 解析、自动把返回值序列化成 <code>JsonResponse</code>）。<code>myshop/educa/urls.py</code> 新增 <code>path('course/', include('courses.urls'))</code>，把 <code>courses</code> app 自己的 URL 挂载到 <code>/course/</code> 前缀下。</p>
+<h2>二、三个自定义 Mixin：把"只能操作自己的课程"这件事写一次、到处复用</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class OwnerMixin:
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(owner=self.request.user)
+
+class OwnerEditMixin:
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
+
+class OwnerCourseMixin(OwnerMixin, LoginRequiredMixin, PermissionRequiredMixin):
+    model = Course
+    fields = ['subject', 'title', 'slug', 'overview']
+    success_url = reverse_lazy('manage_course_list')
+
+class OwnerCourseEditMixin(OwnerCourseMixin, OwnerEditMixin):
+    template_name = 'courses/manage/course/form.html'
+</code></pre></div>
+<p>这是 Django 通用视图（Generic CBV）体系里"关注点拆分"的典型示范：</p>
+<ul>
+<li><code>OwnerMixin</code> 覆盖 <code>get_queryset()</code>——凡是继承它的列表/详情/更新/删除视图，<strong>查询出来的对象集合永远先被过滤成"只属于当前登录用户"</strong>。这意味着即便一个用户篡改 URL 里的 <code>pk</code> 试图编辑别人的课程，<code>get_object_or_404</code> 在这个被收窄的 queryset 里根本查不到那条记录，会直接 404，而不是权限判断失败——<strong>用"查不到"代替"无权访问"</strong>，这样连"这门课程确实存在，只是不是你的"这个信息都不会泄露给攻击者，是比显式权限检查更严格的一种防护姿态。</li>
+<li><code>OwnerEditMixin</code> 覆盖 <code>form_valid()</code>——凡是继承它的创建/更新视图，保存表单前<strong>自动把 <code>owner</code> 字段设成当前登录用户</strong>，用户完全不需要（也不能）在表单里自己选"这门课归谁"，杜绝了"伪造 owner 字段把课程据为己有"的可能。</li>
+<li><code>OwnerCourseMixin</code> 把 <code>OwnerMixin</code> 和 Django 内置的 <code>LoginRequiredMixin</code>（必须登录）、<code>PermissionRequiredMixin</code>（必须有特定权限）组合在一起，还统一声明了 <code>model</code>、<code>fields</code>、<code>success_url</code>——四个具体视图（<code>ManageCourseListView</code>/<code>CourseCreateView</code>/<code>CourseUpdateView</code>/<code>CourseDeleteView</code>）只需要各自声明一个 <code>permission_required</code> 字符串，其余全部继承自这套 Mixin 组合：</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ManageCourseListView(OwnerCourseMixin, ListView):
+    template_name = 'courses/manage/course/list.html'
+    permission_required = 'courses.view_course'
+
+class CourseCreateView(OwnerCourseEditMixin, CreateView):
+    permission_required = 'courses.add_course'
+
+class CourseUpdateView(OwnerCourseEditMixin, UpdateView):
+    permission_required = 'courses.change_course'
+
+class CourseDeleteView(OwnerCourseMixin, DeleteView):
+    template_name = 'courses/manage/course/delete.html'
+    permission_required = 'courses.delete_course'
+</code></pre></div>
+<p><code>'courses.view_course'</code>/<code>'courses.add_course'</code> 这些字符串是 Django <strong>默认自动生成</strong>的模型级权限（每个模型注册时会自动生成 <code>add_&lt;model&gt;</code>/<code>change_&lt;model&gt;</code>/<code>delete_&lt;model&gt;</code>/<code>view_&lt;model&gt;</code> 四条权限，<code>app_label.codename</code> 拼接成完整权限标识），<code>PermissionRequiredMixin</code> 会在请求进来时检查 <code>request.user.has_perm(permission_required)</code>，没有该权限直接返回 403。这套权限目前还没有在代码里看到"给哪个用户/组授予哪些权限"的配置——意味着权限的分配要靠管理员事后在 admin 后台的用户/用户组管理界面手动勾选，这是 Django 内置权限体系"声明检查逻辑在代码里，分配授权在数据里（运行时可调整）"的典型分工。</p>
+<p>这套四个视图<strong>完全没有单独写 <code>forms.py</code> 里的表单类</strong>——<code>fields = ['subject', 'title', 'slug', 'overview']</code> 直接声明在 Mixin 上，Django 通用编辑视图会在背后自动用 <code>modelform_factory</code> 现场生成一个 <code>ModelForm</code>。这是 Django CBV 体系里"表单足够简单就不必显式定义 Form 类"的惯用做法。</p>
+<h2>三、模块管理：<code>Formset</code> 一次性编辑多个模块</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># forms.py
+ModuleFormSet = inlineformset_factory(
+    Course, Module, fields=['title', 'description'], extra=2, can_delete=True,
+)
+</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class CourseModuleUpdateView(TemplateResponseMixin, View):
+    template_name = 'courses/manage/module/formset.html'
+    course = None
+
+    def get_formset(self, data=None):
+        return ModuleFormSet(instance=self.course, data=data)
+
+    def dispatch(self, request, pk):
+        self.course = get_object_or_404(Course, id=pk, owner=request.user)
+        return super().dispatch(request, pk)
+
+    def get(self, request, *args, **kwargs):
+        formset = self.get_formset()
+        return self.render_to_response({'course': self.course, 'formset': formset})
+
+    def post(self, request, *args, **kwargs):
+        formset = self.get_formset(data=request.POST)
+        if formset.is_valid():
+            formset.save()
+            return redirect('manage_course_list')
+        return self.render_to_response({'course': self.course, 'formset': formset})
+</code></pre></div>
+<p><code>inlineformset_factory(Course, Module, ...)</code>——这是 Django 表单系统里专门处理"一对多关系批量编辑"的机制：一门课程下有多个模块，用户在一个页面上一次性新增/编辑/删除多个模块，而不用为每个模块单独打开一个页面。<code>extra=2</code> 表示表单默认多渲染两组空白的"新增模块"输入框；<code>can_delete=True</code> 会给每个已有模块加一个"删除"复选框，勾选后提交表单会把对应模块删除。</p>
+<p>这个视图<strong>没有继承任何 Django 内置的通用编辑视图</strong>（<code>CreateView</code>/<code>UpdateView</code> 都不适合"一次编辑一组关联对象"这种场景），而是直接从最底层的 <code>View</code> + <code>TemplateResponseMixin</code> 手写 <code>get</code>/<code>post</code>。<code>dispatch()</code> 被重写用来提前拿到并校验 <code>self.course</code>（同时兼顾了"确认这门课程存在"和"确认属于当前用户"两件事，同样是用查询过滤而不是显式权限判断的方式做隔离），这个属性之后在 <code>get</code>/<code>post</code> 两个方法里都能直接复用，避免重复查询。</p>
+<h2>四、<code>ContentCreateUpdateView</code>：本章技术含量最高的一个视图</h2>
+<p>这是全书目前为止<strong>最动态</strong>的一段代码——需要用<strong>同一个视图类</strong>处理文本、图片、视频、文件四种完全不同的模型，还要同时兼顾"新建"和"编辑"两种模式：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ContentCreateUpdateView(TemplateResponseMixin, View):
+    module = None
+    model = None
+    obj = None
+    template_name = 'courses/manage/content/form.html'
+
+    def get_model(self, model_name):
+        if model_name in ['text', 'video', 'image', 'file']:
+            return apps.get_model(app_label='courses', model_name=model_name)
+        return None
+
+    def get_form(self, model, *args, **kwargs):
+        Form = modelform_factory(model, exclude=['owner', 'order', 'created', 'updated'])
+        return Form(*args, **kwargs)
+
+    def dispatch(self, request, module_id, model_name, id=None):
+        self.module = get_object_or_404(Module, id=module_id, course__owner=request.user)
+        self.model = self.get_model(model_name)
+        if id:
+            self.obj = get_object_or_404(self.model, id=id, owner=request.user)
+        return super().dispatch(request, module_id, model_name, id)
+
+    def get(self, request, module_id, model_name, id=None):
+        form = self.get_form(self.model, instance=self.obj)
+        return self.render_to_response({'form': form, 'object': self.obj})
+
+    def post(self, request, module_id, model_name, id=None):
+        form = self.get_form(self.model, instance=self.obj, data=request.POST, files=request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.owner = request.user
+            obj.save()
+            if not id:
+                Content.objects.create(module=self.module, item=obj)
+            return redirect('module_content_list', self.module.id)
+        return self.render_to_response({'form': form, 'object': self.obj})
+</code></pre></div>
+<ul>
+<li><strong><code>apps.get_model(app_label='courses', model_name=model_name)</code></strong>——Django 应用注册表（App Registry）提供的运行时反射能力，根据字符串（<code>'text'</code>/<code>'video'</code>/<code>'image'</code>/<code>'file'</code>，来自 URL 路径参数）<strong>动态找到对应的模型类</strong>，而不是在代码里写死 <code>if model_name == 'text': model = Text elif ...</code> 这种分支判断。<code>get_model</code> 方法先用白名单 <code>if model_name in [...]</code> 校验合法性——这一步很关键，防止有人往 URL 里塞一个任意字符串（比如 <code>'user'</code> 或 <code>'course'</code>）试图通过这个通用入口去创建/编辑本不该被这样操作的模型。</li>
+<li><strong><code>modelform_factory(model, exclude=[...])</code></strong>——同样是运行时动态生成表单类，根据传入的具体模型类（<code>Text</code>/<code>Video</code>/<code>Image</code>/<code>File</code> 中的一个）自动生成对应的 <code>ModelForm</code>，排除掉 <code>owner</code>/<code>order</code>/<code>created</code>/<code>updated</code> 这几个不该让用户在表单里手动填写的字段。这样<strong>一个视图类就能同时服务四种模型</strong>，不需要为每种内容类型单独写四份几乎一样的视图代码。</li>
+<li><strong><code>dispatch()</code> 里 <code>if id:</code> 判断是否处于编辑模式</strong>——这个视图靠 URL 是否带 <code>id</code> 参数（<code>module_content_create</code> vs <code>module_content_update</code> 两条不同的 URL 规则，但指向<strong>同一个视图类</strong>）区分"新建"还是"编辑"：新建时 <code>self.obj</code> 是 <code>None</code>，表单是空的；编辑时提前查出已有对象作为表单的 <code>instance</code>。</li>
+<li><strong><code>post()</code> 里 <code>if not id:</code> 决定要不要新建 <code>Content</code> 包装记录</strong>——保存具体内容对象（<code>Text</code>/<code>Image</code>/...）本身之后，<strong>只有在"新建"这个分支</strong>才需要额外创建一条 <code>Content</code> 记录把它和所属 <code>Module</code> 关联起来（通过 <code>GenericForeignKey</code> 的 <code>item=obj</code> 赋值方式）；如果是编辑已有内容，<code>Content</code> 记录早就存在，不需要重复创建。</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ContentDeleteView(View):
+    def post(self, request, id):
+        content = get_object_or_404(Content, id=id, module__course__owner=request.user)
+        module = content.module
+        content.item.delete()
+        content.delete()
+        return redirect('module_content_list', module.id)
+</code></pre></div>
+<p>删除时需要<strong>两次删除</strong>——<code>content.item.delete()</code> 删掉真正的内容对象（<code>Text</code>/<code>Image</code>/<code>Video</code>/<code>File</code> 表里的那一行），<code>content.delete()</code> 再删掉 <code>Content</code> 这条"包装/索引"记录本身。这是 <code>GenericForeignKey</code> 关联方式的必然代价：它不像普通外键那样能通过 <code>on_delete=CASCADE</code> 自动级联删除，因为 <code>Content</code> 和它指向的具体对象之间<strong>没有真正的数据库外键约束</strong>（<code>ContentType</code> + <code>object_id</code> 只是逻辑关联，数据库层面并不知道这是一种关联关系），所以级联删除的逻辑必须由应用代码手动处理。</p>
+<h3>模板里配合的自定义模板过滤器</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># templatetags/course.py
+@register.filter
+def model_name(obj):
+    try:
+        return obj._meta.model_name
+    except AttributeError:
+        return None
+</code></pre></div>
+<p><code>content_list.html</code> 里 <code>{{ item|model_name }}</code> 用它来判断一个内容对象具体是 <code>Text</code>/<code>Image</code>/<code>Video</code>/<code>File</code> 中的哪一个，从而拼出正确的 <code>module_content_update</code> 编辑链接（这个 URL 需要显式带上 <code>model_name</code> 参数）——这是模板层"反向识别 <code>GenericForeignKey</code> 具体指向哪种模型"的常见手法，因为在模板语境里没法直接调用 Python 的 <code>type()</code>，需要一个自定义过滤器把 <code>obj._meta.model_name</code> 这个 Python 层的元信息暴露出来。</p>
+<h2>五、拖拽排序：AJAX + <code>OrderField</code> 的落地</h2>
+<p><code>content_list.html</code> 引入了一个 CDN 托管的第三方库：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">{% block include_js %}
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/html5sortable/0.13.3/html5sortable.min.js&quot;&gt;&lt;/script&gt;
+{% endblock %}
+</code></pre></div>
+<p><code>html5sortable</code> 是一个轻量的"让某个 HTML 列表支持鼠标拖拽调整顺序"的 JS 库，配合模块列表页新出现的 <code>{% block include_js %}</code> 钩子（写在 <code>&lt;script&gt;</code> 主逻辑块之前，专门用来引入外部 JS 库文件）。拖拽结束后触发 <code>sortupdate</code> 事件：</p>
+<div class="codewrap"><div class="langtag">javascript</div><pre><code class="language-javascript">sortable('#modules', {forcePlaceholderSize: true, placeholderClass: 'placeholder'})[0]
+  .addEventListener('sortupdate', function(e) {
+    modulesOrder = {};
+    document.querySelectorAll('#modules li').forEach(function (module, index) {
+      modulesOrder[module.dataset.id] = index;
+      module.querySelector('.order').innerHTML = index + 1;
+    });
+    options['body'] = JSON.stringify(modulesOrder);
+    fetch(moduleOrderUrl, options)
+  });
+</code></pre></div>
+<p>拖完之后，遍历 DOM 里当前的 <code>&lt;li&gt;</code> 顺序，用 <code>data-id</code>（对应数据库主键）和当前下标拼出一个 <code>{模块ID: 新顺序}</code> 的字典，<code>JSON.stringify</code> 之后通过 <code>fetch()</code> POST 给后端。后端接收方：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ModuleOrderView(CsrfExemptMixin, JsonRequestResponseMixin, View):
+    def post(self, request):
+        for id, order in self.request_json.items():
+            Module.objects.filter(id=id, course__owner=request.user).update(order=order)
+        return self.render_json_response({'saved': 'OK'})
+</code></pre></div>
+<p><code>JsonRequestResponseMixin</code>（<code>django-braces</code> 提供）自动把请求体 JSON 解析成 <code>self.request_json</code> 字典，<code>self.render_json_response(...)</code> 自动包成 <code>JsonResponse</code> 返回——省去手动 <code>json.loads(request.body)</code>/<code>JsonResponse(...)</code> 这些样板代码。视图本身逻辑很简单：遍历前端传来的 <code>{id: order}</code> 映射，逐条用 <code>.filter(id=id, course__owner=request.user).update(order=order)</code> 更新——<strong>同样带上了 <code>course__owner=request.user</code> 这个过滤条件</strong>，即便攻击者伪造请求体里的 <code>id</code>，也只能改动自己名下课程的模块顺序，不会影响别人的数据。<code>Content</code> 的排序（<code>ContentOrderView</code>）是完全对称的实现。</p>
+<h3>一处值得关注的 CSRF 处理</h3>
+<p><code>ModuleOrderView</code>/<code>ContentOrderView</code> 都用了 <code>CsrfExemptMixin</code>（<code>django-braces</code> 提供，效果等同于给这个视图整体加了 <code>@csrf_exempt</code>），而前端 <code>fetch()</code> 调用里也<strong>没有设置任何 CSRF token 请求头</strong>。回顾 Bookmarks 项目 Chapter06/Chapter07 的 AJAX 交互（点赞、关注）——那些视图都是老老实实走 Django 默认的 CSRF 保护，前端通过 <code>js-cookie</code> 读取 <code>csrftoken</code> cookie 并塞进请求头，而这里选择了完全跳过 CSRF 校验。这意味着：如果一个已登录的用户被诱导访问了一个恶意页面，那个恶意页面上的 JS 完全可以对着 <code>/course/module/order/</code> 发起一次跨站 POST 请求（浏览器会自动带上该用户的 session cookie），后端因为跳过了 CSRF 校验会照单全收——<strong>这是一处真实的 CSRF 隐患</strong>（虽然由于视图内部用 <code>course__owner=request.user</code> 做了归属过滤，攻击者能造成的破坏被限制在"打乱受害者自己课程模块的顺序"，达不到跨用户篡改数据的程度，但这依然是一次未经用户本意确认的写操作被伪造执行）。更稳妥的做法是让前端在 <code>fetch()</code> 里带上 CSRF token（就像 Chapter06 那样），而不是直接豁免整个视图的 CSRF 保护。</p>
+<h2>六、一处需要留意的回退：登出改回了 GET 链接</h2>
+<p>对比 Chapter12 的 <code>base.html</code>：</p>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">-  &lt;li&gt;
+-    &lt;form action=&quot;{% url &quot;logout&quot; %}&quot; method=&quot;post&quot;&gt;
+-      &lt;button type=&quot;submit&quot;&gt;Sign out&lt;/button&gt;
+-      {% csrf_token %}
+-    &lt;/form&gt;
+-  &lt;/li&gt;
++  &lt;li&gt;&lt;a href=&quot;{% url &quot;logout&quot; %}&quot;&gt;Sign out&lt;/a&gt;&lt;/li&gt;
+</code></pre></div>
+<p>Chapter12 一开始就采用了 POST 表单来触发登出（Django 5 的 CSRF 加固要求登出这种会改变状态的操作不能用 GET 链接触发，避免类似"一个 <code>&lt;img src="/logout/"&gt;</code> 就能让第三方页面偷偷把受害者登出"这类隐患——这一点在 Bookmarks 项目 Chapter04 教学里详细讲过），但 Chapter13 的 <code>base.html</code> <strong>把这处改回了普通的 <code>&lt;a href&gt;</code> 链接</strong>，等于是撤销了这个安全实践。这是继续深读代码时又一个值得记录的"书本示例代码内部不完全一致"的例子——多个项目、多个章节由不同上下文推进时，个别已经改对的细节偶尔会在后续修改里被无意间打回原样。</p>
+<h2>七、端到端流程</h2>
+<ol>
+<li>讲师登录后台，<code>ManageCourseListView</code> 显示"我的课程"列表（<code>OwnerMixin</code> 保证只看到自己的）。</li>
+<li>点击"Create new course" → <code>CourseCreateView</code>（自动记录 <code>owner</code>）→ 保存成功跳回列表。</li>
+<li>点击"Edit modules" → <code>CourseModuleUpdateView</code> 用 <code>ModuleFormSet</code> 一次性增删改这门课下的所有模块。</li>
+<li>进入某个模块的内容管理页（<code>ModuleContentListView</code>）→ 点击"Text"/"Image"/"Video"/"File" 中的一种 → <code>ContentCreateUpdateView</code> 动态解析出对应模型、动态生成表单 → 保存后既存了具体内容对象，也建了一条 <code>Content</code> 索引记录挂到当前模块下。</li>
+<li>在模块列表或内容列表页直接拖拽调整顺序 → <code>html5sortable</code> 触发 <code>sortupdate</code> → <code>fetch()</code> 把新顺序 POST 给 <code>ModuleOrderView</code>/<code>ContentOrderView</code> → 后端批量 <code>update(order=...)</code>，<code>OrderField</code> 在 Chapter12 定义的"新建时自动排到最后"只是初始默认值，真正的顺序调整靠这里的拖拽接口完成。</li>
+</ol>
+<h2>八、Chapter12 → Chapter13 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter12</th>
+<th>Chapter13</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>视图</td>
+<td>无（仅模型/admin）</td>
+<td>完整 CBV 体系：通用编辑视图 + 手写 <code>View</code> 子类混用</td>
+</tr>
+<tr>
+<td>权限控制</td>
+<td>无</td>
+<td><code>LoginRequiredMixin</code> + <code>PermissionRequiredMixin</code> + 自定义 <code>OwnerMixin</code>/<code>OwnerEditMixin</code></td>
+</tr>
+<tr>
+<td>多态内容编辑</td>
+<td>仅数据模型（<code>GenericForeignKey</code>）</td>
+<td><code>apps.get_model()</code> + <code>modelform_factory()</code> 运行时动态解析/生成，一个视图服务四种模型</td>
+</tr>
+<tr>
+<td>排序能力</td>
+<td>仅 <code>OrderField</code> 提供默认排序值</td>
+<td>拖拽 UI（<code>html5sortable</code>）+ AJAX 接口批量更新 <code>order</code></td>
+</tr>
+<tr>
+<td>登出方式</td>
+<td>POST 表单（CSRF 安全）</td>
+<td>回退为 GET 链接（<strong>安全回退</strong>）</td>
+</tr>
+<tr>
+<td>CSRF 处理</td>
+<td>未涉及 AJAX</td>
+<td>排序接口用 <code>CsrfExemptMixin</code> 完全跳过校验（<strong>新增隐患</strong>）</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch14">
+  <div class="chapter-head">
+    <span class="chnum">14</span>
+    <h2 class="chtitle">学生报名系统与多级缓存</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 340" role="img" aria-label="图 14 · 视图级 / 片段级 / 底层 API 三层缓存叠加，最内层课程目录无主动失效机制"><defs>
+          <marker id="c14-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c14-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c14-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">三层缓存（由外到内）</text>
+<rect class="box" x="20" y="36" width="660" height="260" rx="4"></rect>
+<text class="lbl-strong" x="350.0" y="166.0" text-anchor="middle" font-size="12.5"></text>
+<text class="lbl-strong" x="40" y="58" text-anchor="start" font-size="11">cache_page(60*15) — 视图级，整页 HTML 缓存 15 分钟</text>
+<rect class="box-a" x="40" y="70" width="620" height="200" rx="4"></rect>
+<text class="lbl-strong" x="350.0" y="170.0" text-anchor="middle" font-size="12.5"></text>
+<text class="lbl-accent" x="60" y="92" text-anchor="start" font-size="11">{% cache 600 module_contents module %} — 模板片段缓存 10 分钟</text>
+<rect class="box-w" x="60" y="104" width="580" height="130" rx="4"></rect>
+<text class="lbl-strong" x="350.0" y="169.0" text-anchor="middle" font-size="12.5"></text>
+<text class="lbl-warn" x="80" y="126" text-anchor="start" font-size="10.5">cache.get/set 底层 API — 课程目录，按 key 拆分（all_subjects / all_courses / subject_N）</text>
+<text class="lbl" x="80" y="150" text-anchor="start" font-size="10.5">无主动失效：数据变更后要等默认 TTL（约 5 分钟）才刷新</text>
+<text class="lbl" x="80" y="172" text-anchor="start" font-size="10.5">item.render() 按 _meta.model_name 分派到对应内容模板</text>
+<line x1="20" y1="310" x2="700" y2="310" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line></svg><figcaption class="cap">图 14 · 视图级 / 片段级 / 底层 API 三层缓存叠加，最内层课程目录无主动失效机制</figcaption></figure>
+  <p>Chapter14 把 educa 项目从"只有管理端"补齐成一个真正对外可用的产品：游客可以浏览的公开课程目录、学生注册/报名/学习界面，以及为了让这套读多写少的目录页面撑得住流量而引入的<strong>多级缓存体系</strong>（视图级 <code>cache_page</code>、模板片段缓存、底层缓存 API 三种一起用）。</p>
+<h2>一、新依赖</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ django-embed-video==1.4.9
++ pymemcache==4.0.0
++ django-debug-toolbar==4.3.0
++ redis==5.0.4
++ django-redisboard==8.4.0
+</code></pre></div>
+<ul>
+<li><strong><code>django-embed-video</code></strong>：把 YouTube/Vimeo 等视频链接自动转成嵌入播放器 iframe，不用自己解析各家视频网站的 URL 格式。</li>
+<li><strong><code>django-debug-toolbar</code></strong>：和 Bookmarks 项目 Chapter07 一样的开发期 SQL/耗时分析工具。</li>
+<li><strong><code>redis</code></strong>：Python Redis 客户端。</li>
+<li><strong><code>django-redisboard</code></strong>：给 admin 后台加一个可视化查看 Redis 实例状态（内存占用、key 数量、连接数等）的面板。</li>
+<li><strong><code>pymemcache</code></strong> ——这一个有点意外：<code>settings.py</code> 里最终配置的缓存后端是 Redis（<code>django.core.cache.backends.redis.RedisCache</code>），并没有用到 Memcached，<code>pymemcache</code> 这个 Memcached 客户端库看起来是<strong>没有被实际使用的遗留依赖</strong>（可能是作者原本考虑过用 Memcached 做缓存后端、后来改用 Redis 但忘了从 <code>requirements.txt</code> 里移除）。这是继续深读代码时又一处"依赖列表和实际实现不完全对应"的例子。</li>
+</ul>
+<h2>二、<code>settings.py</code>：缓存、Debug Toolbar、登录跳转</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">LOGIN_REDIRECT_URL = reverse_lazy('student_course_list')
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379',
+    }
+}
+CACHE_MIDDLEWARE_ALIAS = 'default'
+CACHE_MIDDLEWARE_SECONDS = 60 * 15  # 15 minutes
+CACHE_MIDDLEWARE_KEY_PREFIX = 'educa'
+
+INTERNAL_IPS = ['127.0.0.1']
+</code></pre></div>
+<p><code>LOGIN_REDIRECT_URL</code> 从默认的 <code>/accounts/profile/</code> 改成了 <code>student_course_list</code>——登录成功后直接进"我的课程"列表，符合这个平台"学生登录是为了学习"的产品定位。<code>CACHES</code> 用 Django 5.x 新增的 <code>RedisCache</code> 内置后端（不再需要 <code>django-redis</code> 第三方包），<code>CACHE_MIDDLEWARE_*</code> 三兄弟是给"整站缓存中间件"用的默认配置（虽然这一章 <code>MIDDLEWARE</code> 里对应的两行中间件是<strong>注释掉</strong>的——<code># 'django.middleware.cache.UpdateCacheMiddleware'</code>/<code># 'django.middleware.cache.FetchFromCacheMiddleware'</code>，说明这套配置是为可能的整站缓存方案预留，本章实际用的是更细粒度的视图级/片段级缓存，见下）。</p>
+<h2>三、课程模型的两处新增：<code>students</code> 字段与多态 <code>render()</code> 方法</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/models.py
+class Course(models.Model):
+    ...
+    students = models.ManyToManyField(User, related_name='courses_joined', blank=True)
+</code></pre></div>
+<p><code>Course.students</code>——课程和学生之间的多对多关系，<code>blank=True</code> 允许一门课程暂时没有任何学生报名。这是本章"报名"功能的数据基础。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ItemBase(models.Model):
+    ...
+    def render(self):
+        return render_to_string(
+            f'courses/content/{self._meta.model_name}.html',
+            {'item': self},
+        )
+</code></pre></div>
+<p>这是本章<strong>设计上最精巧的一笔</strong>——给抽象基类加了一个 <code>render()</code> 方法，让<strong>每一种内容对象自己知道该用哪个模板渲染自己</strong>：<code>self._meta.model_name</code> 在运行时会是 <code>'text'</code>/<code>'image'</code>/<code>'video'</code>/<code>'file'</code> 中的一个（取决于调用它的具体是哪个子类实例），拼出 <code>courses/content/text.html</code> 这样的模板路径去渲染。这样上层代码（<code>StudentCourseDetailView</code> 对应的模板）完全不需要写任何 <code>{% if item_type == 'text' %}...{% elif item_type == 'image' %}...</code> 这种分支判断，只需要对着任意一个 <code>content.item</code> 调用 <code>{{ item.render }}</code>，该显示成什么样子完全由内容对象自己决定——这是"胖模型"（Fat Models）设计思想的一个漂亮例子：把"这种类型的数据该怎么展示"这个知识放在模型这一层，而不是散落进每一处调用它的视图/模板里。四个模板都很简单：</p>
+<div class="codewrap"><div class="langtag">django</div><pre><code class="language-django">{# text.html #}
+{{ item.content|linebreaks }}
+
+{# image.html #}
+&lt;p&gt;&lt;img src=&quot;{{ item.file.url }}&quot; alt=&quot;{{ item.title }}&quot;&gt;&lt;/p&gt;
+
+{# file.html #}
+&lt;p&gt;&lt;a href=&quot;{{ item.file.url }}&quot; class=&quot;button&quot;&gt;Download file&lt;/a&gt;&lt;/p&gt;
+
+{# video.html #}
+{% load embed_video_tags %}
+{% video item.url &quot;small&quot; %}
+</code></pre></div>
+<p><code>video.html</code> 里的 <code>{% video item.url "small" %}</code>（<code>django-embed-video</code> 提供的模板标签）是唯一需要额外处理逻辑的一个——它会解析 <code>item.url</code>（比如一个 YouTube 视频链接），自动生成对应视频服务商的嵌入播放器 HTML，<code>"small"</code> 是预设的尺寸规格。</p>
+<h2>四、公开课程目录：<code>CourseListView</code>/<code>CourseDetailView</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/views.py
+class CourseListView(TemplateResponseMixin, View):
+    model = Course
+    template_name = 'courses/course/list.html'
+
+    def get(self, request, subject=None):
+        subjects = cache.get('all_subjects')
+        if not subjects:
+            subjects = Subject.objects.annotate(total_courses=Count('courses'))
+            cache.set('all_subjects', subjects)
+        all_courses = Course.objects.annotate(total_modules=Count('modules'))
+        if subject:
+            subject = get_object_or_404(Subject, slug=subject)
+            key = f'subject_{subject.id}_courses'
+            courses = cache.get(key)
+            if not courses:
+                courses = all_courses.filter(subject=subject)
+                cache.set(key, courses)
+        else:
+            courses = cache.get('all_courses')
+            if not courses:
+                courses = all_courses
+                cache.set('all_courses', courses)
+        return self.render_to_response({'subjects': subjects, 'subject': subject, 'courses': courses})
+</code></pre></div>
+<p>这是本章<strong>缓存策略里最细粒度的一种</strong>——直接用 Django 底层缓存 API（<code>cache.get</code>/<code>cache.set</code>）手动实现"查缓存，没有就查数据库再写回缓存"的经典模式（Cache-Aside）：</p>
+<ul>
+<li><code>Subject.objects.annotate(total_courses=Count('courses'))</code>/<code>Course.objects.annotate(total_modules=Count('modules'))</code>——用 ORM 的聚合注解一次性算出"每个学科下有几门课"、"每门课有几个模块"，避免在模板循环里对每个对象额外发起一次 <code>COUNT</code> 查询（典型的 N+1 优化）。</li>
+<li><strong>缓存键的设计</strong>：<code>'all_subjects'</code>、<code>'all_courses'</code>、<code>f'subject_{subject.id}_courses'</code>——按"全部学科"、"全部课程"、"某学科下的课程"分别开独立的缓存槽位，而不是用一个大而全的键把所有变体都塞进去，这样不同筛选条件的浏览请求各自独立命中/更新自己的缓存条目。</li>
+<li><strong><code>cache.set(key, courses)</code> 没有传第三个参数（过期时间）</strong>，会使用 <code>CACHES['default']</code> 里没有显式配置的 <code>TIMEOUT</code>（Django 默认 300 秒/5 分钟）。</li>
+</ul>
+<p><strong>这里有一个值得提醒的设计权衡</strong>：整个视图<strong>没有任何"数据变化时主动清除缓存"的逻辑</strong>——管理员在后台新建/编辑/删除一门课程或学科后，公开课程目录页最长可能要等到默认缓存过期（约 5 分钟）才会显示最新数据。这是"读多写少"场景下用<strong>定时过期而非主动失效</strong>的缓存策略的典型取舍：实现简单（不需要在 <code>Course</code>/<code>Subject</code> 的 <code>save()</code>/<code>delete()</code> 里挂信号去清缓存），代价是接受几分钟的数据陈旧窗口。对于课程目录这种更新频率低、对"秒级实时"没有硬性要求的页面，这个权衡是合理的，但继续深读代码或者自己改造这套系统时，应该清楚这是一个<strong>有意为之的最终一致性妥协</strong>，而不是遗漏。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class CourseDetailView(DetailView):
+    model = Course
+    template_name = 'courses/course/detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['enroll_form'] = CourseEnrollForm(initial={'course': self.object})
+        return context
+</code></pre></div>
+<p>课程详情页对所有访客公开（没有 <code>LoginRequiredMixin</code>），但把"报名表单"预置在了 context 里——具体登不登录能不能报名，交给模板层的 <code>{% if request.user.is_authenticated %}</code> 判断（见下）。</p>
+<h2>五、<code>students</code> 应用：注册、报名、学习</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># students/forms.py
+class CourseEnrollForm(forms.Form):
+    course = forms.ModelChoiceField(queryset=Course.objects.none(), widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['course'].queryset = Course.objects.all()
+</code></pre></div>
+<p><code>queryset=Course.objects.none()</code> 后又在 <code>__init__</code> 里重新赋值成 <code>Course.objects.all()</code>——乍看多此一举，其实是<strong>惯用的延迟求值写法</strong>：模块加载时（类体执行的那一刻）如果直接写 <code>queryset=Course.objects.all()</code>，这个查询集会在 Django 应用尚未完全初始化、数据库连接可能还没建立好的阶段就被求值，可能引发时序问题；放进 <code>__init__</code> 里，则保证每次真正实例化这个表单时才去查数据库，是 Django 表单里处理"字段的可选值依赖数据库查询"这类场景的标准写法。<code>widget=forms.HiddenInput</code> 说明这个字段的值不是用户手动选的，而是由视图传入 <code>initial={'course': self.object}</code> 预先填好、随表单一起提交回来的（对应课程详情页表单里那个隐藏的课程 ID 字段）。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># students/views.py
+class StudentRegistrationView(CreateView):
+    template_name = 'students/student/registration.html'
+    form_class = UserCreationForm
+    success_url = reverse_lazy('student_course_list')
+
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        cd = form.cleaned_data
+        user = authenticate(username=cd['username'], password=cd['password1'])
+        login(self.request, user)
+        return result
+</code></pre></div>
+<p>直接复用 Django 内置的 <code>UserCreationForm</code>（不需要自己写注册表单），<code>form_valid</code> 里在 <code>super().form_valid(form)</code> 真正把新用户存进数据库<strong>之后</strong>，紧接着用同一次提交里拿到的明文密码（<code>cd['password1']</code>，此时尚未从 <code>cleaned_data</code> 里清除）调用 <code>authenticate()</code> + <code>login()</code>——<strong>注册成功后立刻自动登录</strong>，用户不需要再单独走一次登录流程。这是一个很常见、体验更好的注册流程设计，对比 Bookmarks 项目 Chapter04 的 <code>register</code> 视图（注册成功后只是渲染一个"完成"页面，需要用户自己再去登录），educa 这里做得更完整。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class StudentEnrollCourseView(LoginRequiredMixin, FormView):
+    course = None
+    form_class = CourseEnrollForm
+
+    def form_valid(self, form):
+        self.course = form.cleaned_data['course']
+        self.course.students.add(self.request.user)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('student_course_detail', args=[self.course.id])
+</code></pre></div>
+<p><code>self.course.students.add(self.request.user)</code>——多对多字段的 <code>.add()</code> 方法本身是<strong>幂等</strong>的（重复调用不会插入重复的关联记录，Django 底层会用 <code>INSERT ... ON CONFLICT</code>/等效机制处理），所以即便用户不小心对同一门课重复提交报名表单，也不会出现异常或者产生脏数据，这个视图不需要额外写"是否已经报过名"的判断逻辑。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class StudentCourseListView(LoginRequiredMixin, ListView):
+    model = Course
+    template_name = 'students/course/list.html'
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(students__in=[self.request.user])
+
+class StudentCourseDetailView(LoginRequiredMixin, DetailView):
+    model = Course
+    template_name = 'students/course/detail.html'
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(students__in=[self.request.user])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        course = self.get_object()
+        if 'module_id' in self.kwargs:
+            context['module'] = course.modules.get(id=self.kwargs['module_id'])
+        else:
+            context['module'] = course.modules.all()[0]
+        return context
+</code></pre></div>
+<p>这两个视图沿用了和 Chapter13 <code>OwnerMixin</code> <strong>完全相同的思路</strong>（用 <code>get_queryset()</code> 过滤而不是显式权限检查）——只不过这里过滤的条件从"我是课程的创建者"变成了"我是课程的报名学生"（<code>students__in=[self.request.user]</code>），同一种防护模式在不同业务语境下被复用。<code>get_context_data</code> 里"如果 URL 没带 <code>module_id</code> 就取第一个模块"（<code>course.modules.all()[0]</code>）是一个隐含的假设——<strong>如果一门课程被报名了但还没有任何模块</strong>，这里会因为对空列表取索引 <code>[0]</code> 而抛 <code>IndexError</code>。当前代码没有对这种边界情况做保护，是继续深读或改造这部分代码时值得注意的一个潜在问题。</p>
+<h2>六、视图级缓存与模板片段缓存</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># students/urls.py
+path('course/&lt;pk&gt;/', cache_page(60 * 15)(views.StudentCourseDetailView.as_view()), name='student_course_detail'),
+path('course/&lt;pk&gt;/&lt;module_id&gt;/', cache_page(60 * 15)(views.StudentCourseDetailView.as_view()), name='student_course_detail_module'),
+</code></pre></div>
+<p><code>cache_page(60 * 15)</code>——<strong>整个视图的响应结果</strong>被缓存 15 分钟，第二次访问同一个 URL 时直接从缓存返回渲染好的 HTML，完全不会执行视图函数（不查数据库、不渲染模板）。这是本章缓存策略里<strong>粒度最粗</strong>的一种，直接包一层装饰器即可生效。</p>
+<div class="codewrap"><div class="langtag">django</div><pre><code class="language-django">{# students/course/detail.html #}
+{% load cache %}
+...
+{% cache 600 module_contents module %}
+  {% for content in module.contents.all %}
+    {% with item=content.item %}
+      &lt;h2&gt;{{ item.title }}&lt;/h2&gt;
+      {{ item.render }}
+    {% endwith %}
+  {% endfor %}
+{% endcache %}
+</code></pre></div>
+<p><code>{% cache 600 module_contents module %}...{% endcache %}</code>——<strong>模板片段缓存</strong>，比 <code>cache_page</code> 更细的粒度：只缓存页面里"模块内容列表"这一块 HTML（600 秒），页面的其余部分（比如模块导航栏）每次仍然正常渲染。<code>module_contents</code> 是这个缓存片段的名字，<code>module</code> 是额外的缓存键变量（不同的 <code>module</code> 对象会生成不同的缓存条目，缓存键实际上是 <code>module_contents</code> + <code>module</code> 的哈希组合）——这样即便整个页面因为 <code>cache_page</code> 已经被缓存了 15 分钟，这一段片段缓存本身单独还有一层 10 分钟的时效性（虽然在这个具体场景下，外层 <code>cache_page</code> 15 分钟已经完全覆盖了内层片段缓存的 10 分钟，内层缓存实际上很难有机会真正命中——这是<strong>两层缓存粒度设计上有一点重叠冗余</strong>的地方，比较适合作为"多级缓存要考虑各级的生效范围是否合理嵌套"这个原则的反面教材）。</p>
+<h2>七、登出方式的再次修复</h2>
+<p>对比 Chapter13（把登出改回了 GET 链接），Chapter14 的 <code>base.html</code> <strong>又改回了 POST 表单</strong>：</p>
+<div class="codewrap"><div class="langtag">django</div><pre><code class="language-django">&lt;li&gt;
+  &lt;form action=&quot;{% url &quot;logout&quot; %}&quot; method=&quot;post&quot;&gt;
+    &lt;button type=&quot;submit&quot;&gt;Sign out&lt;/button&gt;
+    {% csrf_token %}
+  &lt;/form&gt;
+&lt;/li&gt;
+</code></pre></div>
+<p>这一处此前在 Chapter13 教学笔记里被标记为"安全回退"，本章又恢复成了正确写法——进一步印证了这本书的示例代码在不同章节之间会有反复调整、并不总是单调地朝着"更完善"的方向演进，继续深读代码时保持这种"逐章对比、不预设正确性"的习惯是有必要的。</p>
+<h2>八、<code>django-redisboard</code> 与 Debug Toolbar</h2>
+<p><code>INSTALLED_APPS</code> 里加入 <code>'redisboard'</code> 后，admin 后台会自动出现一个 Redis 服务器监控面板（<code>redisboard</code> 内部自带 admin 注册逻辑），可以直接在浏览器里查看 Redis 实例的内存使用、连接数、键总数等指标——因为本章引入的缓存全部落在 Redis 上，这个面板能帮助在开发/调试阶段直接观察缓存的实际状态（比如确认某个 URL 是否真的被 <code>cache_page</code> 缓存住了）。<code>debug_toolbar</code> 的接入方式和 Bookmarks 项目 Chapter07 完全一致（<code>INSTALLED_APPS</code> 加注册、<code>MIDDLEWARE</code> 里放在合适位置、<code>INTERNAL_IPS</code> 限制访问、<code>urls.py</code> 加 <code>__debug__/</code> 路由）。</p>
+<h2>九、端到端流程</h2>
+<p>游客访问首页 → <code>CourseListView</code> 展示所有学科和课程（走 Redis 底层缓存 API，同类查询短期内不重复打数据库）→ 点进某门课的详情页（<code>CourseDetailView</code>，公开可见）→ 未登录会看到"注册以报名"的引导链接，已登录会看到报名表单 → 提交报名表单 → <code>StudentEnrollCourseView</code> 把当前用户加进 <code>course.students</code> → 跳转到"我的课程"里对应这门课的学习页 → <code>StudentCourseDetailView</code>（登录必需 + 报名必需，双重 <code>get_queryset</code> 过滤）展示模块导航和当前模块的内容列表，内容列表这一块走模板片段缓存，整个页面响应额外再走 <code>cache_page</code> 视图级缓存，每个内容条目通过 <code>item.render()</code> 自主决定渲染哪个类型专属的模板。</p>
+<h2>十、Chapter13 → Chapter14 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter13</th>
+<th>Chapter14</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>可见范围</td>
+<td>仅课程创建者本人可访问自己的管理后台</td>
+<td>新增公开课程目录（游客可浏览）+ 学生学习界面</td>
+</tr>
+<tr>
+<td>用户体系</td>
+<td>仅"课程所有者"这一种角色</td>
+<td>新增"学生"角色，<code>Course.students</code> M2M + 报名流程</td>
+</tr>
+<tr>
+<td>内容展示方式</td>
+<td>管理端表单编辑，无展示逻辑</td>
+<td><code>ItemBase.render()</code> 多态自渲染，四种类型各自独立模板</td>
+</tr>
+<tr>
+<td>性能优化</td>
+<td>无</td>
+<td>三层缓存：底层 API（课程目录）/ 视图级 <code>cache_page</code>（学习页）/ 模板片段（内容列表）</td>
+</tr>
+<tr>
+<td>视频内容</td>
+<td><code>Video.url</code> 只是原始 URL 字段</td>
+<td><code>django-embed-video</code> 自动生成嵌入播放器</td>
+</tr>
+<tr>
+<td>登出方式</td>
+<td>回退为 GET 链接（Ch13 标记的安全回退）</td>
+<td>再次修复为 POST 表单</td>
+</tr>
+<tr>
+<td>运维可观测性</td>
+<td>无</td>
+<td><code>django-debug-toolbar</code> + <code>django-redisboard</code></td>
+</tr>
+<tr>
+<td>已知遗留问题</td>
+<td>CSRF 豁免的排序接口</td>
+<td>缓存无主动失效机制（陈旧窗口）；<code>pymemcache</code> 疑似未使用的遗留依赖；<code>modules.all()[0]</code> 潜在 <code>IndexError</code></td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch15">
+  <div class="chapter-head">
+    <span class="chnum">15</span>
+    <h2 class="chtitle">用 Django REST Framework 暴露 API</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 360" role="img" aria-label="图 15 · ViewSet + Router 自动生成端点；权限体系与 Chapter13 的 Django 模型权限共享同一份数据"><defs>
+          <marker id="c15-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c15-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c15-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="170" height="50" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="49.0" text-anchor="middle" font-size="12.5">DefaultRouter</text>
+<text class="lbl" x="105.0" y="67.5" text-anchor="middle" font-size="10.5">自动生成标准端点</text>
+<rect class="box-a" x="240" y="30" width="190" height="50" rx="4"></rect>
+<text class="lbl-strong" x="335.0" y="49.0" text-anchor="middle" font-size="12.5">CourseViewSet</text>
+<text class="lbl" x="335.0" y="67.5" text-anchor="middle" font-size="10.5">ReadOnlyModelViewSet</text>
+<rect class="box" x="480" y="30" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="580.0" y="49.0" text-anchor="middle" font-size="12.5">CourseSerializer</text>
+<text class="lbl" x="580.0" y="67.5" text-anchor="middle" font-size="10.5">嵌套 ModuleSerializer</text>
+<line class="edge" x1="190" y1="55" x2="240" y2="55" marker-end="url(#c15-m)"></line>
+<line class="edge" x1="430" y1="55" x2="480" y2="55" marker-end="url(#c15-m)"></line>
+<rect class="box" x="240" y="120" width="190" height="56" rx="4"></rect>
+<text class="lbl-strong" x="335.0" y="142.0" text-anchor="middle" font-size="12.5">@action enroll</text>
+<text class="lbl" x="335.0" y="160.5" text-anchor="middle" font-size="10.5">POST, BasicAuth</text>
+<text class="lbl" x="335.0" y="172.5" text-anchor="middle" font-size="10.5">IsAuthenticated</text>
+<rect class="box-a" x="240" y="200" width="190" height="56" rx="4"></rect>
+<text class="lbl-strong" x="335.0" y="222.0" text-anchor="middle" font-size="12.5">@action contents</text>
+<text class="lbl" x="335.0" y="240.5" text-anchor="middle" font-size="10.5">GET, + IsEnrolled</text>
+<text class="lbl" x="335.0" y="252.5" text-anchor="middle" font-size="10.5">对象级权限</text>
+<line class="edge" x1="335" y1="80" x2="335" y2="120" marker-end="url(#c15-m)"></line>
+<line class="edge" x1="335" y1="176" x2="335" y2="200" marker-end="url(#c15-m)"></line>
+<rect class="box-a" x="480" y="200" width="200" height="56" rx="4"></rect>
+<text class="lbl-strong" x="580.0" y="222.0" text-anchor="middle" font-size="12.5">CourseWithContentsSerializer</text>
+<text class="lbl" x="580.0" y="240.5" text-anchor="middle" font-size="10.5">ItemRelatedField</text>
+<text class="lbl" x="580.0" y="252.5" text-anchor="middle" font-size="10.5">→ item.render() 输出 HTML</text>
+<line class="edge" x1="430" y1="228" x2="480" y2="228" marker-end="url(#c15-m)"></line>
+<rect class="box" x="20" y="290" width="660" height="44" rx="4"></rect>
+<text class="lbl-strong" x="350.0" y="312.0" text-anchor="middle" font-size="12.5">DjangoModelPermissionsOrAnonReadOnly — 匿名只读，写操作复用 Django 模型权限（courses.add_course 等）</text></svg><figcaption class="cap">图 15 · ViewSet + Router 自动生成端点；权限体系与 Chapter13 的 Django 模型权限共享同一份数据</figcaption></figure>
+  <p>Chapter15 给 educa 项目加上一层 REST API（基于 Django REST Framework，简称 DRF），让课程数据能被移动端 App 或第三方脚本消费，而不只是通过网页浏览。这一章也顺带把 Chapter13/14 攒下来的模型设计成果（<code>OrderField</code>、<code>GenericForeignKey</code>、<code>render()</code> 多态方法、Django 权限系统）几乎原样复用了一遍——<strong>好的模型设计一旦到位，加一层 API 的成本会小很多</strong>。</p>
+<h2>一、新依赖与全局配置</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ djangorestframework==3.15.1
++ requests==2.31.0
+</code></pre></div>
+<p><code>requests</code> 不是给 Django 服务端用的，是给本章末尾的<strong>独立命令行脚本</strong>（<code>api_examples/enroll_all.py</code>，用来演示如何用 Python 调用刚做好的 API）准备的客户端库。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">INSTALLED_APPS += ['rest_framework']
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}
+</code></pre></div>
+<p><code>DjangoModelPermissionsOrAnonReadOnly</code> 是这一章的一个关键决策——它<strong>直接复用 Django 内置的模型级权限系统</strong>（也就是 Chapter13 <code>PermissionRequiredMixin</code> 用过的那套 <code>courses.view_course</code>/<code>courses.add_course</code> 权限），效果是：<strong>未登录的匿名用户只能做只读的 GET 请求</strong>（浏览课程列表、看课程详情），任何写操作（POST/PUT/DELETE）都必须是已登录<strong>且</strong>在 Django 权限系统里被授予了对应权限的用户才能执行。这意味着这一章完全没有重新设计一套 API 专属的权限模型，而是让 Web 端和 API 端共享同一套底层授权数据——一个用户在 admin 后台被赋予的"能不能编辑课程"的权限，天然地也决定了他能不能通过 API 编辑课程。</p>
+<p><code>educa/urls.py</code> 新增 <code>path('api/', include('courses.api.urls', namespace='api'))</code>，API 相关代码被整齐地放进 <code>courses/api/</code> 子包（<code>serializers.py</code>/<code>views.py</code>/<code>urls.py</code>/<code>permissions.py</code>/<code>pagination.py</code>），和面向网页的 <code>views.py</code>/<code>urls.py</code> 物理隔离，是比较规范的"网页视图和 API 视图分离"的项目组织方式。</p>
+<h2>二、序列化器（Serializers）：让模型能被翻译成 JSON</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/api/serializers.py
+class ModuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Module
+        fields = ['order', 'title', 'description']
+
+
+class CourseSerializer(serializers.ModelSerializer):
+    modules = ModuleSerializer(many=True, read_only=True)
+    class Meta:
+        model = Course
+        fields = ['id', 'subject', 'title', 'slug', 'overview', 'created', 'owner', 'modules']
+</code></pre></div>
+<p><code>ModelSerializer</code> 是 DRF 里 <code>ModelForm</code> 概念在"数据序列化"场景下的对应物——根据 <code>Meta.model</code> + <code>Meta.fields</code> 自动推导出该输出/接收哪些字段、每个字段用什么类型校验。<code>CourseSerializer</code> 里嵌套了一个 <code>ModuleSerializer(many=True, read_only=True)</code>——这样请求某门课程的详情时，返回的 JSON 会<strong>内联包含它所有模块的完整信息</strong>，而不需要客户端再对每个模块单独发一次请求，是 REST API 里"要不要嵌套关联数据"这个常见设计决策的一次具体取舍（这里选择了嵌套，<code>read_only=True</code> 意味着这个嵌套字段只用于输出展示，不接受客户端通过它反向创建/修改模块）。</p>
+<h3><code>SubjectSerializer</code>：混合"模型字段"和"计算字段"</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class SubjectSerializer(serializers.ModelSerializer):
+    total_courses = serializers.IntegerField()
+    popular_courses = serializers.SerializerMethodField()
+
+    def get_popular_courses(self, obj):
+        courses = obj.courses.annotate(total_students=Count('students')).order_by('-total_students')[:3]
+        return [f'{c.title} ({c.total_students} students)' for c in courses]
+
+    class Meta:
+        model = Subject
+        fields = ['id', 'title', 'slug', 'total_courses', 'popular_courses']
+</code></pre></div>
+<ul>
+<li><code>total_courses = serializers.IntegerField()</code>——<code>Subject</code> 模型本身并没有这个字段，它依赖调用方（视图层，见下）用 <code>.annotate(total_courses=Count('courses'))</code> 现场算出来并挂在查询结果对象上，序列化器这里只是声明"这个字段存在、类型是整数"，具体值从哪来是<strong>视图的责任</strong>，序列化器不关心。这和 Chapter14 <code>CourseListView</code> 里用 <code>annotate</code> 给模板变量注入统计值是同一种"数据库层面聚合、避免应用层循环计数"的优化思路，只是这次伺候的是 API 而不是模板。</li>
+<li><code>popular_courses = serializers.SerializerMethodField()</code>——这是一个完全<strong>由代码现场计算</strong>、模型上根本不存在对应字段的输出字段，<code>get_popular_courses(self, obj)</code> 方法名严格遵循 <code>get_&lt;字段名&gt;</code> 的约定被 DRF 自动调用。这里现场查询"这个学科下报名人数最多的三门课"，返回的不是结构化数据而是<strong>拼接好的字符串列表</strong>（<code>"Python Basics (120 students)"</code> 这种格式）——这是一个值得注意的设计选择：API 返回给客户端的是一段已经格式化好、供人类直接阅读的文本，而不是让客户端自己拿到 <code>{title, student_count}</code> 这样的结构化数据再自行组装展示文案。这种做法牺牲了一定的客户端灵活性（如果不同客户端想用不同的展示格式，没法只改前端），换来了服务端逻辑的简单直接——是教学示例里常见的权衡，实际生产 API 设计中更常见的做法是返回结构化字段，把格式化留给消费方。</li>
+</ul>
+<h3><code>ItemRelatedField</code>：让 API 直接复用 <code>render()</code> 生成的 HTML</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ItemRelatedField(serializers.RelatedField):
+    def to_representation(self, value):
+        return value.render()
+
+class ContentSerializer(serializers.ModelSerializer):
+    item = ItemRelatedField(read_only=True)
+    class Meta:
+        model = Content
+        fields = ['order', 'item']
+</code></pre></div>
+<p>这是本章<strong>最值得玩味的一处设计</strong>——<code>ItemRelatedField</code> 是一个自定义的 DRF 字段类型，<code>to_representation</code> 决定了这个字段在输出 JSON 时该怎么表示，这里直接调用了 Chapter14 给 <code>ItemBase</code> 加的 <code>render()</code> 方法（那个方法本来是给 Django 模板系统用的，返回一段<strong>渲染好的 HTML 字符串</strong>）。也就是说，<strong>这个 REST API 在 <code>item</code> 字段里直接返回一段 HTML 片段</strong>，而不是返回 <code>{type: 'text', content: '...'}</code> 这种更"REST 风格"的结构化多态数据。</p>
+<p>这样做的好处是<strong>最大化复用</strong>了 Chapter14 已经写好的四套内容类型模板（<code>text.html</code>/<code>image.html</code>/<code>video.html</code>/<code>file.html</code>），移动端 App 只要能渲染 HTML（比如用一个 WebView 组件）就能直接展示课程内容，完全不需要自己重新实现"这四种内容类型分别该怎么显示"的逻辑。代价是这打破了"API 应该返回纯数据、样式和展现交给客户端决定"的常规 REST 设计原则——如果未来要做一个原生 App（不依赖 WebView 渲染 HTML），这个字段目前的形态就不够用了，需要另外设计。这是一个"教学示例里刻意复用已有代码，但不完全是生产级 API 设计最佳实践"的典型例子，值得辩证看待。</p>
+<h2>三、ViewSet：把增删改查自动组织成标准 REST 端点</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/api/views.py
+class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Subject.objects.annotate(total_courses=Count('courses'))
+    serializer_class = SubjectSerializer
+    pagination_class = StandardPagination
+
+
+class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Course.objects.prefetch_related('modules')
+    serializer_class = CourseSerializer
+    pagination_class = StandardPagination
+</code></pre></div>
+<p><code>ReadOnlyModelViewSet</code>——DRF 提供的一种通用视图集，自动生成"列表"和"详情"两个只读端点（对应 <code>GET /api/courses/</code> 和 <code>GET /api/courses/&lt;id&gt;/</code>），不提供创建/更新/删除（如果要读写全套，可以换成 <code>ModelViewSet</code>）。这里选只读，是因为课程数据的创建/编辑本来就该走 Chapter13 已经做好的网页管理端（<code>OwnerMixin</code> 那一套），API 目前的定位是"给客户端读数据 + 报名/查看内容"，不是"给客户端管理课程"。</p>
+<p><code>Subject.objects.annotate(total_courses=Count('courses'))</code> 这行直接出现在 <code>queryset</code> 类属性里——每次列出学科时都自动带上课程数量统计，配合上面提到的 <code>SubjectSerializer.total_courses</code> 字段读取这个 annotate 出来的值。<code>Course.objects.prefetch_related('modules')</code>——因为 <code>CourseSerializer</code> 会嵌套渲染每门课的所有模块，这里提前用 <code>prefetch_related</code> 把模块数据一次性批量取出来，避免"列出 N 门课程，每门课程都单独发一次查模块的 SQL"这种 N+1 问题——这是 API 场景下比网页模板更容易被放大的性能陷阱（API 经常被批量拉取列表数据，N+1 问题在这种场景下影响更明显）。</p>
+<h3><code>@action</code>：给 ViewSet 加自定义端点</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    ...
+    @action(
+        detail=True, methods=['post'],
+        authentication_classes=[BasicAuthentication],
+        permission_classes=[IsAuthenticated],
+    )
+    def enroll(self, request, *args, **kwargs):
+        course = self.get_object()
+        course.students.add(request.user)
+        return Response({'enrolled': True})
+
+    @action(
+        detail=True, methods=['get'],
+        serializer_class=CourseWithContentsSerializer,
+        authentication_classes=[BasicAuthentication],
+        permission_classes=[IsAuthenticated, IsEnrolled],
+    )
+    def contents(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+</code></pre></div>
+<p><code>@action</code> 装饰器让一个 ViewSet 在标准的"列表/详情"端点之外，额外挂载自定义的业务端点：<code>detail=True</code> 表示这个动作作用于单个对象（URL 形如 <code>/api/courses/&lt;id&gt;/enroll/</code>）。两个自定义端点各自有<strong>独立的鉴权配置</strong>（覆盖了整个视图集/全局的默认设置）：</p>
+<ul>
+<li><strong><code>enroll</code></strong>：POST 请求，<code>authentication_classes=[BasicAuthentication]</code>（HTTP Basic 认证，客户端在请求头里带用户名密码）+ <code>permission_classes=[IsAuthenticated]</code>（必须是已认证用户）。这是本章第一次在 API 层重新实现"报名"这个动作——<code>course.students.add(request.user)</code> 和 Chapter14 网页端 <code>StudentEnrollCourseView.form_valid</code> 里的那行代码<strong>逻辑完全一样</strong>，只是这次是给 API 客户端用的独立入口，而不是走网页表单。</li>
+<li><strong><code>contents</code></strong>：GET 请求，除了要求认证，还多了一个<strong>自定义权限类</strong> <code>IsEnrolled</code>：</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/api/permissions.py
+class IsEnrolled(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.students.filter(id=request.user.id).exists()
+</code></pre></div>
+<p><code>has_object_permission</code> 是 DRF 权限类里专门用来做"对象级"权限判断的钩子（区别于"你能不能访问这个端点"这种笼统的权限，这里判断的是"你能不能访问<strong>这一个具体的</strong>课程对象"）——逻辑就是"当前用户是否在这门课的报名学生名单里"，和 Chapter14 网页端 <code>StudentCourseDetailView.get_queryset()</code> 里 <code>filter(students__in=[self.request.user])</code> 是<strong>同一条业务规则的两种实现</strong>：网页端用查询过滤（查不到就 404），API 端用显式的对象级权限检查（查得到但没权限会返回 403）。这里能看出同一条访问控制规则，在 Django 通用视图和 DRF 权限体系里各自惯用的实现方式并不相同，但背后的业务意图是一致的。</p>
+<p><code>contents</code> 端点复用了标准 <code>retrieve()</code> 方法（DRF <code>RetrieveModelMixin</code> 提供），但通过 <code>serializer_class=CourseWithContentsSerializer</code> 覆盖了默认的序列化器——同一个"查询单个课程详情"的底层逻辑，配上不同的序列化器就能返回不同详略程度的数据（普通详情端点只给模块列表，<code>contents</code> 端点连每个模块下的具体内容条目都嵌套返回）。</p>
+<h2>四、分页</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/api/pagination.py
+class StandardPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+</code></pre></div>
+<p><code>PageNumberPagination</code> 是 DRF 内置的按页码分页方案（<code>?page=2</code> 这种），<code>page_size_query_param = 'page_size'</code> 额外允许客户端通过查询参数自定义每页大小（比如 <code>?page_size=20</code>），<code>max_page_size = 50</code> 给这个自定义空间设了上限，防止客户端传一个 <code>page_size=100000</code> 之类的极端值把服务端一次性查询/返回的数据量拖垮——这是设计公开 API 时一个常见的自我保护措施。</p>
+<h2>五、路由：<code>DefaultRouter</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/api/urls.py
+router = routers.DefaultRouter()
+router.register('courses', views.CourseViewSet)
+router.register('subjects', views.SubjectViewSet)
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
+</code></pre></div>
+<p><code>DefaultRouter</code> 是 DRF 提供的自动路由生成器——只要注册一个 ViewSet，它会自动按 REST 惯例生成一整套 URL（列表、详情、以及所有用 <code>@action</code> 声明的自定义端点），不需要像传统 Django <code>urlpatterns</code> 那样一条条手写 <code>path()</code>。文件里还留着几行被注释掉的旧式 <code>path()</code> 声明（<code>subject_list</code>/<code>subject_detail</code>/<code>course_enroll</code>），说明这是本章从"手写 Django 视图 + URL"迁移到"DRF ViewSet + Router"过程中留下的痕迹——注释而不是删除，方便读者对照两种写法的差异。</p>
+<h2>六、命令行客户端示例：<code>api_examples/enroll_all.py</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">import requests
+
+base_url = 'http://127.0.0.1:8000/api/'
+url = f'{base_url}courses/'
+available_courses = []
+
+while url is not None:
+    r = requests.get(url)
+    response = r.json()
+    url = response['next']
+    courses = response['results']
+    available_courses += [course['title'] for course in courses]
+
+for course in courses:
+    r = requests.post(
+        f'{base_url}courses/{course[&quot;id&quot;]}/enroll/',
+        auth=(username, password),
+    )
+</code></pre></div>
+<p>这是一个独立于 Django 项目之外的纯 Python 脚本，用来演示"别的程序如何消费这套 API"：</p>
+<ul>
+<li><strong>分页遍历</strong>：<code>while url is not None</code> 循环利用了 DRF <code>PageNumberPagination</code> 返回结果里的标准字段 <code>next</code>（下一页的完整 URL，没有下一页时是 <code>null</code>）——客户端不需要自己拼页码，只需要不断跟着 <code>next</code> 走，直到它变成 <code>None</code>，是消费分页 API 的标准写法。</li>
+<li><strong><code>auth=(username, password)</code></strong>：<code>requests</code> 库对 HTTP Basic 认证的原生支持，直接对应服务端 <code>enroll</code> 端点声明的 <code>authentication_classes=[BasicAuthentication]</code>。</li>
+</ul>
+<h2>七、端到端流程</h2>
+<p>客户端 <code>GET /api/subjects/</code> → 拿到学科列表（附带每个学科的课程总数和最热门三门课的统计描述）→ <code>GET /api/courses/</code> 翻页遍历所有课程（附带每门课的模块列表）→ 对感兴趣的课程 <code>POST /api/courses/&lt;id&gt;/enroll/</code>（带 Basic Auth）完成报名 → 报名成功后 <code>GET /api/courses/&lt;id&gt;/contents/</code>（同样需要认证 + <code>IsEnrolled</code> 对象级权限校验）获取这门课完整的模块+内容详情，每条内容的 <code>item</code> 字段直接是可渲染的 HTML 片段，客户端拿到后可以直接嵌入展示。</p>
+<h2>八、Chapter14 → Chapter15 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter14</th>
+<th>Chapter15</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据访问方式</td>
+<td>仅网页（Django 模板渲染）</td>
+<td>新增 REST API（DRF ViewSet + Router）</td>
+</tr>
+<tr>
+<td>权限模型</td>
+<td>Django 内置权限（<code>PermissionRequiredMixin</code>）</td>
+<td>直接复用同一套权限（<code>DjangoModelPermissionsOrAnonReadOnly</code>），API 与网页共享授权数据</td>
+</tr>
+<tr>
+<td>报名逻辑</td>
+<td>仅网页表单（<code>StudentEnrollCourseView</code>）</td>
+<td>网页表单 + API 自定义 <code>@action</code>（<code>enroll</code>），核心逻辑重复实现了一份</td>
+</tr>
+<tr>
+<td>访问控制粒度</td>
+<td>查询过滤（<code>get_queryset</code> 收窄结果集）</td>
+<td>查询过滤（列表）+ 显式对象级权限类 <code>IsEnrolled</code>（<code>contents</code> 端点）</td>
+</tr>
+<tr>
+<td>内容展示</td>
+<td><code>item.render()</code> 服务于 Django 模板</td>
+<td><code>item.render()</code> 被 API 序列化器直接复用，返回 HTML 而非结构化 JSON</td>
+</tr>
+<tr>
+<td>消费方</td>
+<td>仅浏览器</td>
+<td>浏览器 + 任意 HTTP 客户端（示例：<code>api_examples/enroll_all.py</code>）</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch16">
+  <div class="chapter-head">
+    <span class="chnum">16</span>
+    <h2 class="chtitle">用 Django Channels 实现课程实时聊天室</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 360" role="img" aria-label="图 16 · 多条 WebSocket 连接通过 Redis Channel Layer 分组广播；连接建立时缺少报名资格校验"><defs>
+          <marker id="c16-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c16-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c16-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="130" height="46" rx="4"></rect>
+<text class="lbl-strong" x="85.0" y="53.0" text-anchor="middle" font-size="12.5">浏览器 A</text>
+<rect class="box" x="20" y="100" width="130" height="46" rx="4"></rect>
+<text class="lbl-strong" x="85.0" y="123.0" text-anchor="middle" font-size="12.5">浏览器 B</text>
+<rect class="box" x="20" y="170" width="130" height="46" rx="4"></rect>
+<text class="lbl-strong" x="85.0" y="193.0" text-anchor="middle" font-size="12.5">浏览器 C</text>
+<rect class="box" x="200" y="30" width="150" height="46" rx="4"></rect>
+<text class="lbl-strong" x="275.0" y="53.0" text-anchor="middle" font-size="10.5">ChatConsumer</text>
+<line class="edge" x1="150" y1="53" x2="200" y2="53" marker-end="url(#c16-m)"></line>
+<rect class="box" x="200" y="100" width="150" height="46" rx="4"></rect>
+<text class="lbl-strong" x="275.0" y="123.0" text-anchor="middle" font-size="10.5">ChatConsumer</text>
+<line class="edge" x1="150" y1="123" x2="200" y2="123" marker-end="url(#c16-m)"></line>
+<rect class="box" x="200" y="170" width="150" height="46" rx="4"></rect>
+<text class="lbl-strong" x="275.0" y="193.0" text-anchor="middle" font-size="10.5">ChatConsumer</text>
+<line class="edge" x1="150" y1="193" x2="200" y2="193" marker-end="url(#c16-m)"></line>
+<rect class="box-a" x="430" y="90" width="220" height="70" rx="4"></rect>
+<text class="lbl-strong" x="540.0" y="119.0" text-anchor="middle" font-size="12.5">Channel Layer（Redis）</text>
+<text class="lbl" x="540.0" y="137.5" text-anchor="middle" font-size="10.5">分组 chat_{course_id}</text>
+<text class="lbl" x="540.0" y="149.5" text-anchor="middle" font-size="10.5">group_add / group_send</text>
+<path class="edge" d="M350,53 Q400,80 430,110" marker-end="url(#c16-m)"></path>
+<line class="edge" x1="350" y1="123" x2="430" y2="123" marker-end="url(#c16-m)"></line>
+<path class="edge" d="M350,193 Q400,170 430,140" marker-end="url(#c16-m)"></path>
+<path class="edge" class="edge-dashed" d="M540,160 Q450,220 350,260" marker-end="url(#c16-m)"></path>
+<text class="lbl" x="445.0" y="205.0" text-anchor="middle" font-size="10">chat_message() 广播回全体</text>
+<rect class="box" x="200" y="260" width="380" height="50" rx="4"></rect>
+<text class="lbl-strong" x="390.0" y="285.0" text-anchor="middle" font-size="10">receive() → group_send（先广播）→ Message.objects.acreate（再落库）</text>
+<rect class="box-w" x="20" y="300" width="660" height="46" rx="4"></rect>
+<text class="lbl-strong" x="350.0" y="323.0" text-anchor="middle" font-size="12.5">connect() 未校验用户是否报名该课程 —— HTTP 视图有校验，WebSocket 层没有</text></svg><figcaption class="cap">图 16 · 多条 WebSocket 连接通过 Redis Channel Layer 分组广播；连接建立时缺少报名资格校验</figcaption></figure>
+  <p>Chapter16 给 educa 加上了一个<strong>实时聊天室</strong>功能：每门课程一个专属聊天室，报名的学生能看到彼此发的消息并实时收到新消息推送。这是全书第一次涉及 <strong>WebSocket</strong> 和<strong>异步（ASGI）</strong>编程模型——和之前十五章清一色的"请求-响应"式 HTTP 视图完全是两套不同的编程范式。</p>
+<h2>一、新依赖与 ASGI 化改造</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ channels[daphne]==4.1.0
++ channels-redis==4.2.0
+</code></pre></div>
+<p><code>django-channels</code> 是 Django 官方项目组维护的扩展库，把 Django 从"只能处理短生命周期的 HTTP 请求-响应"扩展成能处理<strong>长连接</strong>（WebSocket）。<code>daphne</code> 是 Channels 官方推荐的 ASGI 服务器（替代传统的 WSGI 服务器，能同时服务普通 HTTP 请求和 WebSocket 长连接）。<code>channels-redis</code> 提供了"Channel Layer"的 Redis 实现——这是让<strong>多个不同的 WebSocket 连接互相通信</strong>的关键基础设施（下面详细讲）。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">INSTALLED_APPS = ['daphne', ..., 'chat.apps.ChatConfig', ...]
+
+ASGI_APPLICATION = 'educa.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {'hosts': [('127.0.0.1', 6379)]},
+    },
+}
+</code></pre></div>
+<p><code>'daphne'</code> 被放在 <code>INSTALLED_APPS</code> <strong>最前面</strong>——这是官方要求的顺序，<code>daphne</code> 需要在 Django 自己的 <code>runserver</code>/静态文件处理逻辑加载之前完成对开发服务器命令的接管（把默认的 WSGI 开发服务器替换成能同时处理 HTTP 和 WebSocket 的 ASGI 版本）。</p>
+<p><code>educa/asgi.py</code> 的改动是本章"接入 Channels"最核心的一步：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">django_asgi_app = get_asgi_application()
+
+from chat.routing import websocket_urlpatterns
+
+application = ProtocolTypeRouter({
+    'http': django_asgi_app,
+    'websocket': AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
+})
+</code></pre></div>
+<p><code>ProtocolTypeRouter</code> 是整个应用的顶层入口——<strong>按协议类型分流</strong>：普通的 HTTP 请求依然交给原来那套 Django 应用（<code>django_asgi_app</code>，本质上还是走 URL 路由 → 视图 → 模板这条老路）处理，而 WebSocket 连接被分流到一套<strong>完全独立的路由体系</strong>（<code>chat/routing.py</code> 里的 <code>websocket_urlpatterns</code>）。这意味着这一章并不是把整个网站都改造成异步的，而是<strong>只在需要长连接的这一小块功能上叠加了一套并行的处理管线</strong>，其余十五章积累下来的所有 HTTP 视图完全不受影响，继续按原来的方式运行。</p>
+<p><code>AuthMiddlewareStack</code> 是关键——它让 WebSocket 连接也能拿到和普通 HTTP 请求一样的<strong>基于 session 的用户认证信息</strong>（浏览器发起 WebSocket 握手时依然会带上 session cookie），后面在 Consumer 里能直接通过 <code>self.scope['user']</code> 拿到当前登录用户，用法上和 <code>request.user</code> 几乎一致。</p>
+<h2>二、<code>Message</code> 模型：聊天记录持久化</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># chat/models.py
+class Message(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='chat_messages')
+    course = models.ForeignKey('courses.Course', on_delete=models.PROTECT, related_name='chat_messages')
+    content = models.TextField()
+    sent_on = models.DateTimeField(auto_now_add=True)
+</code></pre></div>
+<p><strong><code>on_delete=models.PROTECT</code></strong>（两个外键都是）——这是本书目前为止第一次使用 <code>PROTECT</code>（之前见过的都是 <code>CASCADE</code>/<code>SET_NULL</code>）。<code>PROTECT</code> 的行为是：如果一个 <code>User</code> 或 <code>Course</code> 还关联着任何聊天记录，<strong>禁止删除</strong>这个 User/Course，数据库层面会直接抛 <code>ProtectedError</code>，阻止删除操作执行。这是一个刻意的数据保留策略——聊天记录被当作某种需要长期保存的"历史档案"，管理员不能通过删除课程或用户来顺带悄悄清空聊天记录，如果真的要删除，必须先显式处理掉相关的聊天消息。这和之前项目里"删除即级联清理干净"（<code>CASCADE</code>）的默认思路形成了有意思的对比。</p>
+<h2>三、<code>ChatConsumer</code>：本章的核心</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># chat/consumers.py
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.user = self.scope['user']
+        self.id = self.scope['url_route']['kwargs']['course_id']
+        self.room_group_name = f'chat_{self.id}'
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    async def persist_message(self, message):
+        await Message.objects.acreate(user=self.user, course_id=self.id, content=message)
+
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+        now = timezone.now()
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {'type': 'chat_message', 'message': message, 'user': self.user.username, 'datetime': now.isoformat()},
+        )
+        await self.persist_message(message)
+
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps(event))
+</code></pre></div>
+<p><strong>Consumer</strong> 是 Channels 里的核心概念，大致相当于"WebSocket 版的视图"——不是处理一次性的请求-响应，而是管理一条<strong>持续存在的连接</strong>的生命周期，<code>connect</code>/<code>disconnect</code>/<code>receive</code> 分别对应"连接建立"、"连接断开"、"收到客户端发来的消息"三个事件钩子，全部用 <code>async def</code> 定义（异步方法），这也是全书第一次出现原生的 Python 异步语法。</p>
+<h3>Channel Layer：让多个连接互相"广播"</h3>
+<p>这是理解这段代码最关键的一点——<strong>一个 WebSocket 连接只能和它自己的客户端通信</strong>，但聊天室需要"A 发的消息，B、C、D 都要实时收到"，这就需要一种<strong>跨连接的消息分发机制</strong>，这正是 <code>channel_layer</code>（底层由 <code>channels-redis</code> 提供，本质上是用 Redis 做消息中转）存在的意义：</p>
+<ul>
+<li><code>self.channel_layer.group_add(self.room_group_name, self.channel_name)</code>——每个 WebSocket 连接一建立，就把自己（<code>self.channel_name</code>，Channels 自动分配的这条连接的唯一标识）加入一个以课程 ID 命名的<strong>分组</strong>（<code>chat_{course_id}</code>）。同一门课程的所有正在聊天的用户，连接都会被加进同一个分组。</li>
+<li><code>self.channel_layer.group_send(self.room_group_name, {...})</code>——<code>receive()</code> 收到某个用户发来的一条消息后，不是直接回传给发送者自己，而是<strong>把这条消息广播给整个分组</strong>（这门课程聊天室里所有当前在线的连接）。</li>
+<li><code>chat_message(self, event)</code>——<strong>这是 Channels 的一个约定</strong>：<code>group_send</code> 传入的字典里 <code>'type': 'chat_message'</code> 这个键决定了分组里每个连接接下来会调用<strong>自己 Consumer 实例上同名的方法</strong> <code>chat_message</code>（Channels 自动把下划线命名 <code>chat_message</code> 映射过去）。也就是说，<code>receive()</code> 广播出去的消息，最终会在<strong>每一个</strong>订阅了这个分组的连接对象上触发一次它自己的 <code>chat_message()</code> 方法，<code>self.send(text_data=json.dumps(event))</code> 才是真正把消息通过 WebSocket 推给对应客户端浏览器的那一步。这套"发送方法名即路由键"的设计是 Channels 分组广播机制的核心约定，第一次接触容易觉得绕，但理解了就会发现这是一种很简洁的"发布-订阅"实现。</li>
+<li><code>Message.objects.acreate(...)</code>——用的是 Django 5.x 提供的<strong>异步 ORM 方法</strong>（<code>acreate</code>，对应同步版本的 <code>create</code>），因为整个 Consumer 都跑在异步事件循环里，如果直接调用同步的 <code>Message.objects.create(...)</code> 会阻塞整个事件循环，<code>acreate</code> 让这次数据库写入以异步方式执行、不阻塞其他并发连接的处理。持久化和广播是<strong>独立的两步</strong>（先广播用于实时展示，再落库），这样即使写库稍慢，也不会拖慢消息的实时送达。</li>
+</ul>
+<h2>四、Consumer 的路由与视图入口</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># chat/routing.py
+websocket_urlpatterns = [
+    re_path(r'ws/chat/room/(?P&lt;course_id&gt;\d+)/$', consumers.ChatConsumer.as_asgi()),
+]
+</code></pre></div>
+<p>WebSocket 路由用的是 <code>re_path</code>（正则表达式路由）而不是 Django 3.1+ 之后更现代的路径转换器写法（<code>path('ws/chat/room/&lt;int:course_id&gt;/', ...)</code>）——这是 Channels 生态里比较常见的历史遗留写法，<code>\d+</code> 这个正则本身完全等价于 <code>&lt;int:course_id&gt;</code> 的效果。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># chat/views.py
+@login_required
+def course_chat_room(request, course_id):
+    try:
+        course = request.user.courses_joined.get(id=course_id)
+    except Course.DoesNotExist:
+        return HttpResponseForbidden()
+    latest_messages = course.chat_messages.select_related('user').order_by('-id')[:5]
+    latest_messages = reversed(latest_messages)
+    return render(request, 'chat/room.html', {'course': course, 'latest_messages': latest_messages})
+</code></pre></div>
+<p>这是一个<strong>普通的同步 Django 视图</strong>（不是 Consumer），负责渲染聊天室页面的初始 HTML（包括最近 5 条历史消息，用于用户一进聊天室就能看到一点上下文，而不是从空白开始）——<code>request.user.courses_joined.get(id=course_id)</code> 这行同时完成了"课程是否存在"和"当前用户是否报名了这门课"两个检查，查不到直接走 <code>except</code> 分支返回 <code>403 Forbidden</code>。<code>latest_messages</code> 取最新 5 条（按 <code>-id</code> 倒序取出后再 <code>reversed()</code> 一次，让最终展示顺序变回"从旧到新"，符合聊天记录的自然阅读顺序）。</p>
+<h3>一处值得关注的授权缺口：WebSocket 连接本身没有重新校验报名资格</h3>
+<p>对比一下：<code>course_chat_room</code> 这个<strong>HTTP 入口视图</strong>认真做了"用户是否报名了这门课程"的校验，但真正建立 WebSocket 连接的 <code>ChatConsumer.connect()</code> <strong>完全没有重复这个检查</strong>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">async def connect(self):
+    self.user = self.scope['user']
+    self.id = self.scope['url_route']['kwargs']['course_id']
+    self.room_group_name = f'chat_{self.id}'
+    await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+    await self.accept()
+</code></pre></div>
+<p>它只是从 URL 里拿到 <code>course_id</code>，既不检查 <code>self.user.is_authenticated</code>（<code>AuthMiddlewareStack</code> 对未登录用户会把 <code>scope['user']</code> 填成 <code>AnonymousUser</code>，而不是拒绝连接），也不检查这个用户是否真的报名了这门课程，就直接 <code>await self.accept()</code> 接受了连接并加入对应分组。这意味着：<strong>只要知道或猜到某门课程的 <code>course_id</code>，任何人（哪怕是未登录的匿名访客，或者登录了但没有报名这门课的用户）都可以直接向 <code>ws://.../ws/chat/room/&lt;任意course_id&gt;/</code> 发起 WebSocket 连接</strong>，加入对应聊天室分组，实时旁听甚至发言、把消息写进数据库——<strong>完全绕开了网页入口视图里那道"必须已报名"的权限检查</strong>。</p>
+<p>这是继续深读代码时又一个值得记录的安全隐患：<strong>Web 视图层的权限校验，不会自动延伸到与之配套但独立接入的 WebSocket Consumer 上</strong>，两条通往同一份数据的路径需要<strong>分别</strong>做鉴权。对照 Chapter15 API 层的 <code>IsEnrolled</code> 权限类（专门为 <code>contents</code> 端点显式做了"是否已报名"的对象级校验）能更清楚地看出，这里的 Consumer 本该在 <code>connect()</code> 里补上一段类似 <code>await self.user.courses_joined.filter(id=self.id).aexists()</code> 的校验，不通过就 <code>await self.close()</code> 拒绝连接——但当前代码没有做这一步。</p>
+<h2>五、前端：原生 WebSocket API</h2>
+<div class="codewrap"><div class="langtag">javascript</div><pre><code class="language-javascript">const url = 'ws://' + window.location.host + '/ws/chat/room/' + courseId + '/';
+const chatSocket = new WebSocket(url);
+
+chatSocket.onmessage = function(event) {
+  const data = JSON.parse(event.data);
+  ...
+  chat.innerHTML += '&lt;div class=&quot;message ' + source + '&quot;&gt;...';
+  chat.scrollTop = chat.scrollHeight;
+};
+
+submitButton.addEventListener('click', function(event) {
+  const message = input.value;
+  if (message) {
+    chatSocket.send(JSON.stringify({'message': message}));
+    input.value = '';
+  }
+});
+</code></pre></div>
+<p>不依赖任何第三方 JS 库，直接用浏览器原生的 <code>WebSocket</code> API：连接建立后，<code>onmessage</code> 回调处理服务端（<code>chat_message</code> 方法）推送过来的每一条消息，动态往 <code>#chat</code> 容器里追加一段 HTML 并自动滚动到底部；发送消息则是简单的 <code>chatSocket.send(JSON.stringify({...}))</code>。<code>{{ course.id|json_script:"course-id" }}</code> 是 Django 内置的 <code>json_script</code> 过滤器，把 Python 值安全地序列化成一个 <code>&lt;script type="application/json"&gt;</code> 标签，前端用 <code>JSON.parse(document.getElementById(...).textContent)</code> 读取——这是把服务端渲染的数据安全传递给前端 JS 的标准做法，比直接把变量值拼进 JS 代码字符串里更能避免 XSS 风险（<code>json_script</code> 会对内容做适当转义）。</p>
+<p><strong>一个值得留意的小细节</strong>：<code>url</code> 硬编码用的是 <code>'ws://'</code> 前缀，而不是根据当前页面协议动态判断（<code>window.location.protocol === 'https:' ? 'wss://' : 'ws://'</code>）。如果这个网站部署在 HTTPS 环境下，浏览器通常会因为"混合内容"安全策略拒绝从一个 HTTPS 页面发起不加密的 <code>ws://</code> 连接，实际生产部署这里需要相应调整为 <code>wss://</code>。这是教学示例里为了简化而先不处理生产部署细节的又一个例子。</p>
+<h2>六、端到端流程</h2>
+<p>学生在"我的课程"详情页看到"Course chat room"链接 → 点击进入 <code>course_chat_room</code> 视图（校验登录 + 报名资格）→ 渲染聊天室页面，附带最近 5 条历史消息 → 页面加载完毕，前端 JS 立即发起一条 WebSocket 连接 → 服务端 <code>ChatConsumer.connect()</code> 把这条连接加入以课程 ID 命名的分组 → 用户输入并发送一条消息 → <code>receive()</code> 触发，先把消息广播给分组内所有连接（每个连接各自的 <code>chat_message()</code> 被调用，实时推送到各自浏览器），再异步落库 → 分组内其他正在聊天的用户浏览器 <code>onmessage</code> 触发，实时看到这条新消息出现在聊天窗口里。</p>
+<h2>七、Chapter15 → Chapter16 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter15</th>
+<th>Chapter16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通信协议</td>
+<td>纯 HTTP（含 REST API）</td>
+<td>新增 WebSocket（长连接），HTTP/WebSocket 并行由 <code>ProtocolTypeRouter</code> 分流</td>
+</tr>
+<tr>
+<td>编程模型</td>
+<td>全部同步</td>
+<td>首次引入原生 <code>async</code>/<code>await</code> 与异步 ORM 方法（<code>acreate</code>）</td>
+</tr>
+<tr>
+<td>跨连接通信</td>
+<td>无此需求</td>
+<td>Channel Layer（Redis 支撑）实现分组广播</td>
+</tr>
+<tr>
+<td>权限校验</td>
+<td>HTTP 视图 + DRF 对象级权限类（<code>IsEnrolled</code>）两处独立实现同一规则</td>
+<td>HTTP 视图有校验，<strong>WebSocket Consumer 未重复校验</strong>（新发现的授权缺口）</td>
+</tr>
+<tr>
+<td>数据删除策略</td>
+<td>沿用 <code>CASCADE</code>/<code>SET_NULL</code></td>
+<td>首次使用 <code>on_delete=PROTECT</code>，聊天记录不可被连带删除</td>
+</tr>
+<tr>
+<td>前端技术</td>
+<td>无新增</td>
+<td>原生 <code>WebSocket</code> API + <code>json_script</code> 过滤器安全传值</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch17">
+  <div class="chapter-head">
+    <span class="chnum">17</span>
+    <h2 class="chtitle">生产部署（Nginx + uWSGI + Daphne）</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 380" role="img" aria-label="图 17 · Nginx 按协议分流到 uWSGI（同步）与 Daphne（异步）双进程，settings 按环境三分层"><defs>
+          <marker id="c17-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c17-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c17-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="150" height="46" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="53.0" text-anchor="middle" font-size="12.5">浏览器</text>
+<rect class="box-a" x="250" y="20" width="220" height="100" rx="4"></rect>
+<text class="lbl-strong" x="360.0" y="64.0" text-anchor="middle" font-size="12.5">Nginx</text>
+<text class="lbl" x="360.0" y="82.5" text-anchor="middle" font-size="10.5">TLS 终结 · 80→443 跳转</text>
+<text class="lbl" x="360.0" y="94.5" text-anchor="middle" font-size="10.5">/ws/ 设置 Upgrade 头</text>
+<line class="edge" x1="170" y1="53" x2="250" y2="60" marker-end="url(#c17-m)"></line>
+<text class="lbl" x="210.0" y="51.5" text-anchor="middle" font-size="10">HTTPS</text>
+<rect class="box" x="560" y="20" width="140" height="46" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="37.0" text-anchor="middle" font-size="12.5">uWSGI</text>
+<text class="lbl" x="630.0" y="55.5" text-anchor="middle" font-size="10.5">unix socket</text>
+<text class="lbl" x="630.0" y="67.5" text-anchor="middle" font-size="10.5">同步 HTTP</text>
+<rect class="box" x="560" y="90" width="140" height="46" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="107.0" text-anchor="middle" font-size="12.5">Daphne:9001</text>
+<text class="lbl" x="630.0" y="125.5" text-anchor="middle" font-size="10.5">WebSocket 异步</text>
+<line class="edge" x1="470" y1="55" x2="560" y2="43" marker-end="url(#c17-m)"></line>
+<text class="lbl" x="515.0" y="44.0" text-anchor="middle" font-size="10">/</text>
+<line class="edge" x1="470" y1="85" x2="560" y2="113" marker-end="url(#c17-m)"></line>
+<text class="lbl" x="515.0" y="94.0" text-anchor="middle" font-size="10">/ws/</text>
+<rect class="box" x="250" y="160" width="220" height="46" rx="4"></rect>
+<text class="lbl-strong" x="360.0" y="177.0" text-anchor="middle" font-size="12.5">静态 / 媒体文件</text>
+<text class="lbl" x="360.0" y="195.5" text-anchor="middle" font-size="10.5">Nginx 直接 alias 读盘，</text>
+<text class="lbl" x="360.0" y="207.5" text-anchor="middle" font-size="10.5">不经过 Python 进程</text>
+<line class="edge" class="edge-dashed" x1="360" y1="120" x2="360" y2="160" marker-end="url(#c17-m)"></line>
+<rect class="box" x="400" y="250" width="150" height="46" rx="4"></rect>
+<text class="lbl-strong" x="475.0" y="273.0" text-anchor="middle" font-size="12.5">PostgreSQL</text>
+<rect class="box" x="570" y="250" width="150" height="46" rx="4"></rect>
+<text class="lbl-strong" x="645.0" y="267.0" text-anchor="middle" font-size="12.5">Redis</text>
+<text class="lbl" x="645.0" y="285.5" text-anchor="middle" font-size="10.5">缓存 + Channel Layer</text>
+<path class="edge" class="edge-dashed" d="M630,66 Q560,160 460,250" marker-end="url(#c17-m)"></path>
+<line class="edge" class="edge-dashed" x1="630" y1="113" x2="630" y2="250" marker-end="url(#c17-m)"></line>
+<rect class="box-a" x="20" y="250" width="300" height="70" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="279.0" text-anchor="middle" font-size="10.5">settings/</text>
+<text class="lbl" x="170.0" y="295.5" text-anchor="middle" font-size="10.5">base.py（公共）</text>
+<text class="lbl" x="170.0" y="307.5" text-anchor="middle" font-size="10.5">local.py（DEBUG=True,SQLite）</text>
+<text class="lbl" x="170.0" y="319.5" text-anchor="middle" font-size="10.5">prod.py（DEBUG=False,Postgres,</text>
+<text class="lbl" x="170.0" y="331.5" text-anchor="middle" font-size="10.5">CSRF/SESSION_COOKIE_SECURE）</text>
+<text class="lbl" x="20" y="340" text-anchor="start" font-size="10.5">DJANGO_SETTINGS_MODULE 必须显式指定 local / prod，__init__.py 留空强制声明环境</text></svg><figcaption class="cap">图 17 · Nginx 按协议分流到 uWSGI（同步）与 Daphne（异步）双进程，settings 按环境三分层</figcaption></figure>
+  <p>这是全书最后一章——<strong>生产部署</strong>：把 educa 从"能在本地用 <code>runserver</code> 跑起来的教学项目"补齐成一套真正能上线的架构：分环境的 settings、PostgreSQL、Nginx + uWSGI + Daphne 的多进程拓扑、HTTPS、子域名路由，还有一个用于运营召回的管理命令。这也把全书从 Chapter08 起就在 TDD/TSD 讨论里反复提到的"settings 该按环境拆分"这个建议真正落了地。</p>
+<h2>一、<code>settings</code> 从单文件拆成包：<code>base.py</code>/<code>local.py</code>/<code>prod.py</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># educa/settings/local.py
+from .base import *
+DEBUG = True
+DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}}
+</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># educa/settings/prod.py
+from decouple import config
+from .base import *
+
+DEBUG = False
+ADMINS = [('Antonio M', 'email@mydomain.com')]
+ALLOWED_HOSTS = ['.educaproject.com']
+
+DATABASES = {'default': {
+    'ENGINE': 'django.db.backends.postgresql',
+    'NAME': config('POSTGRES_DB'), 'USER': config('POSTGRES_USER'), 'PASSWORD': config('POSTGRES_PASSWORD'),
+    'HOST': 'db', 'PORT': 5432,
+}}
+
+REDIS_URL = 'redis://cache:6379'
+CACHES['default']['LOCATION'] = REDIS_URL
+CHANNEL_LAYERS['default']['CONFIG']['hosts'] = [REDIS_URL]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+</code></pre></div>
+<p><code>base.py</code> 装所有环境共用的配置，<code>local.py</code>/<code>prod.py</code> 各自 <code>from .base import *</code> 后再覆盖差异项——这正是我们在 Blog 项目 TDD 文档里标注过的 TSD 建议（"settings 应该按环境拆分"），在这本书第四个项目、第十七章才第一次真正落地。几个值得展开的点：</p>
+<ul>
+<li><strong><code>ALLOWED_HOSTS = ['.educaproject.com']</code></strong>——开头的 <code>.</code> 是通配写法，匹配 <code>educaproject.com</code> 本身以及<strong>任意子域名</strong>（<code>python.educaproject.com</code>、<code>www.educaproject.com</code> 等）。这个设计不是随手写的，直接为下面要讲的"课程子域名"中间件铺路。</li>
+<li><strong><code>REDIS_URL = 'redis://cache:6379'</code></strong>——<code>cache</code> 不是一个真实主机名，而是 <code>docker-compose.yml</code> 里 Redis 服务的<strong>服务名</strong>（Docker Compose 内置的服务发现机制会把服务名解析成对应容器的内网 IP）。<code>local.py</code> 里 <code>CACHES</code>/<code>CHANNEL_LAYERS</code> 沿用 <code>base.py</code> 默认的 <code>127.0.0.1</code>（本地开发假设 Redis 就跑在本机），<code>prod.py</code> 则统一把这两处地址替换成 Docker 网络内的服务名——这是"同一份配置结构，不同环境替换掉具体连接地址"的典型写法。</li>
+<li><strong><code>CSRF_COOKIE_SECURE</code>/<code>SESSION_COOKIE_SECURE</code>/<code>SECURE_SSL_REDIRECT</code></strong> 三行——只在生产环境打开：前两个让浏览器只在 HTTPS 连接下才会把 CSRF/Session Cookie 发送出去（HTTP 明文连接不发送，防止中间人窃听到这些敏感 Cookie），<code>SECURE_SSL_REDIRECT</code> 让 Django 自动把所有 HTTP 请求 301 跳转到 HTTPS。本地开发环境没有 HTTPS，所以这三项只在 <code>prod.py</code> 里打开，<code>local.py</code> 保持默认（关闭）。</li>
+</ul>
+<h3>一个需要显式设置才能工作的"契约"</h3>
+<p><code>educa/settings/__init__.py</code> 是<strong>完全空的文件</strong>，而 <code>manage.py</code>/<code>wsgi.py</code>/<code>asgi.py</code> 里 <code>os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'educa.settings')</code> 默认指向的正是这个空的 <code>educa.settings</code> <strong>包本身</strong>（不是 <code>local.py</code> 也不是 <code>prod.py</code>）。这意味着<strong>如果不显式设置 <code>DJANGO_SETTINGS_MODULE</code> 环境变量指向 <code>educa.settings.local</code> 或 <code>educa.settings.prod</code>，Django 启动时会因为缺少 <code>DATABASES</code>、<code>SECRET_KEY</code> 等必需配置直接报错</strong>——这不是遗漏，而是刻意的设计："默认值"故意留空，逼着每个真正启动应用的入口都必须显式声明自己跑在哪个环境下，避免"忘记指定环境，结果不小心用本地配置连上了生产数据库"这类事故。<code>docker-compose.yml</code> 里能看到这份契约的落实：</p>
+<div class="codewrap"><div class="langtag">yaml</div><pre><code class="language-yaml">web:
+  environment:
+    - DJANGO_SETTINGS_MODULE=educa.settings.prod
+daphne:
+  environment:
+    - DJANGO_SETTINGS_MODULE=educa.settings.prod
+</code></pre></div>
+<h3>一处遗留的"该拆但没拆干净"</h3>
+<p><code>debug_toolbar</code>、<code>redisboard</code>、<code>rest_framework</code> 都在 <code>base.py</code> 的 <code>INSTALLED_APPS</code>/<code>MIDDLEWARE</code> 里<strong>无条件声明</strong>，<code>prod.py</code> 并没有把 <code>debug_toolbar</code> 从生产环境的 <code>INSTALLED_APPS</code>/<code>MIDDLEWARE</code> 里摘掉——虽然 <code>debug_toolbar</code> 自身默认要求 <code>DEBUG=True</code> 才会真正渲染工具栏（<code>prod.py</code> 里 <code>DEBUG=False</code>，实际效果上工具栏不会显示给生产用户），但这依然是"开发期专属工具本该在生产 settings 里彻底移除，而不是靠另一个开关间接兜底"这条原则没有被贯彻到底的例子——和 Bookmarks 项目 Chapter07 首次引入 <code>debug_toolbar</code> 时留下的同一处隐患一脉相承，直到全书最后一章也没有被修复。</p>
+<h2>二、<code>subdomain_course_middleware</code>：课程专属子域名</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># courses/middleware.py
+def subdomain_course_middleware(get_response):
+    def middleware(request):
+        host_parts = request.get_host().split('.')
+        if len(host_parts) &gt; 2 and host_parts[0] != 'www':
+            course = get_object_or_404(Course, slug=host_parts[0])
+            course_url = reverse('course_detail', args=[course.slug])
+            url = '{}://{}{}'.format(request.scheme, '.'.join(host_parts[1:]), course_url)
+            return redirect(url)
+        response = get_response(request)
+        return response
+    return middleware
+</code></pre></div>
+<p>这是一个<strong>函数式中间件</strong>（Django 中间件的现代写法，直接是一个接收 <code>get_response</code> 返回内层函数的闭包，不需要写类）。逻辑是：把当前请求的域名按 <code>.</code> 拆开，如果域名段数大于 2（说明带了子域名，比如 <code>python-basics.educaproject.com</code> 拆出来是 <code>['python-basics', 'educaproject', 'com']</code>）且这个子域名不是 <code>www</code>，就把这个子域名当成<strong>课程的 slug</strong> 去查课程，查到了就 301（<code>redirect</code> 默认）跳转回主域名下对应的课程详情页 URL；查不到直接 404。</p>
+<p>这正是前面 <code>ALLOWED_HOSTS = ['.educaproject.com']</code> 通配符存在的原因——每门课程理论上都能有一个形如 <code>&lt;课程slug&gt;.educaproject.com</code> 的专属短链接，方便讲师在课程宣传材料上使用一个好记的独立域名，而不需要给每门课单独注册一个真实域名（子域名在 DNS 上通常只需要一条通配符解析记录，<code>*.educaproject.com</code> 指向同一台服务器即可）。这个中间件被放在 <code>MIDDLEWARE</code> 列表的<strong>最后一位</strong>（<code>courses.middleware.subdomain_course_middleware</code>），这样只有在 <code>AuthenticationMiddleware</code>/<code>SessionMiddleware</code> 等基础设施都处理完之后才轮到它判断子域名，避免影响其他中间件的正常工作。</p>
+<h2>三、生产网络拓扑：Nginx + uWSGI + Daphne 三件套</h2>
+<p>这是本章<strong>架构层面最重要</strong>的部分——因为 Chapter16 引入了 WebSocket（异步 ASGI），而 Django 主体依然是同步代码（管理端、REST API 等大部分视图都是普通同步视图），生产环境<strong>没法只用一种服务器进程类型</strong>把所有流量都伺候好，于是拆成了两条独立的处理链路，前面用 Nginx 统一分流：</p>
+<div class="codewrap"><div class="langtag">nginx</div><pre><code class="language-nginx">upstream uwsgi_app { server unix:/code/educa/uwsgi_app.sock; }
+upstream daphne { server daphne:9001; }
+
+server {
+    listen 80;
+    server_name *.educaproject.com educaproject.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    ssl_certificate /code/educa/ssl/educa.crt;
+    ssl_certificate_key /code/educa/ssl/educa.key;
+    server_name *.educaproject.com educaproject.com;
+
+    location / {
+        include /etc/nginx/uwsgi_params;
+        uwsgi_pass uwsgi_app;
+    }
+    location /ws/ {
+        proxy_pass http://daphne;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection &quot;upgrade&quot;;
+    }
+    location /static/ { alias /code/educa/static/; }
+    location /media/ { alias /code/educa/media/; }
+}
+</code></pre></div>
+<ul>
+<li><strong>80 端口的 server 块</strong>只做一件事——把所有 HTTP 流量 301 强制跳转到 HTTPS（和 <code>settings.SECURE_SSL_REDIRECT</code> 是同一个目的的两层保险，一层在 Nginx 网关层拦截，一层在 Django 应用层兜底）。</li>
+<li><strong><code>/</code> 走 <code>uwsgi_pass</code></strong>——所有普通 HTTP 请求（网页、REST API、admin 后台）交给 uWSGI 进程处理，通过 Unix Socket（而不是 TCP 端口）通信，同机进程间通信用文件系统 socket 通常比 TCP loopback 略快、也不占用额外端口。</li>
+<li><strong><code>/ws/</code> 走 <code>proxy_pass</code> 到 Daphne</strong>，而且<strong>显式设置了 <code>Upgrade</code>/<code>Connection: upgrade</code> 请求头</strong>——这是 HTTP 协议升级为 WebSocket 协议必须的握手信息，Nginx 默认的反向代理不会自动转发这两个头，必须手动声明，否则 WebSocket 连接会在 Nginx 这一层就握手失败。这一段配置直接对应 <code>chat/routing.py</code> 里 <code>ws/chat/room/...</code> 这条 URL 前缀。</li>
+<li><strong><code>/static/</code>、<code>/media/</code> 直接用 <code>alias</code> 从磁盘伺服</strong>，完全不经过 Python 进程——静态文件/媒体文件交给 Nginx 直接读盘返回，比让 Django/uWSGI 进程去处理这类请求效率高得多，这是 Django 生产部署的标准实践。</li>
+</ul>
+<p>对应 <code>docker-compose.yml</code> 里两个独立的应用容器：</p>
+<div class="codewrap"><div class="langtag">yaml</div><pre><code class="language-yaml">web:
+  command: [&quot;./wait-for-it.sh&quot;, &quot;db:5432&quot;, &quot;--&quot;, &quot;uwsgi&quot;, &quot;--ini&quot;, &quot;/code/config/uwsgi/uwsgi.ini&quot;]
+daphne:
+  command: [&quot;../wait-for-it.sh&quot;, &quot;db:5432&quot;, &quot;--&quot;, &quot;daphne&quot;, &quot;-b&quot;, &quot;0.0.0.0&quot;, &quot;-p&quot;, &quot;9001&quot;, &quot;educa.asgi:application&quot;]
+</code></pre></div>
+<p><code>uwsgi.ini</code>：</p>
+<div class="codewrap"><div class="langtag">ini</div><pre><code class="language-ini">[uwsgi]
+socket=/code/educa/uwsgi_app.sock
+chdir = /code/educa/
+module=educa.wsgi:application
+master=true
+chmod-socket=666
+uid=www-data
+gid=www-data
+vacuum=true
+</code></pre></div>
+<p><code>uid</code>/<code>gid</code> 设成 <code>www-data</code> 而不是 <code>root</code>——<strong>权限最小化</strong>，即便应用进程被攻破，攻击者拿到的也只是一个低权限系统账户，而不是能为所欲为的 root；<code>vacuum=true</code> 让 uWSGI 进程退出时自动清理它创建的 socket 文件，避免残留文件导致下次启动时的冲突。</p>
+<p><code>wait-for-it.sh</code> 是一个通用的开源 shell 脚本（本身不是 Django/本书特有的东西），作用是"阻塞后续命令执行，直到指定的 <code>host:port</code> 真正能连上为止"——<code>docker-compose.yml</code> 里的 <code>depends_on: [db]</code> <strong>只保证容器按顺序启动</strong>，不保证 PostgreSQL 进程在容器启动的那一瞬间就已经完全就绪、能接受连接（数据库初始化通常需要几秒到几十秒），所以 <code>web</code>/<code>daphne</code> 两个服务的启动命令都先跑一遍 <code>wait-for-it.sh db:5432 --</code> 探测数据库端口，确认真的能连通了才继续执行后面的 <code>uwsgi</code>/<code>daphne</code> 命令——这是 Docker Compose 环境下"服务依赖就绪等待"的经典解决方案。</p>
+<h2>四、<code>asgi.py</code> 的一处安全补强</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">application = ProtocolTypeRouter({
+    'http': django_asgi_app,
+    'websocket': AllowedHostsOriginValidator(
+        AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+    ),
+})
+</code></pre></div>
+<p>对比 Chapter16 的版本，这里多包了一层 <code>AllowedHostsOriginValidator</code>——它会检查发起 WebSocket 连接请求的 <code>Origin</code> 请求头是否在 <code>settings.ALLOWED_HOSTS</code> 允许的域名范围内，不匹配就直接拒绝握手。这是为了防止<strong>跨站 WebSocket 劫持</strong>（CSWSH）——如果没有这层校验，任何第三方网站的 JS 代码都能对着 <code>wss://educaproject.com/ws/chat/room/1/</code> 发起连接（浏览器的同源策略对 WebSocket 连接本身并不强制拦截，跟发起 AJAX 请求不一样），<code>AllowedHostsOriginValidator</code> 补上了这道"来源域名是否可信"的防线。</p>
+<p><strong>但这层校验和 Chapter16 教学笔记里标注的那个授权缺口是两个不同维度的问题</strong>——<code>AllowedHostsOriginValidator</code> 只回答"这次连接是不是从我们信任的域名发起的"，并不回答"这个已登录用户是不是真的报名了 <code>course_id</code> 对应的这门课"。也就是说，即便加了这层校验，一个<strong>已登录但没有报名某门课的用户</strong>，依然可以在自己浏览器的开发者工具里手动打开一条指向该课程聊天室的 WebSocket 连接——<code>ChatConsumer.connect()</code> 里那处"未校验报名资格"的问题，直到全书最后一章也没有被修复。</p>
+<h2>五、运营召回：自定义管理命令 <code>enroll_reminder</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># students/management/commands/enroll_reminder.py
+class Command(BaseCommand):
+    help = 'Sends an e-mail reminder to users registered more than N days that are not enrolled into any courses yet'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--days', dest='days', type=int)
+
+    def handle(self, *args, **options):
+        emails = []
+        subject = 'Enroll in a course'
+        date_joined = timezone.now().today() - datetime.timedelta(days=options['days'] or 0)
+        users = User.objects.annotate(course_count=Count('courses_joined')) \
+            .filter(course_count=0, date_joined__date__lte=date_joined)
+        for user in users:
+            message = f&quot;&quot;&quot;Dear {user.first_name}, We noticed that you didn't enroll in any courses yet...&quot;&quot;&quot;
+            emails.append((subject, message, settings.DEFAULT_FROM_EMAIL, [user.email]))
+        send_mass_mail(emails)
+        self.stdout.write(f'Sent {len(emails)} reminders')
+</code></pre></div>
+<p>这是全书<strong>第一次自定义 Django 管理命令</strong>（<code>python manage.py enroll_reminder --days 7</code>）——<code>BaseCommand</code> 子类 + <code>add_arguments</code> 声明命令行参数 + <code>handle</code> 实现具体逻辑，是 Django 管理命令的标准三段式写法。业务逻辑本身很直接：<code>annotate(course_count=Count('courses_joined')).filter(course_count=0, ...)</code> 一次查询找出"注册超过 N 天、但一门课都没报名"的所有用户，<code>send_mass_mail</code>（Django 内置，专门优化过的批量邮件发送函数，会复用同一个 SMTP 连接依次发送多封邮件，比循环调用 <code>send_mail</code> 更高效）逐一发送召回提醒邮件。</p>
+<p>这是典型的"运营侧召回"场景（把注册了但没有转化行为的用户找出来主动触达），设计上通常要配合定时任务（cron/Celery Beat）每天跑一次——但这个仓库里同样<strong>没有看到任何调度这个命令的配置</strong>（<code>docker-compose.yml</code> 里没有额外的 cron 服务或类似机制），命令本身完整可用，只是"如何让它自动定期执行"这一层留给了读者自己在真正部署时补上，是全书里又一处"讲清楚了工具本身，没有把最后一环完全接好线"的例子。</p>
+<p><code>settings.DEFAULT_FROM_EMAIL</code> 在整个项目的三份 settings 文件里都没有显式定义——不过这是 Django 自带默认值的设置项（默认为 <code>'webmaster@localhost'</code>），不会报错，只是这个默认发件地址大概率不是运营真正想要的寄件人地址，实际部署时需要显式配置。</p>
+<h2>六、<code>prompts/task.md</code>：又一份未落地的练习草稿</h2>
+<p>延续全书的固定模式，这一章同样留了一份作者的 AI 提示词草稿——这次想问的是"如何用 Redis 记录学生在每门课程里上次学习到哪个模块，实现断点续学"。草稿里引用的 <code>StudentCourseDetailView</code> 代码还是 Chapter14 的版本（<code>course.modules.all()[0]</code> 那处潜在 <code>IndexError</code> 依然原样存在），说明这个"断点续学"想法始终停留在探索阶段，没有被实现进正式代码——如果要落地，大概率会复用 Chapter14 讲过的"Redis 存少量高频读写状态"的模式（类似 Chapter07 图片浏览计数、Chapter10 商品推荐），用一个 <code>student:{user_id}:course:{course_id}:last_module</code> 之类的键记录最近访问的模块 ID。</p>
+<h2>七、Chapter16 → Chapter17（全书收尾）变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter16</th>
+<th>Chapter17</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Settings 组织</td>
+<td>单文件 <code>settings.py</code></td>
+<td>拆分为 <code>base.py</code>/<code>local.py</code>/<code>prod.py</code>，<code>__init__.py</code> 留空强制显式声明环境</td>
+</tr>
+<tr>
+<td>数据库</td>
+<td>SQLite</td>
+<td>PostgreSQL（生产），密钥走 <code>python-decouple</code> 读环境变量</td>
+</tr>
+<tr>
+<td>服务拓扑</td>
+<td>单一 <code>runserver</code> 进程</td>
+<td>Nginx（TLS 终结+分流+静态文件）+ uWSGI（同步 HTTP）+ Daphne（WebSocket）三进程协作</td>
+</tr>
+<tr>
+<td>WebSocket 安全</td>
+<td>无 Origin 校验，无报名资格校验</td>
+<td>新增 <code>AllowedHostsOriginValidator</code>（<strong>部分修复</strong>，报名校验缺口仍未补上）</td>
+</tr>
+<tr>
+<td>多租户/路由</td>
+<td>无</td>
+<td>子域名中间件，支持课程专属短链接</td>
+</tr>
+<tr>
+<td>运营工具</td>
+<td>无</td>
+<td>自定义管理命令 <code>enroll_reminder</code>（未接调度）</td>
+</tr>
+<tr>
+<td>已知遗留问题</td>
+<td>WebSocket 未校验报名资格</td>
+<td>同一问题依然存在；<code>debug_toolbar</code> 等开发工具未在 <code>prod.py</code> 中彻底移除；召回命令未接定时调度</td>
+</tr>
+</tbody>
+</table></div>
+<p>全书四个项目（Blog → Bookmarks → myshop → educa）从最基础的博客 CRUD，一路走到社交关系、支付网关、国际化、REST API、WebSocket 实时通信、多进程生产部署——技术栈逐章累加的同时，也贯穿着不少值得记住的反面教材（SSRF、CSRF 豁免、缓存陈旧窗口、授权缺口),这些"没做完/没做对"的地方本身也是这套教学代码库里很有价值的一部分。</p>
+</section>
+    <div class="footdoc">
+      由 Claude 对照 Django 5 By Example 官方代码仓库逐章阅读整理生成 · 图示为教学示意，非源码逐行还原
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>

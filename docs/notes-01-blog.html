@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog 项目深读笔记 · Django 5 By Example 源码深读</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20x%3D%2250%22%20y%3D%2262%22%20font-size%3D%2262%22%20text-anchor%3D%22middle%22%3E%F0%9F%93%9D%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5 By Example · 项目一 / 共四个</span>
+      <h1>📝&nbsp; Blog 项目深读笔记</h1>
+      <p>从只有“文章列表 + 详情”的最小 MVT 骨架，到标签云、全文模糊搜索、RSS 订阅与站点地图 —— 三章，看一个博客系统如何被逐层生长出来。</p>
+    </div>
+    <nav>
+      <a href="#ch01"><span class="n">01</span>Blog 项目详解教学</a><a href="#ch02"><span class="n">02</span>Blog 项目详解教学</a><a href="#ch03"><span class="n">03</span>Blog 项目详解教学</a>
+    </nav>
+    <div class="series">
+      <div class="label">全书四个项目</div>
+      <a href="notes-01-blog.html" class="current">📝 Blog 项目深读笔记</a><a href="notes-02-bookmarks.html">🔖 Bookmarks 项目深读笔记</a><a href="notes-03-myshop.html">🛒 myshop 项目深读笔记</a><a href="notes-04-educa.html">🎓 educa 项目深读笔记</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">源码深读 · 逐章教学笔记</span>
+      <h1>Blog 项目深读笔记</h1>
+      <p class="sub">从只有“文章列表 + 详情”的最小 MVT 骨架，到标签云、全文模糊搜索、RSS 订阅与站点地图 —— 三章，看一个博客系统如何被逐层生长出来。</p>
+      <div class="meta">
+        <span>覆盖 Chapter 01–03</span>
+        <span>基于官方配套代码仓库逐行阅读整理</span>
+        <span>含 3 张手绘架构示意图</span>
+      </div>
+    </div>
+    
+<section class="chapter" id="ch01">
+  <div class="chapter-head">
+    <span class="chnum">01</span>
+    <h2 class="chtitle">Blog 项目详解教学</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 300" role="img" aria-label="图 01 · 请求经过 URL → 视图 → 模型 → 模板的最小 MVT 链路，FavouritePost 是复合主键的教学彩蛋"><defs>
+          <marker id="c01-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c01-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c01-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="110" height="46" rx="4"></rect>
+<text class="lbl-strong" x="75.0" y="53.0" text-anchor="middle" font-size="12.5">浏览器</text>
+<rect class="box" x="170" y="30" width="130" height="46" rx="4"></rect>
+<text class="lbl-strong" x="235.0" y="47.0" text-anchor="middle" font-size="12.5">blog/urls.py</text>
+<text class="lbl" x="235.0" y="65.5" text-anchor="middle" font-size="10.5">路由</text>
+<rect class="box" x="340" y="20" width="150" height="60" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="44.0" text-anchor="middle" font-size="12.5">views.py</text>
+<text class="lbl" x="415.0" y="62.5" text-anchor="middle" font-size="10.5">post_list / post_detail</text>
+<text class="lbl" x="415.0" y="74.5" text-anchor="middle" font-size="10.5">add_favourite / favourites</text>
+<rect class="box" x="530" y="20" width="170" height="60" rx="4"></rect>
+<text class="lbl-strong" x="615.0" y="44.0" text-anchor="middle" font-size="12.5">templates/blog/</text>
+<text class="lbl" x="615.0" y="62.5" text-anchor="middle" font-size="10.5">list / detail / favourites</text>
+<line class="edge" x1="130" y1="53" x2="170" y2="53" marker-end="url(#c01-m)"></line>
+<text class="lbl" x="150.0" y="48.0" text-anchor="middle" font-size="10">GET /blog/3/</text>
+<line class="edge" x1="300" y1="53" x2="340" y2="50" marker-end="url(#c01-m)"></line>
+<line class="edge" x1="490" y1="45" x2="530" y2="45" marker-end="url(#c01-m)"></line>
+<text class="lbl" x="510.0" y="40.0" text-anchor="middle" font-size="10">render()</text>
+<path class="edge" d="M600,80 Q500,140 415,96" marker-end="url(#c01-m)"></path>
+<text class="lbl" x="507.5" y="83.0" text-anchor="middle" font-size="10">HttpResponse</text>
+<rect class="box-a" x="320" y="150" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="172.0" text-anchor="middle" font-size="12.5">Post</text>
+<text class="lbl" x="405.0" y="190.5" text-anchor="middle" font-size="10.5">objects（全部）</text>
+<text class="lbl" x="405.0" y="202.5" text-anchor="middle" font-size="10.5">published（已发布，自定义 Manager）</text>
+<rect class="box-a" x="320" y="230" width="170" height="50" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="249.0" text-anchor="middle" font-size="12.5">FavouritePost</text>
+<text class="lbl" x="405.0" y="267.5" text-anchor="middle" font-size="10.5">pk = CompositePrimaryKey(user, post)</text>
+<line class="edge" x1="415" y1="80" x2="405" y2="150" marker-end="url(#c01-m)"></line>
+<text class="lbl" x="410.0" y="110.0" text-anchor="middle" font-size="10">ORM 查询</text>
+<line class="edge" x1="405" y1="206" x2="405" y2="230" marker-end="url(#c01-m)"></line>
+<rect class="box" x="80" y="210" width="160" height="46" rx="4"></rect>
+<text class="lbl-strong" x="160.0" y="233.0" text-anchor="middle" font-size="12.5">Django Admin</text>
+<path class="edge" d="M160,210 Q220,170 340,178" marker-end="url(#c01-m)"></path>
+<text class="lbl" x="20" y="118" text-anchor="start" font-size="10.5">两个管理器：objects 给后台，published 只给业务代码</text>
+<text class="lbl" x="20" y="285" text-anchor="start" font-size="10.5">FavouritePost 是 Django 5.2 CompositePrimaryKey 新特性的教学示例，Ch02 起从主线消失</text></svg><figcaption class="cap">图 01 · 请求经过 URL → 视图 → 模型 → 模板的最小 MVT 链路，FavouritePost 是复合主键的教学彩蛋</figcaption></figure>
+  <blockquote><p>对应目录：<code>Chapter01/</code>（Django 5 by Example 全书第一个可运行项目）</p></blockquote>
+<h2>一、这一章的定位</h2>
+<p>Chapter01 是全书第一个可运行的最小 Django 项目：一个只有"文章列表 + 文章详情"的博客雏形。目的是让读者从零跑通 <code>startproject</code> → <code>startapp</code> → 模型 → 迁移 → 管理后台 → 视图 → URL → 模板 的完整链路。</p>
+<p><strong>注意一个和纸质书不完全一致的地方</strong>：这份代码仓库里的 Chapter01 比书中原始文字描述的内容更丰富——多了一个"收藏文章"（Favourite）功能，并且用到了 <strong><code>models.CompositePrimaryKey</code></strong>，这是 Django <strong>5.2</strong> 才引入的新特性（复合主键）。这说明仓库作者针对 Django 5.2 重新改写/扩充了示例，用来提前演示新特性，而不是书本原文的逐字复现。</p>
+<h2>二、目录结构</h2>
+<div class="codewrap"><pre><code>Chapter01/
+├── Dockerfile / docker-compose.yml / do.sh   # 开发环境
+├── requirements.txt                           # Django~=5.2, asgiref, sqlparse
+└── mysite/
+    ├── manage.py
+    ├── mysite/                # 项目配置包
+    │   ├── settings.py / urls.py / wsgi.py / asgi.py
+    └── blog/                  # 唯一的 app
+        ├── models.py / admin.py / views.py / urls.py / apps.py
+        ├── migrations/0001_initial.py, 0002_favouritepost.py
+        ├── static/css/blog.css
+        └── templates/blog/{base.html, post/{list,detail,favourites}.html}
+</code></pre></div>
+<p>和 Chapter03（最终形态）相比，这里<strong>没有</strong>：Comment 模型、taggit 标签、PostgreSQL、表单、分页、搜索、RSS、sitemap——这些都是后续章节逐步加上去的。这一章就是最纯粹的骨架。</p>
+<h2>三、项目配置层</h2>
+<p><strong><code>settings.py</code></strong>：教科书式的默认配置。
+- 用的是 <strong>SQLite</strong>（<code>BASE_DIR / 'db.sqlite3'</code>），不像 Chapter03 已切到 PostgreSQL——这正是"循序渐进"的痕迹，数据库升级是后面章节的内容。
+- <code>INSTALLED_APPS</code> 只多了一行 <code>'blog.apps.BlogConfig'</code>，没有 <code>django.contrib.sites</code>、<code>postgres</code>、<code>taggit</code> 等，都是后面才加的。
+- <code>DEBUG=True</code>、<code>SECRET_KEY</code> 是明文占位符——典型的开发环境配置，生产不能这么用。</p>
+<p><strong><code>mysite/urls.py</code></strong>：只有两条路由：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">path('admin/', admin.site.urls),
+path('blog/', include('blog.urls', namespace='blog')),
+</code></pre></div>
+<p>根路径 <code>/</code> 直接 404，所有博客内容都挂在 <code>/blog/</code> 下。</p>
+<h2>四、数据模型层（本章核心）</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class PublishedManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(status=Post.Status.PUBLISHED)
+
+class Post(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = 'DF', 'Draft'
+        PUBLISHED = 'PB', 'Published'
+    title = models.CharField(max_length=250)
+    slug = models.SlugField(max_length=250)          # 注意：这里还没加 unique_for_date
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blog_posts')
+    body = models.TextField()
+    publish = models.DateTimeField(default=timezone.now)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=2, choices=Status, default=Status.DRAFT)
+
+    objects = models.Manager()       # 默认管理器
+    published = PublishedManager()   # 自定义管理器，只返回已发布文章
+
+    class Meta:
+        ordering = ['-publish']
+        indexes = [models.Index(fields=['-publish'])]
+
+    def get_absolute_url(self):
+        return reverse('blog:post_detail', args=[self.id])
+</code></pre></div>
+<p>教学要点：
+1. <strong>双管理器模式</strong>：<code>objects</code>（全部数据，给 admin 用）+ <code>published</code>（业务代码只看已发布内容）。这是 Django 里"数据全集 vs 业务视图"的经典范式，Chapter03 原封不动沿用了这个设计。
+2. <strong><code>TextChoices</code></strong>：Django 3.0+ 的枚举写法，比老式的 tuple-of-tuples 更清晰，<code>Post.Status.PUBLISHED</code> 既是值也带 label。
+3. <strong><code>slug</code> 此时还没加 <code>unique_for_date='publish'</code></strong>——这是故意的：Chapter01 的 URL 用 <code>id</code> 做主键（<code>&lt;int:id&gt;/</code>），到后面章节才改成"按日期+slug"的 SEO 友好 URL，slug 唯一性约束是那时候才引入的。
+4. <strong><code>get_absolute_url()</code></strong>：Django 约定俗成的方法，供模板/admin 跳转到对象详情页用。</p>
+<p><strong><code>FavouritePost</code> 模型（本章的亮点/新知识点）</strong>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class FavouritePost(models.Model):
+    pk = models.CompositePrimaryKey(&quot;user&quot;, &quot;post&quot;)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey('blog.Post', on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+</code></pre></div>
+<ul>
+<li><code>CompositePrimaryKey("user", "post")</code> 是 <strong>Django 5.2 新增的 API</strong>，用 <code>(user_id, post_id)</code> 联合作为主键，而不是单独再造一个自增 <code>id</code> 字段。效果等价于旧版 Django 里常见的写法：</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># Django 5.2 之前的写法
+class Meta:
+    unique_together = ('user', 'post')
+</code></pre></div>
+<p>但 <code>CompositePrimaryKey</code> 是数据库层真正的复合主键（而不是唯一约束+隐藏自增 id），语义更准确，也是这本书选用 Django 5.2 的原因之一——顺带教这个新特性。
+- 这张表本质上是"用户收藏文章"的多对多中间表，天然防止同一用户重复收藏同一篇文章（复合主键唯一）。</p>
+<h2>五、迁移演进</h2>
+<ul>
+<li><code>0001_initial.py</code>：建 <code>Post</code> 表 + <code>-publish</code> 索引，依赖 <code>auth.user</code>。</li>
+<li><code>0002_favouritepost.py</code>（<code>Django 5.2b1</code> 生成，日期 2025-03-10）：建 <code>FavouritePost</code>，用到 <code>models.CompositePrimaryKey(...)</code>，并对 <code>settings.AUTH_USER_MODEL</code> 做了 <code>swappable_dependency</code>（标准写法，允许项目自定义 User 模型而不破坏迁移依赖关系）。</li>
+</ul>
+<h2>六、Admin 后台</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ['title', 'slug', 'author', 'publish', 'status']
+    list_filter = ['status', 'created', 'publish', 'author']
+    search_fields = ['title', 'body']
+    prepopulated_fields = {'slug': ('title',)}
+    raw_id_fields = ['author']
+    date_hierarchy = 'publish'
+    ordering = ['status', 'publish']
+    show_facets = admin.ShowFacets.ALWAYS
+</code></pre></div>
+<p>和 Chapter03 的 admin 配置<strong>完全一致</strong>，说明这块内容在第一章就定型了，后面章节没再改。值得讲的两点：
+- <code>prepopulated_fields = {'slug': ('title',)}</code>：在 admin 表单里输入标题时自动生成 slug（JS 联动），减少编辑负担。
+- <code>show_facets = admin.ShowFacets.ALWAYS</code>：<strong>Django 5.0+ 新特性</strong>，在 list_filter 侧边栏里显示每个筛选项匹配的记录数量（facet counts），默认是根据结果量自动判断是否显示，这里强制常显。</p>
+<p>注意 <code>FavouritePost</code> <strong>没有注册到 admin</strong>——它是纯业务表，不需要人工管理。</p>
+<h2>七、视图层（4 个函数视图）</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def post_list(request):
+    posts = Post.published.all()
+    return render(request, 'blog/post/list.html', {'posts': posts})
+</code></pre></div>
+<p>最简单的列表视图，此时还<strong>没有分页</strong>（<code>Paginator</code> 是后面章节加的）。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def post_detail(request, id):
+    favourite_post = None
+    post = get_object_or_404(Post, id=id, status=Post.Status.PUBLISHED)
+    try:
+        if request.user.is_authenticated:
+            favourite_post = FavouritePost.objects.get(user=request.user, post=post)
+    except FavouritePost.DoesNotExist:
+        pass
+    return render(request, 'blog/post/detail.html',
+                  {'is_favourite': favourite_post is not None, 'post': post})
+</code></pre></div>
+<ul>
+<li><code>get_object_or_404(Post, id=id, status=Post.Status.PUBLISHED)</code>：直接在查询里带上状态过滤，草稿文章即使知道 id 也访问不到，返回 404——这是"以查询条件做权限控制"的常见手法。</li>
+<li>用 <code>try/except FavouritePost.DoesNotExist</code> 而不是 <code>filter().first()</code>，是显式教你 Django ORM 的 <code>DoesNotExist</code> 异常机制；只有登录用户才查询是否收藏过。</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def add_favourite(request, id):
+    post = get_object_or_404(Post, id=id)
+    FavouritePost.objects.get_or_create(user=request.user, post=post)
+    return HttpResponseRedirect(post.get_absolute_url())
+</code></pre></div>
+<ul>
+<li><code>get_or_create</code>：利用复合主键的唯一性，重复点"收藏"也不会报错或产生重复记录，天然幂等。</li>
+<li>注意这个视图<strong>没有加 <code>@login_required</code></strong>——如果匿名用户点击收藏，<code>request.user</code> 是 <code>AnonymousUser</code>，<code>get_or_create</code> 会因为外键约束失败而报错。这是一个值得留意的小漏洞/待改进点（模板里其实是在 <code>post_detail</code> 页面无条件渲染"收藏"链接，并没有先判断是否登录）。</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@login_required
+def favourites(request):
+    favourite_posts = Post.objects.filter(
+        id__in=FavouritePost.objects.filter(user=request.user).values_list('post_id', flat=True)
+    )
+    return render(request, 'blog/post/favourites.html', {'favourite_posts': favourite_posts})
+</code></pre></div>
+<ul>
+<li>这里才正确加了 <code>@login_required</code>。</li>
+<li>查询手法：先在 <code>FavouritePost</code> 里筛出当前用户收藏的 <code>post_id</code> 列表（<code>values_list('post_id', flat=True)</code>），再用 <code>id__in=...</code> 反查 <code>Post</code>。这是子查询模式的教学写法；更地道的写法其实可以用 <code>Post.objects.filter(favouritepost__user=request.user)</code> 走反向关联一步到位，但这里选择了更直白、更适合初学者理解的两步查询。</li>
+</ul>
+<h2>八、URL 路由</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">app_name = 'blog'
+urlpatterns = [
+    path('', views.post_list, name='post_list'),
+    path('&lt;int:id&gt;/', views.post_detail, name='post_detail'),
+    path('favrourite/add/&lt;int:id&gt;/', views.add_favourite, name='add_favourite'),   # 注意：favrourite 拼写错误
+    path('favourites/', views.favourites, name='favourites'),
+]
+</code></pre></div>
+<p><code>favrourite</code> 是个拼写错误（应为 favourite），不影响功能，只是命名不够严谨——这类小瑕疵在教学代码里很常见，实际项目中应该修正。</p>
+<h2>九、模板层</h2>
+<ul>
+<li><code>base.html</code>：定义 <code>{% block title %}</code> / <code>{% block content %}</code>，右侧写死了一个 <code>#sidebar</code>（"This is my blog."），到 Chapter03 这里才会被替换成动态的"最新文章/热门标签"侧栏。</li>
+<li><code>list.html</code>：遍历 <code>posts</code>，标题可点击进入详情，正文用 <code>{{ post.body|truncatewords:30|linebreaks }}</code> 截断预览。<strong>没有分页</strong>，也<strong>没有 markdown 过滤器</strong>（这两个都是 Chapter02/03 引入的）。</li>
+<li><code>detail.html</code>：根据 <code>is_favourite</code> 显示 ❤️ 或"Add to favourites"链接，正文全文 <code>linebreaks</code>。</li>
+<li><code>favourites.html</code>：结构和 <code>list.html</code> 几乎一样，只是遍历 <code>favourite_posts</code>。</li>
+</ul>
+<h2>十、端到端业务流程走查</h2>
+<ol>
+<li><strong>匿名用户浏览列表</strong>：<code>GET /blog/</code> → <code>post_list</code> → <code>Post.published.all()</code>（只含已发布文章，按 <code>-publish</code> 排序）→ 渲染 <code>list.html</code>。</li>
+<li><strong>点进详情</strong>：<code>GET /blog/3/</code> → <code>post_detail</code> → 404 检查（草稿/不存在都 404）→ 因为未登录，<code>favourite_post=None</code> → 模板显示"Add to favourites"链接。</li>
+<li><strong>登录用户点击收藏</strong>：<code>GET /blog/favrourite/add/3/</code> → <code>add_favourite</code> → <code>get_or_create(user, post)</code> 写入 <code>FavouritePost</code>（复合主键 <code>(user_id, post_id)</code>）→ 重定向回详情页 → 这次 <code>favourite_post</code> 查得到 → 显示 ❤️。</li>
+<li><strong>查看收藏夹</strong>：<code>GET /blog/favourites/</code>（未登录会被 <code>@login_required</code> 重定向到登录页，但项目里其实<strong>没有配置</strong> <code>LOGIN_URL</code>/登录视图，这也是留给后续章节的坑）→ 子查询拿到收藏的 <code>post_id</code> 列表 → 渲染 <code>favourites.html</code>。</li>
+</ol>
+<h2>十一、开发环境</h2>
+<p><code>Dockerfile</code> 基于 <code>python:3.12.3-slim</code>，只装 <code>requirements.txt</code>（此时还不需要 <code>psycopg</code>，因为用的是 SQLite）。<code>docker-compose.yml</code> 三个服务：<code>web</code>（基础镜像）、<code>web_migrate</code>（跑一次性迁移）、<code>web_run</code>（起 <code>runserver</code>，映射 8000 端口，<code>depends_on: web_migrate</code> 保证先迁移再起服务）。<code>do.sh</code> 提供 <code>./do.sh start/stop/migrate/shell</code> 等便捷命令。</p>
+<h2>十二、这一章埋下的伏笔（对照后续章节）</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>本章现状</th>
+<th>后续章节的演进</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQLite</td>
+<td>Chapter03 切到 PostgreSQL</td>
+</tr>
+<tr>
+<td><code>slug</code> 无唯一约束，URL 用 <code>id</code></td>
+<td>Chapter02/03 加 <code>unique_for_date</code> + 日期型 URL</td>
+</tr>
+<tr>
+<td>列表无分页</td>
+<td>Chapter02 引入 <code>Paginator</code></td>
+</tr>
+<tr>
+<td>正文用 <code>linebreaks</code></td>
+<td>Chapter03 引入 Markdown 渲染 + 自定义模板标签</td>
+</tr>
+<tr>
+<td>无标签系统</td>
+<td>Chapter03 引入 <code>django-taggit</code></td>
+</tr>
+<tr>
+<td>无评论</td>
+<td>Chapter03 引入 <code>Comment</code> 模型</td>
+</tr>
+<tr>
+<td>Favourite 功能（本章特有）</td>
+<td>后续章节里这个功能<strong>没有再出现</strong>——它更像是本仓库作者单独插入用来演示 <code>CompositePrimaryKey</code> 新特性的教学补丁，Chapter02/03 的 <code>models.py</code> 里已经找不到 <code>FavouritePost</code> 了</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch02">
+  <div class="chapter-head">
+    <span class="chnum">02</span>
+    <h2 class="chtitle">Blog 项目详解教学</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 330" role="img" aria-label="图 02 · 评论提交用 commit=False 补齐外键；邮件分享用同一视图处理 GET 展示 / POST 发信两态"><defs>
+          <marker id="c02-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c02-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c02-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="24" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">浏览 + 评论</text>
+<rect class="box" x="20" y="40" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="59.0" text-anchor="middle" font-size="12.5">GET 详情页</text>
+<text class="lbl" x="95.0" y="77.5" text-anchor="middle" font-size="10.5">post_detail()</text>
+<rect class="box" x="210" y="40" width="160" height="50" rx="4"></rect>
+<text class="lbl-strong" x="290.0" y="59.0" text-anchor="middle" font-size="12.5">CommentForm()</text>
+<text class="lbl" x="290.0" y="77.5" text-anchor="middle" font-size="10.5">空表单随详情页返回</text>
+<rect class="box" x="410" y="40" width="160" height="50" rx="4"></rect>
+<text class="lbl-strong" x="490.0" y="59.0" text-anchor="middle" font-size="12.5">POST /comment/</text>
+<text class="lbl" x="490.0" y="77.5" text-anchor="middle" font-size="10.5">@require_POST</text>
+<rect class="box-a" x="410" y="130" width="160" height="60" rx="4"></rect>
+<text class="lbl-strong" x="490.0" y="154.0" text-anchor="middle" font-size="12.5">form.save(commit=False)</text>
+<text class="lbl" x="490.0" y="172.5" text-anchor="middle" font-size="10.5">补 comment.post = post</text>
+<text class="lbl" x="490.0" y="184.5" text-anchor="middle" font-size="10.5">comment.save()</text>
+<line class="edge" x1="170" y1="65" x2="210" y2="65" marker-end="url(#c02-m)"></line>
+<line class="edge" x1="370" y1="65" x2="410" y2="65" marker-end="url(#c02-m)"></line>
+<line class="edge" x1="490" y1="90" x2="490" y2="130" marker-end="url(#c02-m)"></line>
+<path class="edge" class="edge-dashed" d="M410,160 Q320,60 240,90" marker-end="url(#c02-m)"></path>
+<text class="lbl" x="325.0" y="120.0" text-anchor="middle" font-size="10">渲染 comment.html</text>
+<line x1="20" y1="195" x2="700" y2="195" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="218" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">邮件分享</text>
+<rect class="box" x="20" y="232" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="251.0" text-anchor="middle" font-size="12.5">GET /share/</text>
+<text class="lbl" x="95.0" y="269.5" text-anchor="middle" font-size="10.5">空 EmailPostForm</text>
+<rect class="box" x="210" y="232" width="170" height="50" rx="4"></rect>
+<text class="lbl-strong" x="295.0" y="251.0" text-anchor="middle" font-size="12.5">POST /share/</text>
+<text class="lbl" x="295.0" y="269.5" text-anchor="middle" font-size="10.5">build_absolute_uri()</text>
+<text class="lbl" x="295.0" y="281.5" text-anchor="middle" font-size="10.5">拼绝对链接</text>
+<rect class="box-a" x="420" y="232" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="495.0" y="251.0" text-anchor="middle" font-size="12.5">send_mail()</text>
+<text class="lbl" x="495.0" y="269.5" text-anchor="middle" font-size="10.5">Gmail SMTP</text>
+<rect class="box" x="600" y="232" width="100" height="50" rx="4"></rect>
+<text class="lbl-strong" x="650.0" y="251.0" text-anchor="middle" font-size="12.5">sent = True</text>
+<text class="lbl" x="650.0" y="269.5" text-anchor="middle" font-size="10.5">切换成功提示</text>
+<line class="edge" x1="170" y1="257" x2="210" y2="257" marker-end="url(#c02-m)"></line>
+<line class="edge" x1="380" y1="257" x2="420" y2="257" marker-end="url(#c02-m)"></line>
+<line class="edge" x1="570" y1="257" x2="600" y2="257" marker-end="url(#c02-m)"></line></svg><figcaption class="cap">图 02 · 评论提交用 commit=False 补齐外键；邮件分享用同一视图处理 GET 展示 / POST 发信两态</figcaption></figure>
+  <blockquote><p>对应目录：<code>Chapter02/</code>（Django 5 by Example 全书第二个可运行项目，在 Chapter01 骨架上迭代）</p></blockquote>
+<h2>一、这一章的定位</h2>
+<p>如果说 Chapter01 是"能跑起来的最小模型"，Chapter02 就是把它变成一个"看起来像真博客"的产品：文章有了漂亮的 URL、列表能翻页、读者能通过邮件分享文章、能在文章下面留言。同时代码里第一次出现了 <strong>邮件发送</strong>、<strong>表单（Form / ModelForm）</strong>、<strong>Class-Based View</strong>。</p>
+<p>值得注意的是：Chapter01 里那个用来演示 <code>CompositePrimaryKey</code> 的 <code>FavouritePost</code>/收藏功能，在这一章<strong>彻底消失</strong>了——<code>models.py</code>、<code>admin.py</code>、<code>urls.py</code>、模板里都找不到它的痕迹。这印证了收藏功能只是仓库作者为了展示 Django 5.2 新特性而插入的"教学彩蛋"，并不属于全书主线，从 Chapter02 起主线重新回到书本原著内容。</p>
+<h2>二、数据模型层：两处关键升级</h2>
+<h3>1. <code>slug</code> 加上了 <code>unique_for_date='publish'</code></h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">slug = models.SlugField(max_length=250, unique_for_date='publish')
+</code></pre></div>
+<p>对应迁移 <code>0002_alter_post_slug.py</code>。这个约束的含义是："同一天发布的文章，slug 不能重复"（不是全局唯一，而是按天唯一）。这是为下面的日期型 URL 做铺垫——URL 用 <code>年/月/日/slug</code> 定位文章，只要保证同一天内 slug 不重复，这个 URL 就能唯一确定一篇文章。</p>
+<h3>2. <code>get_absolute_url()</code> 从按 id 跳转改成按日期+slug 跳转</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def get_absolute_url(self):
+    return reverse('blog:post_detail', args=[
+        self.publish.year, self.publish.month, self.publish.day, self.slug,
+    ])
+</code></pre></div>
+<p>对比 Chapter01 的 <code>args=[self.id]</code>——这是本章最核心的语义变化：<strong>从"数据库内部 id 驱动的 URL"升级为"人类可读、对 SEO 友好的 URL"</strong>（例如 <code>/blog/2024/4/4/my-first-post/</code>）。搜索引擎和用户都更喜欢这种带日期和关键词的地址。</p>
+<h3>3. 新增 <code>Comment</code> 模型</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class Comment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    name = models.CharField(max_length=80)
+    email = models.EmailField()
+    body = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['created']
+        indexes = [models.Index(fields=['created'])]
+</code></pre></div>
+<ul>
+<li><code>related_name='comments'</code>：使得可以从文章反查评论，即 <code>post.comments.all()</code>（后面视图里用到）。</li>
+<li><code>active</code> 字段：给管理员一个"软删除/审核"开关——不需要真的删除垃圾评论，把 <code>active</code> 设为 <code>False</code> 即可让它不再显示，这是内容审核的常见设计。</li>
+<li><code>ordering = ['created']</code>：按时间正序，最早的评论排最前面（和 <code>Post</code> 的 <code>-publish</code> 倒序刚好相反，符合评论区"按时间线阅读"的直觉）。</li>
+</ul>
+<p>对应迁移 <code>0003_comment_...py</code>：建表 + <code>created</code> 索引。</p>
+<h2>三、表单层（本章新引入的模块 <code>forms.py</code>）</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class EmailPostForm(forms.Form):
+    name = forms.CharField(max_length=25)
+    email = forms.EmailField()
+    to = forms.EmailField()
+    comments = forms.CharField(required=False, widget=forms.Textarea)
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['name', 'email', 'body']
+</code></pre></div>
+<p>教学要点：
+- <strong><code>forms.Form</code> vs <code>forms.ModelForm</code></strong> 的第一次对比出现：<code>EmailPostForm</code> 不对应任何数据库模型，纯粹用来做"发件人信息 + 收件邮箱 + 留言"的输入校验；<code>CommentForm</code> 则直接从 <code>Comment</code> 模型反推出表单字段（<code>fields = [...]</code> 白名单指定允许用户填写哪些字段，<code>post</code> 外键、<code>created</code>、<code>active</code> 都不暴露给用户，由后端逻辑控制）。
+- <code>forms.EmailField()</code> 自带邮箱格式校验，不用手写正则。</p>
+<h2>四、视图层：本章信息量最大的部分</h2>
+<h3>1. 分页版 <code>post_list</code>（函数视图，写好后被注释掉了）</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def post_list(request):
+    post_list = Post.published.all()
+    paginator = Paginator(post_list, 3)
+    page_number = request.GET.get('page', 1)
+    try:
+        posts = paginator.page(page_number)
+    except PageNotAnInteger:
+        posts = paginator.page(1)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
+    return render(request, 'blog/post/list.html', {'posts': posts})
+</code></pre></div>
+<p>标准的三层异常兜底分页模式：
+- <code>PageNotAnInteger</code>：URL 里 <code>?page=abc</code> 这种非数字输入，兜底回第 1 页。
+- <code>EmptyPage</code>：<code>?page=999</code> 超出范围，兜底到最后一页。
+- 每页 3 篇文章（<code>Paginator(post_list, 3)</code>）。</p>
+<h3>2. <code>PostListView</code>（Class-Based View，实际被启用的版本）</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class PostListView(ListView):
+    queryset = Post.published.all()
+    context_object_name = 'posts'
+    paginate_by = 3
+    template_name = 'blog/post/list.html'
+</code></pre></div>
+<p>在 <code>urls.py</code> 里可以看到：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># path('', views.post_list, name='post_list'),   # 被注释掉
+path('', views.PostListView.as_view(), name='post_list'),  # 实际生效
+</code></pre></div>
+<p><strong>这是书中很经典的教学对比手法</strong>：先手写一遍分页逻辑让你理解原理，再展示 Django 自带的 <code>ListView</code> 如何用几行声明式代码替代整个 try/except 分页逻辑（<code>ListView</code> 内部自动处理了 <code>Paginator</code> 和两种异常）。上线用的是 CBV 版本，FBV 版本留着当参考注释。</p>
+<p>有个细节要注意：<code>ListView</code> 传给模板的分页对象变量名是 <strong><code>page_obj</code></strong>（Django 内置约定），而手写的 FBV 版本传的是 <strong><code>posts</code></strong>。所以 <code>list.html</code> 里必须写 <code>{% include "pagination.html" with page=page_obj %}</code>，如果之后改回 FBV 版本，这行要跟着改成 <code>page=posts</code>——这是 CBV/FBV 切换时容易踩的坑。</p>
+<h3>3. <code>post_detail</code>：从按 id 查询改为按日期+slug 联合查询</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def post_detail(request, year, month, day, post):
+    post = get_object_or_404(
+        Post, status=Post.Status.PUBLISHED, slug=post,
+        publish__year=year, publish__month=month, publish__day=day,
+    )
+    comments = post.comments.filter(active=True)
+    form = CommentForm()
+    return render(request, 'blog/post/detail.html',
+                  {'post': post, 'comments': comments, 'form': form})
+</code></pre></div>
+<ul>
+<li>用 <code>publish__year=year</code> 这种字段查找（field lookup）语法按年月日过滤，配合 slug 唯一定位一篇文章。</li>
+<li><code>post.comments.filter(active=True)</code>：只把审核通过的评论传给模板，被标记为不活跃的评论不会展示（但不会被删除，管理员随时可以在 admin 里重新激活）。</li>
+<li>顺带把一个空的 <code>CommentForm()</code> 传给模板，用于渲染"发表评论"表单（GET 请求只是展示表单，真正提交由另一个视图 <code>post_comment</code> 处理——这是"展示"和"处理提交"分离成两个视图的模式）。</li>
+</ul>
+<h3>4. <code>post_share</code>：邮件分享功能（本章的第二个亮点）</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def post_share(request, post_id):
+    post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+    sent = False
+    if request.method == 'POST':
+        form = EmailPostForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            post_url = request.build_absolute_uri(post.get_absolute_url())
+            subject = f&quot;{cd['name']} ({cd['email']}) recommends you read {post.title}&quot;
+            message = f&quot;Read {post.title} at {post_url}\n\n{cd['name']}'s comments: {cd['comments']}&quot;
+            send_mail(subject=subject, message=message, from_email=None, recipient_list=[cd['to']])
+            sent = True
+    else:
+        form = EmailPostForm()
+    return render(request, 'blog/post/share.html', {'post': post, 'form': form, 'sent': sent})
+</code></pre></div>
+<p>教学要点：
+- <strong>同一个视图函数处理 GET 和 POST 两种请求</strong>：GET 时展示空表单，POST 时校验+发信。这是 Django 表单处理的标准范式（"提交到自身"模式）。
+- <code>request.build_absolute_uri(post.get_absolute_url())</code>：<code>get_absolute_url()</code> 只返回路径（如 <code>/blog/2024/4/4/xxx/</code>），<code>build_absolute_uri</code> 把它拼成带协议和域名的完整 URL（如 <code>http://127.0.0.1:8000/blog/2024/4/4/xxx/</code>），因为邮件里的链接必须是绝对地址。
+- <code>send_mail(from_email=None, ...)</code>：<code>from_email</code> 传 <code>None</code> 时 Django 会自动使用 <code>settings.DEFAULT_FROM_EMAIL</code>。
+- <code>sent</code> 标志位控制模板渲染"成功提示"还是"表单"——对应 <code>share.html</code> 里的 <code>{% if sent %}</code>。
+- 对应地，<code>settings.py</code> 里第一次出现了邮件配置（Gmail SMTP + <code>python-decouple</code> 从环境变量读取账号密码），<code>docker-compose.yml</code> 也相应加了 <code>env_file: - .env</code>。这说明 Chapter03 里的邮件配置其实从 Chapter02 就开始了，Chapter03 只是继续沿用。</p>
+<h3>5. <code>post_comment</code>：评论提交（<code>commit=False</code> 模式首次出现）</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@require_POST
+def post_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+    comment = None
+    form = CommentForm(data=request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.post = post
+        comment.save()
+    return render(request, 'blog/post/comment.html', {'post': post, 'form': form, 'comment': comment})
+</code></pre></div>
+<ul>
+<li><code>@require_POST</code>：装饰器强制该视图只接受 POST 请求，GET 请求会被拒绝返回 405——因为提交评论这个动作不应该能被 GET 触发（防止意外的重复提交/CSRF 类问题，也符合 REST 语义）。</li>
+<li><strong><code>form.save(commit=False)</code></strong>：这是 <code>ModelForm</code> 的关键技巧。<code>CommentForm</code> 表单本身不包含 <code>post</code> 外键字段（<code>Meta.fields = ['name', 'email', 'body']</code>，没有 <code>post</code>），所以不能直接 <code>form.save()</code>——数据库要求 <code>post_id</code> 非空。<code>commit=False</code> 让 Django 只在内存里构造出 <code>Comment</code> 实例但不写库，这样就有机会手动把 URL 里传来的 <code>post</code> 对象赋值给 <code>comment.post</code>，再调用 <code>comment.save()</code> 真正落库。这是"表单字段不完整、需要后端补全外键"场景的标准解法，Chapter03 完全沿用了这个模式。</li>
+</ul>
+<h2>五、URL 路由</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">app_name = 'blog'
+urlpatterns = [
+    path('', views.PostListView.as_view(), name='post_list'),
+    path('&lt;int:year&gt;/&lt;int:month&gt;/&lt;int:day&gt;/&lt;slug:post&gt;/', views.post_detail, name='post_detail'),
+    path('&lt;int:post_id&gt;/share/', views.post_share, name='post_share'),
+    path('&lt;int:post_id&gt;/comment/', views.post_comment, name='post_comment'),
+]
+</code></pre></div>
+<p>对比 Chapter01 的 <code>path('&lt;int:id&gt;/', ...)</code>，详情页路由变成了四段式路径参数 <code>&lt;int:year&gt;/&lt;int:month&gt;/&lt;int:day&gt;/&lt;slug:post&gt;/</code>，<code>&lt;slug:post&gt;</code> 用 Django 自带的 slug 转换器约束 URL 段的字符集（字母数字和连字符）。</p>
+<h2>六、Admin 后台</h2>
+<p><code>PostAdmin</code> 配置和 Chapter01 完全一致；新增了：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ['name', 'email', 'post', 'created', 'active']
+    list_filter = ['active', 'created', 'updated']
+    search_fields = ['name', 'email', 'body']
+</code></pre></div>
+<p><code>list_filter</code> 里带 <code>active</code>，方便管理员快速筛出待审核/已屏蔽的评论。</p>
+<h2>七、模板层</h2>
+<ul>
+<li><strong><code>list.html</code></strong>：链接从 <code>{% url 'blog:post_detail' post.id %}</code> 改成了 <code>{{ post.get_absolute_url }}</code>（因为详情页现在需要四个参数，直接调用模型方法比在模板里手写四个 <code>{% url %}</code> 参数更简洁）；底部加了 <code>{% include "pagination.html" with page=page_obj %}</code>。</li>
+<li><strong><code>pagination.html</code></strong>（新增的可复用组件）：</li>
+</ul>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">{% if page.has_previous %}
+  &lt;a href=&quot;{% querystring page=page.previous_page_number %}&quot;&gt;Previous&lt;/a&gt;
+{% endif %}
+...
+{% if page.has_next %}
+  &lt;a href=&quot;{% querystring page=page.next_page_number %}&quot;&gt;Next&lt;/a&gt;
+{% endif %}
+</code></pre></div>
+<p>这里用到了 <strong><code>{% querystring %}</code></strong>，这是 <strong>Django 5.1 新增的模板标签</strong>，作用是在保留当前 URL 其它查询参数的前提下，只修改/添加指定的参数（这里是 <code>page</code>）。比起旧版本手写 <code>?page={{ n }}</code> 更健壮——如果 URL 上还带着搜索关键词等其它参数，<code>querystring</code> 标签会自动保留它们不丢失。
+- <strong><code>detail.html</code></strong>：新增"Share this post"链接、评论数统计（<code>{% with comments.count as total_comments %}</code> + <code>pluralize</code> 过滤器自动处理单复数）、遍历渲染评论列表（<code>{% empty %}</code> 处理无评论情况）、<code>{% include "blog/post/includes/comment_form.html" %}</code> 嵌入评论表单。
+- <strong><code>comment_form.html</code></strong>（新增的 include 片段）：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">&lt;form action=&quot;{% url &quot;blog:post_comment&quot; post.id %}&quot; method=&quot;post&quot;&gt;
+  {{ form.name.as_field_group }}
+  ...
+</code></pre></div>
+<p><code>as_field_group</code> 是 <strong>Django 5.0+ 新增的表单渲染方法</strong>，把单个字段连同它的 label、帮助文本、错误信息一起渲染成一组 HTML，比逐个手写 <code>{{ form.name.label_tag }}{{ form.name }}{{ form.name.errors }}</code> 更简洁，也比整体的 <code>{{ form.as_p }}</code> 更灵活（可以自由控制每个字段的排版，比如这里 <code>name</code>、<code>email</code> 用 <code>class="left"</code> 并排显示）。
+- <strong><code>share.html</code></strong>：GET/POST 双态模板，<code>{% if sent %}</code> 控制显示"发送成功"还是表单本身，<code>{{ form.as_p }}</code> 走的是整体快速渲染。
+- <strong><code>comment.html</code></strong>：同样是"成功 vs 重新显示表单"的双态模式，<code>{% if comment %}</code> 判断评论是否创建成功。</p>
+<h2>八、端到端业务流程走查</h2>
+<ol>
+<li><strong>浏览列表（带分页）</strong>：<code>GET /blog/?page=2</code> → <code>PostListView</code> 自动处理分页 → <code>list.html</code> 渲染第 2 页的 3 篇文章 → 底部翻页链接用 <code>{% querystring %}</code> 生成。</li>
+<li><strong>点进详情</strong>：<code>GET /blog/2024/4/4/my-first-post/</code> → 按年月日+slug 精确匹配 → 展示正文、已审核评论列表、空评论表单。</li>
+<li><strong>提交评论</strong>：表单 <code>action</code> 指向 <code>POST /blog/5/comment/</code> → <code>@require_POST</code> 拦掉 GET → <code>form.save(commit=False)</code> 补齐 <code>post</code> 外键后落库 → 渲染 <code>comment.html</code> 显示"评论已添加"。</li>
+<li><strong>邮件分享</strong>：<code>GET /blog/5/share/</code> 显示空表单 → 用户填写好友邮箱和留言，<code>POST</code> 提交 → 校验通过后拼出绝对 URL，调用 <code>send_mail</code> 真实发送 Gmail 邮件 → 页面切换成"发送成功"提示。</li>
+</ol>
+<h2>九、与前后章节的对照</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Chapter01</th>
+<th>Chapter02（本章）</th>
+<th>Chapter03</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>详情页 URL</td>
+<td><code>&lt;int:id&gt;/</code></td>
+<td><code>&lt;year&gt;/&lt;month&gt;/&lt;day&gt;/&lt;slug&gt;/</code></td>
+<td>相同，沿用</td>
+</tr>
+<tr>
+<td>列表分页</td>
+<td>无</td>
+<td><code>Paginator</code> / <code>ListView</code> 双版本</td>
+<td>沿用 CBV，每页 3 篇</td>
+</tr>
+<tr>
+<td>评论</td>
+<td>无</td>
+<td>新增 <code>Comment</code> 模型+提交流程</td>
+<td>沿用</td>
+</tr>
+<tr>
+<td>邮件分享</td>
+<td>无</td>
+<td>新增，Gmail SMTP</td>
+<td>沿用</td>
+</tr>
+<tr>
+<td>数据库</td>
+<td>SQLite</td>
+<td>仍是 SQLite</td>
+<td>切换到 PostgreSQL</td>
+</tr>
+<tr>
+<td>标签/搜索/RSS/sitemap</td>
+<td>无</td>
+<td>无</td>
+<td>新增（taggit、TrigramSimilarity、syndication、sitemaps）</td>
+</tr>
+<tr>
+<td>收藏功能 CompositePrimaryKey</td>
+<td>有（本章特有教学彩蛋）</td>
+<td><strong>消失</strong></td>
+<td>无</td>
+</tr>
+</tbody>
+</table></div>
+<p>简单说：<strong>Chapter02 把"文章能被看到"升级成"文章能被搜索引擎友好地索引、能翻页浏览、能被分享传播、能收到读者反馈"</strong>，是从静态展示走向"社区互动"的关键一步；Chapter03 则在此基础上叠加标签分类、全文搜索、订阅（RSS）和站点地图，进一步强化内容发现能力。</p>
+</section>
+<section class="chapter" id="ch03">
+  <div class="chapter-head">
+    <span class="chnum">03</span>
+    <h2 class="chtitle">Blog 项目详解教学</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 380" role="img" aria-label="图 03 · Post 是内容发现能力的枢纽：标签相似推荐、模糊搜索、RSS、站点地图各自独立接入"><defs>
+          <marker id="c03-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c03-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c03-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="275" y="160" width="170" height="60" rx="4"></rect>
+<text class="lbl-strong" x="360.0" y="184.0" text-anchor="middle" font-size="12.5">Post</text>
+<text class="lbl" x="360.0" y="202.5" text-anchor="middle" font-size="10.5">published</text>
+<rect class="box" x="20" y="20" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="42.0" text-anchor="middle" font-size="12.5">TaggableManager</text>
+<text class="lbl" x="105.0" y="60.5" text-anchor="middle" font-size="10.5">Tag / TaggedItem</text>
+<text class="lbl" x="105.0" y="72.5" text-anchor="middle" font-size="10.5">按标签过滤 + 相似推荐</text>
+<rect class="box" x="530" y="20" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="615.0" y="42.0" text-anchor="middle" font-size="12.5">TrigramSimilarity</text>
+<text class="lbl" x="615.0" y="60.5" text-anchor="middle" font-size="10.5">pg_trgm 模糊搜索</text>
+<text class="lbl" x="615.0" y="72.5" text-anchor="middle" font-size="10.5">similarity__gt=0.1</text>
+<rect class="box" x="20" y="300" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="322.0" text-anchor="middle" font-size="12.5">LatestPostsFeed</text>
+<text class="lbl" x="105.0" y="340.5" text-anchor="middle" font-size="10.5">django.contrib.syndication</text>
+<text class="lbl" x="105.0" y="352.5" text-anchor="middle" font-size="10.5">/blog/feed/</text>
+<rect class="box" x="530" y="300" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="615.0" y="322.0" text-anchor="middle" font-size="12.5">PostSitemap</text>
+<text class="lbl" x="615.0" y="340.5" text-anchor="middle" font-size="10.5">django.contrib.sitemaps</text>
+<text class="lbl" x="615.0" y="352.5" text-anchor="middle" font-size="10.5">/sitemap.xml</text>
+<rect class="box" x="270" y="300" width="180" height="56" rx="4"></rect>
+<text class="lbl-strong" x="360.0" y="322.0" text-anchor="middle" font-size="12.5">templatetags/blog_tags</text>
+<text class="lbl" x="360.0" y="340.5" text-anchor="middle" font-size="10.5">simple_tag / inclusion_tag</text>
+<text class="lbl" x="360.0" y="352.5" text-anchor="middle" font-size="10.5">filter：markdown 过滤器</text>
+<path class="edge" d="M320,160 Q220,120 130,76" marker-end="url(#c03-m)"></path>
+<path class="edge" d="M400,160 Q500,120 590,76" marker-end="url(#c03-m)"></path>
+<path class="edge" d="M130,300 Q220,260 300,220" marker-end="url(#c03-m)"></path>
+<path class="edge" d="M590,300 Q500,260 420,220" marker-end="url(#c03-m)"></path>
+<line class="edge" x1="360" y1="220" x2="360" y2="300" marker-end="url(#c03-m)"></line>
+<text class="lbl" x="20" y="110" text-anchor="start" font-size="10">annotate(same_tags=Count('tags'))
+按共同标签数排序取 4 篇</text>
+<text class="lbl" x="530" y="110" text-anchor="start" font-size="10">标题 trigram 相似度
+容错拼写误差</text></svg><figcaption class="cap">图 03 · Post 是内容发现能力的枢纽：标签相似推荐、模糊搜索、RSS、站点地图各自独立接入</figcaption></figure>
+  <blockquote><p>对应目录：<code>Chapter03/</code>（Blog 项目在全书三章里的最终形态，在 Chapter02 基础上迭代）</p></blockquote>
+<h2>一、这一章的定位</h2>
+<p>Chapter03 把 Chapter02 已经具备"URL 规范 + 分页 + 评论 + 邮件分享"的博客，进一步升级为一个<strong>具备内容发现能力的完整博客系统</strong>：读者可以按标签浏览、全文搜索、订阅 RSS；系统会根据标签自动推荐相似文章；正文支持 Markdown 排版；搜索引擎能通过 <code>sitemap.xml</code> 更好地收录站点。同时数据库从 SQLite 正式切换到了 <strong>PostgreSQL</strong>，这是因为搜索功能依赖 PostgreSQL 专有的 <code>pg_trgm</code>（三元组相似度）扩展。</p>
+<p>有个小细节值得一提：<code>Chapter03/prompts/task.md</code> 里有一段提示词，内容是"如何把标签筛选页也加进 sitemap.xml"——这更像是仓库作者留下的一个<strong>练习/思考题草稿</strong>（用于配合 AI 工具做扩展练习），并不是书本正文的一部分，当前的 <code>sitemaps.py</code> 里其实还没有实现这个扩展，只做了文章的 sitemap。</p>
+<h2>二、数据库切换：SQLite → PostgreSQL</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+    }
+}
+</code></pre></div>
+<p>所有连接参数都通过 <code>python-decouple</code> 的 <code>config()</code> 从环境变量读取（对应 <code>docker-compose.yml</code> 里 <code>db</code> 服务：<code>postgres:16.2</code>）。切换的直接原因是：<code>TrigramSimilarity</code> 全文相似度搜索是 PostgreSQL 的 <code>pg_trgm</code> 扩展提供的能力，SQLite 没有等价功能。</p>
+<p><code>INSTALLED_APPS</code> 新增了四项：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">'django.contrib.sites',      # sitemap/feed 框架依赖 SITE_ID 拼接完整域名
+'django.contrib.sitemaps',   # 站点地图框架
+'django.contrib.postgres',   # 解锁 TrigramSimilarity 等 PostgreSQL 专有 ORM 功能
+'taggit',                    # 第三方标签库 django-taggit
+</code></pre></div>
+<p>以及顶层新增 <code>SITE_ID = 1</code>（<code>django.contrib.sites</code> 要求）。</p>
+<p><code>requirements.txt</code> 相应新增：<code>django-taggit==5.0.1</code>、<code>Markdown==3.6</code>、<code>psycopg==3.1.18</code>。</p>
+<h2>三、数据模型层：只加了一行，却带来一整条新迁移链</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">from taggit.managers import TaggableManager
+...
+class Post(models.Model):
+    ...
+    tags = TaggableManager()
+</code></pre></div>
+<p><code>Post</code> 模型本身<strong>只多了这一个字段</strong>，但背后触发了两条新迁移：</p>
+<ul>
+<li><strong><code>0004_post_tags.py</code></strong>：给 <code>Post</code> 加 <code>tags</code> 字段，<code>through='taggit.TaggedItem'</code>——<code>TaggableManager</code> 底层是标准的"多对多 + 中间表"模式，<code>taggit.Tag</code> 存标签本身，<code>taggit.TaggedItem</code> 存"哪个对象打了哪个标签"的关联，支持任意模型复用（这也是它能通过 <code>GenericForeignKey</code> 给不同模型挂标签的原理，Chapter04+ 的书签项目会更深入用到这套机制）。</li>
+<li><strong><code>0005_trigram_ext.py</code></strong>：</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">from django.contrib.postgres.operations import TrigramExtension
+operations = [TrigramExtension()]
+</code></pre></div>
+<p>在数据库里执行 <code>CREATE EXTENSION pg_trgm</code>，为后面的全文相似度搜索开启底层能力。这是<strong>数据库级别的迁移</strong>（不建表、不改字段，而是给 PostgreSQL 实例开一个扩展），教学意义在于告诉你 Django 迁移系统不仅能管理表结构，还能管理数据库扩展这种基础设施级配置。</p>
+<p><code>Comment</code> 模型没有任何变化，<code>Meta</code>/<code>Admin</code> 配置也和 Chapter02 完全一致。</p>
+<h2>四、视图层：本章改动最集中的地方</h2>
+<h3>1. <code>post_list</code>：从纯分页升级为"标签筛选 + 分页"</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def post_list(request, tag_slug=None):
+    post_list = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        post_list = post_list.filter(tags__in=[tag])
+    paginator = Paginator(post_list, 3)
+    ...
+    return render(request, 'blog/post/list.html', {'posts': posts, 'tag': tag})
+</code></pre></div>
+<ul>
+<li><strong><code>tag_slug=None</code> 默认参数</strong>：同一个视图函数既服务于"全部文章列表"（<code>/blog/</code>，不传 <code>tag_slug</code>）又服务于"按标签筛选"（<code>/blog/tag/django/</code>，传 <code>tag_slug</code>）——一个函数复用两条路由，靠 URLconf 层面决定要不要传这个参数。</li>
+<li>注意这里视图函数<strong>改回了纯 FBV</strong>（<code>Paginator</code> 手写版），<code>urls.py</code> 里对应地把 <code>PostListView.as_view()</code> 注释掉、换回 <code>views.post_list</code>：</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">path('', views.post_list, name='post_list'),
+# path('', views.PostListView.as_view(), name='post_list'),
+</code></pre></div>
+<p>原因很直接：<code>ListView</code> 是通用类视图，不方便优雅地接收并处理"可选的 tag_slug 参数 + 按标签过滤查询集"这种定制逻辑，所以书本这里从 CBV 又切回了手写 FBV——这是"当需求变复杂时，选择更灵活的函数视图而非硬套通用类视图"的实际权衡案例，<code>PostListView</code> 类本身还留在代码里没删，仅是不再被路由使用。</p>
+<h3>2. <code>post_detail</code>：新增"相似文章推荐"算法</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">post_tags_ids = post.tags.values_list('id', flat=True)
+similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)
+similar_posts = similar_posts.annotate(
+    same_tags=Count('tags')
+).order_by('-same_tags', '-publish')[:4]
+</code></pre></div>
+<p>这是本章最有含金量的 ORM 用法，逐行拆解：
+1. <code>post.tags.values_list('id', flat=True)</code>：拿到当前文章所有标签的 id 列表（<code>flat=True</code> 让结果是 <code>[1, 3, 5]</code> 而不是 <code>[(1,), (3,), (5,)]</code>）。
+2. <code>Post.published.filter(tags__in=post_tags_ids)</code>：找出所有"至少共享一个标签"的已发布文章。
+3. <code>.exclude(id=post.id)</code>：排除自己。
+4. <code>.annotate(same_tags=Count('tags'))</code>：<strong>关键一步</strong>——对每篇候选文章，统计它与当前文章"重叠的标签数"有多少（因为前面 filter 已经限定 tags 在 post_tags_ids 范围内，所以这里 <code>Count('tags')</code> 统计的正是共同标签数，而不是该文章的全部标签数）。
+5. <code>.order_by('-same_tags', '-publish')[:4]</code>：按"共同标签数"降序排列，共同标签数相同时按发布时间降序，只取前 4 篇。</p>
+<p>这套"用标签重叠度做相似度排序"的算法不需要任何机器学习，纯靠 SQL 聚合就实现了推荐功能，是这本书里最经典的 ORM 教学案例之一。</p>
+<h3>3. <code>post_search</code>：PostgreSQL 全文相似度搜索（本章第二个亮点）</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def post_search(request):
+    form = SearchForm()
+    query = None
+    results = []
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            results = (
+                Post.published.annotate(
+                    similarity=TrigramSimilarity('title', query),
+                )
+                .filter(similarity__gt=0.1)
+                .order_by('-similarity')
+            )
+    return render(request, 'blog/post/search.html', {'form': form, 'query': query, 'results': results})
+</code></pre></div>
+<ul>
+<li><code>SearchForm</code>（<code>forms.py</code> 新增）：只有一个 <code>query = forms.CharField()</code> 字段。</li>
+<li>用的是 <strong><code>GET</code> 而不是 <code>POST</code></strong>：<code>if 'query' in request.GET</code>——搜索结果页应该是可收藏/可分享的 URL（如 <code>/blog/search/?query=django</code>），这是 GET 语义更贴切表单的经典场景，和邮件分享、评论提交那种"有副作用的动作"必须用 POST 形成对比。</li>
+<li><strong><code>TrigramSimilarity('title', query)</code></strong>：这是 <code>django.contrib.postgres.search</code> 提供的功能，底层调用 PostgreSQL <code>pg_trgm</code> 扩展（也就是上面 <code>0005_trigram_ext</code> 迁移开启的能力），把标题和查询词都拆成三字符片段（trigram），计算重叠比例得到一个 0~1 的相似度分数。</li>
+<li><code>.filter(similarity__gt=0.1)</code>：过滤掉相似度太低（基本不相关）的结果，<code>0.1</code> 是一个经验阈值。</li>
+<li>这种模糊匹配比 <code>title__icontains=query</code> 更强大：即使用户拼错单词或者只匹配到部分片段，只要三元组重叠度够高也能被搜到，这是传统 <code>LIKE</code>/<code>icontains</code> 做不到的。</li>
+</ul>
+<h2>五、URL 路由：本章新增两条</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">app_name = 'blog'
+urlpatterns = [
+    path('', views.post_list, name='post_list'),
+    path('tag/&lt;slug:tag_slug&gt;/', views.post_list, name='post_list_by_tag'),  # 新增：标签筛选
+    path('&lt;int:year&gt;/&lt;int:month&gt;/&lt;int:day&gt;/&lt;slug:post&gt;/', views.post_detail, name='post_detail'),
+    path('&lt;int:post_id&gt;/share/', views.post_share, name='post_share'),
+    path('&lt;int:post_id&gt;/comment/', views.post_comment, name='post_comment'),
+    path('feed/', LatestPostsFeed(), name='post_feed'),   # 新增：RSS 订阅
+    path('search/', views.post_search, name='post_search'),  # 新增：搜索
+]
+</code></pre></div>
+<ul>
+<li><code>path('tag/&lt;slug:tag_slug&gt;/', views.post_list, ...)</code> 和根路径 <code>path('', views.post_list, ...)</code> <strong>指向同一个视图函数</strong>，只是有没有传 <code>tag_slug</code> 参数的区别——印证了上面提到的"一个函数服务两条路由"。</li>
+<li><code>LatestPostsFeed()</code> 直接实例化后作为视图挂到路由上——Django Syndication 框架的 <code>Feed</code> 类本身实现了 <code>__call__</code>，可以直接当作可调用视图使用。</li>
+</ul>
+<p><code>mysite/urls.py</code> 也新增了 sitemap 路由：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">from blog.sitemaps import PostSitemap
+sitemaps = {'posts': PostSitemap}
+urlpatterns = [
+    ...
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+]
+</code></pre></div>
+<h2>六、RSS 订阅（<code>feeds.py</code>，全新模块）</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class LatestPostsFeed(Feed):
+    title = 'My blog'
+    link = reverse_lazy('blog:post_list')
+    description = 'New posts of my blog.'
+
+    def items(self):
+        return Post.published.all()[:5]
+
+    def item_title(self, item):
+        return item.title
+
+    def item_description(self, item):
+        return truncatewords_html(markdown.markdown(item.body), 30)
+
+    def item_pubdate(self, item):
+        return item.publish
+</code></pre></div>
+<p>教学要点：
+- <strong>为什么用 <code>reverse_lazy</code> 而不是 <code>reverse</code></strong>：<code>Feed</code> 类的 <code>link</code> 是一个<strong>类属性</strong>，在模块被 import 的那一刻就会求值。如果用 <code>reverse('blog:post_list')</code>，此时 URLconf 可能还没有完全加载完成，会抛出 <code>NoReverseMatch</code>。<code>reverse_lazy</code> 返回一个惰性求值的代理对象，真正需要用到 URL 字符串时（比如渲染 RSS XML 时）才去解析，从而避开这个"循环依赖/加载顺序"问题。这是 Django 里"类属性 vs 方法调用时机"的一个经典坑点。
+- <code>item_description</code> 里先用 <code>markdown.markdown(item.body)</code> 把 Markdown 正文转成 HTML，再用 <code>truncatewords_html</code> 截断到 30 个词——注意用的是 <code>_html</code> 版本而不是普通 <code>truncatewords</code>，因为普通版本会破坏 HTML 标签结构（比如在 <code>&lt;strong&gt;</code> 标签中间截断），<code>truncatewords_html</code> 能感知标签边界安全截断。</p>
+<h2>七、站点地图（<code>sitemaps.py</code>，全新模块）</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class PostSitemap(Sitemap):
+    changefreq = 'weekly'
+    priority = 0.9
+
+    def items(self):
+        return Post.published.all()
+
+    def lastmod(self, obj):
+        return obj.updated
+</code></pre></div>
+<ul>
+<li><code>changefreq</code>/<code>priority</code> 是给搜索引擎爬虫的提示信息（多久重新抓取一次、这批 URL 的相对重要程度），不是强制约束。</li>
+<li><code>lastmod(self, obj)</code> 返回每个对象的最后修改时间——<code>Sitemap</code> 框架会自动对每个 <code>items()</code> 返回的对象调用 <code>obj.get_absolute_url()</code> 拼 URL，配合 <code>lastmod</code> 生成完整的 <code>&lt;url&gt;&lt;loc&gt;...&lt;/loc&gt;&lt;lastmod&gt;...&lt;/lastmod&gt;&lt;/url&gt;</code> 条目。这也是为什么 <code>Post</code> 模型必须实现 <code>get_absolute_url()</code>——sitemap 框架就是靠这个约定方法自动拿到每个对象的地址，不需要你手写。</li>
+</ul>
+<h2>八、自定义模板标签（<code>templatetags/blog_tags.py</code>，全新模块）</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">register = template.Library()
+
+@register.simple_tag
+def total_posts():
+    return Post.published.count()
+
+@register.inclusion_tag('blog/post/latest_posts.html')
+def show_latest_posts(count=5):
+    latest_posts = Post.published.order_by('-publish')[:count]
+    return {'latest_posts': latest_posts}
+
+@register.simple_tag
+def get_most_commented_posts(count=5):
+    return Post.published.annotate(
+        total_comments=Count('comments')
+    ).order_by('-total_comments')[:count]
+
+@register.filter(name='markdown')
+def markdown_format(text):
+    return mark_safe(markdown.markdown(text))
+</code></pre></div>
+<p>四种不同的模板标签/过滤器写法，一次性教全：
+- <strong><code>simple_tag</code></strong>（<code>total_posts</code>）：最简单的形式，返回值直接输出到模板，比如 <code>{% total_posts %}</code> 输出数字。
+- <strong><code>inclusion_tag</code></strong>（<code>show_latest_posts</code>）：不仅计算数据，还指定一个子模板（<code>latest_posts.html</code>）来渲染这份数据，返回的字典就是那个子模板的上下文——本质是"局部视图 + 局部模板"的复用单元，<code>{% show_latest_posts 3 %}</code> 直接嵌入渲染好的 <code>&lt;ul&gt;...&lt;/ul&gt;</code>。
+- <strong><code>simple_tag</code> + <code>as</code> 语法</strong>：<code>get_most_commented_posts</code> 用 <code>{% get_most_commented_posts as most_commented_posts %}</code> 把结果存进模板变量，而不是直接输出——因为调用方（<code>base.html</code>）想自己控制怎么遍历渲染这批文章，而不是用固定的子模板。这里的 <code>annotate(total_comments=Count('comments'))</code> 又是一次"用聚合查询实现热门排序"的手法，和相似文章推荐算法同源。
+- <strong>自定义过滤器 <code>markdown</code></strong>（<code>@register.filter(name='markdown')</code>）：<code>markdown.markdown(text)</code> 把 Markdown 源码转成 HTML 字符串，但 Django 模板默认会对字符串做自动转义（防 XSS），所以必须用 <code>mark_safe()</code> 显式告诉 Django"这段 HTML 是可信的，不要转义"。这是模板层里少数需要主动关闭自动转义的合法场景——<strong>前提是正文内容来自可信的博客作者（通过 admin 后台写入），而不是未经处理的用户输入</strong>，否则会有 XSS 风险。这也是为什么只在渲染 <code>post.body</code> 这种作者可信内容时才用它，评论的 <code>comment.body</code> 依然用普通的 <code>linebreaks</code>（不转 HTML，更安全）。</p>
+<h2>九、模板层：把新能力接入页面</h2>
+<ul>
+<li><strong><code>base.html</code></strong>（侧边栏彻底变成动态内容）：</li>
+</ul>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">{% load blog_tags %}
+...
+I've written {% total_posts %} posts so far.
+&lt;a href=&quot;{% url &quot;blog:post_feed&quot; %}&quot;&gt;Subscribe to my RSS feed&lt;/a&gt;
+&lt;h3&gt;Latest posts&lt;/h3&gt;
+{% show_latest_posts 3 %}
+&lt;h3&gt;Most commented posts&lt;/h3&gt;
+{% get_most_commented_posts as most_commented_posts %}
+&lt;ul&gt;
+  {% for post in most_commented_posts %}
+    &lt;li&gt;&lt;a href=&quot;{{ post.get_absolute_url }}&quot;&gt;{{ post.title }}&lt;/a&gt;&lt;/li&gt;
+  {% endfor %}
+&lt;/ul&gt;
+</code></pre></div>
+<p>对比 Chapter01/02 里写死的"This is my blog."静态文案，这里侧边栏现在每次请求都要额外跑 3 条查询（总数、最新 3 篇、评论最多的 5 篇）——是一个"内容丰富但有性能代价"的设计取舍，真实生产环境这类侧边栏数据通常会加缓存。
+- <strong><code>list.html</code></strong>：
+  - 顶部加了 <code>{% if tag %}&lt;h2&gt;Posts tagged with "{{ tag.name }}"&lt;/h2&gt;{% endif %}</code>。
+  - 每篇文章下方列出标签，并且每个标签本身就是链接：<code>{% url "blog:post_list_by_tag" tag.slug %}</code>——点标签能直接跳到该标签的筛选列表，形成"标签云"式导航。
+  - 正文预览从 <code>{{ post.body|truncatewords:30|linebreaks }}</code> 换成了 <code>{{ post.body|markdown|truncatewords_html:30 }}</code>——先转 Markdown 为 HTML，再安全截断（<code>truncatewords_html</code> 而不是普通 <code>truncatewords</code>，原因同 feeds.py 里提到的）。
+- <strong><code>detail.html</code></strong>：正文改用 <code>{{ post.body|markdown }}</code>（不截断，全文渲染）；新增"Similar posts"区块遍历 <code>similar_posts</code>，<code>{% empty %}</code> 处理没有相似文章的情况。
+- <strong><code>search.html</code></strong>（全新模板）：GET 表单，<code>{% if query %}</code> 区分"刚打开搜索页"和"已经提交过查询"两种状态；结果里同样用 <code>markdown|truncatewords_html:12</code> 渲染摘要；带一个"Search again"链接方便清空重搜。
+- <strong><code>latest_posts.html</code></strong>（全新的 inclusion_tag 专用子模板）：极简的 <code>&lt;ul&gt;</code> 列表，只负责渲染 <code>show_latest_posts</code> 传进来的 <code>latest_posts</code>。</p>
+<h2>十、端到端业务流程走查</h2>
+<ol>
+<li><strong>按标签浏览</strong>：点击某篇文章下的标签链接 → <code>GET /blog/tag/django/</code> → <code>post_list(tag_slug='django')</code> → <code>get_object_or_404(Tag, slug='django')</code> 查到标签对象 → <code>post_list.filter(tags__in=[tag])</code> 过滤 → 分页渲染，标题上方额外显示"Posts tagged with 'django'"。</li>
+<li><strong>查看详情触发相似推荐</strong>：<code>GET /blog/2024/4/4/xxx/</code> → 常规详情逻辑之外，额外计算 <code>similar_posts</code>（按共同标签数+时间排序取 4 篇）→ 模板渲染"Similar posts"区块，读者可以继续点进相关内容，提升站内停留时长。</li>
+<li><strong>全文搜索</strong>：<code>GET /blog/search/?query=djago</code>（哪怕拼错一个字母）→ <code>TrigramSimilarity</code> 依然可能因为片段重叠度够高而匹配到"Django"相关标题 → 按相似度降序展示结果。</li>
+<li><strong>订阅 RSS</strong>：<code>GET /blog/feed/</code> → <code>LatestPostsFeed</code> 返回最新 5 篇文章的 XML Feed，RSS 阅读器可以定期拉取这个地址获取更新，<code>item_description</code> 里的正文经过 Markdown 渲染+截断。</li>
+<li><strong>搜索引擎抓取</strong>：爬虫请求 <code>GET /sitemap.xml</code> → Django 站点地图框架自动遍历 <code>PostSitemap.items()</code>（所有已发布文章）→ 用每篇文章的 <code>get_absolute_url()</code> + <code>updated</code> 时间生成标准 sitemap XML，帮助搜索引擎更高效地发现和重新抓取内容。</li>
+</ol>
+<h2>十一、与前面章节的完整对照</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Chapter01</th>
+<th>Chapter02</th>
+<th>Chapter03（本章）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据库</td>
+<td>SQLite</td>
+<td>SQLite</td>
+<td><strong>PostgreSQL</strong>（为 pg_trgm 搜索而切换）</td>
+</tr>
+<tr>
+<td>列表视图实现</td>
+<td>FBV，无分页</td>
+<td>CBV（<code>ListView</code>）+ 分页</td>
+<td><strong>改回 FBV</strong>（因为要支持可选的标签过滤参数）</td>
+</tr>
+<tr>
+<td>标签系统</td>
+<td>无</td>
+<td>无</td>
+<td><strong>新增</strong>（<code>django-taggit</code>，标签云导航 + 相似推荐）</td>
+</tr>
+<tr>
+<td>正文渲染</td>
+<td><code>linebreaks</code></td>
+<td><code>linebreaks</code></td>
+<td><strong>Markdown</strong>（<code>markdown</code> 过滤器 + <code>mark_safe</code>）</td>
+</tr>
+<tr>
+<td>搜索</td>
+<td>无</td>
+<td>无</td>
+<td><strong>新增</strong>（<code>TrigramSimilarity</code> 模糊搜索）</td>
+</tr>
+<tr>
+<td>RSS 订阅</td>
+<td>无</td>
+<td>无</td>
+<td><strong>新增</strong>（<code>django.contrib.syndication</code>）</td>
+</tr>
+<tr>
+<td>站点地图</td>
+<td>无</td>
+<td>无</td>
+<td><strong>新增</strong>（<code>django.contrib.sitemaps</code>）</td>
+</tr>
+<tr>
+<td>自定义模板标签</td>
+<td>无</td>
+<td>无</td>
+<td><strong>新增</strong>（4 种写法：simple_tag / inclusion_tag / as 语法 / filter）</td>
+</tr>
+<tr>
+<td>侧边栏内容</td>
+<td>静态文案</td>
+<td>静态文案</td>
+<td><strong>动态</strong>（总数/最新文章/热门评论，3 条额外查询）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>一句话总结</strong>：Chapter03 把博客从"能发布、能互动"升级为"能被发现"——标签让站内导航更立体，搜索和相似推荐让内容互相引流，RSS 和 sitemap 则打通了站外的订阅与搜索引擎收录渠道。这也是全书 Blog 项目（Chapter01→03）的最终形态，后续 Chapter04 开始会转向一个全新项目（Social/Bookmarks 书签站）。</p>
+</section>
+    <div class="footdoc">
+      由 Claude 对照 Django 5 By Example 官方代码仓库逐章阅读整理生成 · 图示为教学示意，非源码逐行还原
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>

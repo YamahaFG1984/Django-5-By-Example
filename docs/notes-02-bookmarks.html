@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bookmarks 项目深读笔记 · Django 5 By Example 源码深读</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20x%3D%2250%22%20y%3D%2262%22%20font-size%3D%2262%22%20text-anchor%3D%22middle%22%3E%F0%9F%94%96%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5 By Example · 项目二 / 共四个</span>
+      <h1>🔖&nbsp; Bookmarks 项目深读笔记</h1>
+      <p>账号体系起步，逐章长出多后端登录、图片收藏与书签工具、关注关系与动态流、Redis 排行榜 —— 一个社交化书签站的完整骨架。</p>
+    </div>
+    <nav>
+      <a href="#ch04"><span class="n">04</span>用户认证体系</a><a href="#ch05"><span class="n">05</span>多种登录方式与消息反馈</a><a href="#ch06"><span class="n">06</span>图片收藏、书签工具与 AJAX 交互</a><a href="#ch07"><span class="n">07</span>关注系统、动态流与 Redis 排行榜</a>
+    </nav>
+    <div class="series">
+      <div class="label">全书四个项目</div>
+      <a href="notes-01-blog.html">📝 Blog 项目深读笔记</a><a href="notes-02-bookmarks.html" class="current">🔖 Bookmarks 项目深读笔记</a><a href="notes-03-myshop.html">🛒 myshop 项目深读笔记</a><a href="notes-04-educa.html">🎓 educa 项目深读笔记</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">源码深读 · 逐章教学笔记</span>
+      <h1>Bookmarks 项目深读笔记</h1>
+      <p class="sub">账号体系起步，逐章长出多后端登录、图片收藏与书签工具、关注关系与动态流、Redis 排行榜 —— 一个社交化书签站的完整骨架。</p>
+      <div class="meta">
+        <span>覆盖 Chapter 04–07</span>
+        <span>基于官方配套代码仓库逐行阅读整理</span>
+        <span>含 4 张手绘架构示意图</span>
+      </div>
+    </div>
+    
+<section class="chapter" id="ch04">
+  <div class="chapter-head">
+    <span class="chnum">04</span>
+    <h2 class="chtitle">用户认证体系</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 300" role="img" aria-label="图 04 · Profile 通过 OneToOne 挂在默认 User 上，这正是 TSD 警示要用自定义 User 模型的反例"><defs>
+          <marker id="c04-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c04-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c04-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="40" y="30" width="160" height="56" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="52.0" text-anchor="middle" font-size="12.5">auth.User</text>
+<text class="lbl" x="120.0" y="70.5" text-anchor="middle" font-size="10.5">Django 默认用户模型</text>
+<rect class="box-a" x="300" y="30" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="385.0" y="52.0" text-anchor="middle" font-size="12.5">Profile</text>
+<text class="lbl" x="385.0" y="70.5" text-anchor="middle" font-size="10.5">date_of_birth</text>
+<text class="lbl" x="385.0" y="82.5" text-anchor="middle" font-size="10.5">photo = ImageField</text>
+<line class="edge" x1="200" y1="58" x2="300" y2="58" marker-end="url(#c04-m)"></line>
+<text class="lbl" x="250.0" y="53.0" text-anchor="middle" font-size="10">OneToOneField</text>
+<text class="lbl" x="230" y="44" text-anchor="start" font-size="10.5">1 : 1</text>
+<rect class="box-w" x="560" y="30" width="140" height="56" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="52.0" text-anchor="middle" font-size="12.5">该用 Custom User？</text>
+<text class="lbl" x="630.0" y="70.5" text-anchor="middle" font-size="10.5">TSD：项目起步就该用</text>
+<text class="lbl" x="630.0" y="82.5" text-anchor="middle" font-size="10.5">自定义 User 模型</text>
+<line class="edge-w" class="edge-dashed" x1="470" y1="58" x2="560" y2="58" marker-end="url(#c04-mw)"></line>
+<rect class="box-a" x="40" y="160" width="190" height="70" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="189.0" text-anchor="middle" font-size="12.5">register()</text>
+<text class="lbl" x="135.0" y="207.5" text-anchor="middle" font-size="10.5">set_password()</text>
+<text class="lbl" x="135.0" y="219.5" text-anchor="middle" font-size="10.5">+ Profile.objects.create()</text>
+<rect class="box" x="260" y="160" width="190" height="70" rx="4"></rect>
+<text class="lbl-strong" x="355.0" y="189.0" text-anchor="middle" font-size="12.5">auth.urls include</text>
+<text class="lbl" x="355.0" y="207.5" text-anchor="middle" font-size="10.5">login / logout</text>
+<text class="lbl" x="355.0" y="219.5" text-anchor="middle" font-size="10.5">password_change / reset</text>
+<line class="edge" x1="240" y1="195" x2="260" y2="195" marker-end="url(#c04-m)"></line>
+<rect class="box" x="480" y="160" width="190" height="70" rx="4"></rect>
+<text class="lbl-strong" x="575.0" y="189.0" text-anchor="middle" font-size="12.5">dashboard()</text>
+<text class="lbl" x="575.0" y="207.5" text-anchor="middle" font-size="10.5">@login_required</text>
+<line class="edge" x1="460" y1="195" x2="480" y2="195" marker-end="url(#c04-m)"></line>
+<text class="lbl" x="40" y="145" text-anchor="start" font-size="10.5">端到端流程：注册 → 登录/登出/改密/重置（内建视图）→ 仪表盘</text></svg><figcaption class="cap">图 04 · Profile 通过 OneToOne 挂在默认 User 上，这正是 TSD 警示要用自定义 User 模型的反例</figcaption></figure>
+  <h2>一、本章定位</h2>
+<p>前三章的 Blog 项目到 Chapter03 就告一段落了。Chapter04 开了一个新目录 <code>Chapter04/bookmarks/</code>，是全新的 Django 项目 <code>bookmarks</code>，里面只有一个 app：<code>account</code>。这一章的唯一目标是：<strong>注册、登录、登出、编辑资料、改密码、重置密码</strong>——一套完整的账号体系,后续章节（图片收藏、关注、点赞、动态流）都会长在这个账号体系之上。</p>
+<p>值得注意的是，这个项目里 <code>base.css</code> 已经提前写好了 <code>.image-*</code>、<code>.people-*</code>、<code>.action</code>、<code>.social</code> 等还没用到的样式类——说明这份 CSS 是给整个 Bookmarks 系列章节共用的"半成品"，本章只用到其中 header/表单相关部分。</p>
+<h2>二、目录结构</h2>
+<div class="codewrap"><pre><code>Chapter04/bookmarks/
+├── bookmarks/              项目配置包
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py / asgi.py
+├── account/                 唯一的 app
+│   ├── models.py            Profile 模型
+│   ├── forms.py             4 个表单
+│   ├── views.py             登录/注册/仪表盘/编辑资料
+│   ├── urls.py
+│   ├── admin.py
+│   ├── migrations/
+│   ├── static/css/base.css
+│   └── templates/
+│       ├── base.html
+│       ├── account/         自定义模板（登录、注册、仪表盘、编辑）
+│       └── registration/    覆盖 Django 内建 auth 视图用的模板
+</code></pre></div>
+<h2>三、配置层：<code>settings.py</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">INSTALLED_APPS = [
+    'account.apps.AccountConfig',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    ...
+]
+</code></pre></div>
+<p><code>django.contrib.auth</code> 是 Django 默认就带的，本章第一次真正把它用起来。三个关键配置：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
+</code></pre></div>
+<p>这三项是 Django 认证体系的"路由约定"：<code>@login_required</code> 装饰器在用户未登录时会跳到 <code>LOGIN_URL</code>；登录成功后默认跳到 <code>LOGIN_REDIRECT_URL</code>。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+</code></pre></div>
+<p>重置密码功能需要发邮件，开发阶段用 console backend——邮件内容直接打印在终端，不需要真的配 SMTP，这是本地调试密码重置流程最省事的方式（对比 Blog 项目里 Ch02 就直接配了真实 Gmail SMTP，这里是更轻量的开发期做法）。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+</code></pre></div>
+<p>配合 <code>Profile.photo</code> 这个 <code>ImageField</code>。项目 <code>urls.py</code> 里对应加了：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+</code></pre></div>
+<p>只有 <code>DEBUG=True</code> 时 Django 才会帮你直接托管媒体文件——生产环境这段代码根本不会生效，媒体文件必须交给 Nginx/对象存储，这是标准做法。</p>
+<h2>四、数据模型层：<code>Profile</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class Profile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    date_of_birth = models.DateField(blank=True, null=True)
+    photo = models.ImageField(upload_to='users/%Y/%m/%d/', blank=True)
+</code></pre></div>
+<p>这里有个<strong>很值得拿出来对照的设计点</strong>：这个项目从头到尾都在用 Django <strong>默认的 <code>auth.User</code></strong>，然后额外挂一张 <code>Profile</code> 表存"User 模型里没有的字段"（生日、头像）。这正是《Two Scoops of Django》里最著名的一条建议——"项目起步就该用自定义 User 模型，避免以后拆 Profile 表、多一次 join"——<strong>这本书的示例代码本身就没有遵循这条建议</strong>，用的是最传统的"默认 User + OneToOne Profile"模式。这不是错，只是教学书为了让读者聚焦在"如何用 auth 体系"上，刻意选择了更简单直接的路径；但如果把这个项目当真实项目来改造，第一件该做的事就是先换成自定义 User 模型，再往上加字段，而不是继续叠 Profile 表。</p>
+<p><code>settings.AUTH_USER_MODEL</code> 而不是直接 <code>import User</code> 硬编码——这是 Django 的标准写法，即使当前用的是默认 User，也要通过这个配置项引用，方便未来切换。</p>
+<h2>五、Admin</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'date_of_birth', 'photo']
+    raw_id_fields = ['user']
+</code></pre></div>
+<p><code>raw_id_fields = ['user']</code> 把 <code>user</code> 外键从下拉框换成一个带搜索弹窗的输入框——当 <code>User</code> 表数据量大时，下拉框会卡到没法用，这是 Django admin 里处理大表外键的标准手法（Blog 项目里 <code>PostAdmin</code> 对 <code>author</code> 字段也用了同样的技巧）。</p>
+<h2>六、<code>views.py</code> 逐个讲解</h2>
+<h3><code>user_login</code>——手写的登录视图</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def user_login(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            user = authenticate(request, username=cd['username'], password=cd['password'])
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    return HttpResponse('Authenticated successfully')
+                else:
+                    return HttpResponse('Disabled account')
+            else:
+                return HttpResponse('Invalid login')
+</code></pre></div>
+<p>这是书里故意先带你手写一遍登录逻辑，讲清楚 <code>authenticate()</code>（校验用户名密码，返回 User 对象或 None）和 <code>login()</code>（把用户写进 session）两步分离的原理。但看 <code>urls.py</code> 就会发现——<strong>这个视图在最终版本里被注释掉了</strong>，被 Django 内建的 <code>LoginView</code> 取代。这是很典型的教学设计：先带你理解原理，再告诉你"其实框架已经内置了，不用自己写"。</p>
+<h3><code>dashboard</code>——最简单的登录后主页</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@login_required
+def dashboard(request):
+    return render(request, 'account/dashboard.html', {'section': 'dashboard'})
+</code></pre></div>
+<p><code>section</code> 这个变量传给模板是为了让导航栏知道当前高亮哪个菜单项（<code>base.html</code> 里 <code>{% if section == "dashboard" %}class="selected"{% endif %}</code>），这是后续几章 Images/People 页面都会复用的约定。</p>
+<h3><code>register</code>——注册 + 自动建 Profile</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def register(request):
+    if request.method == 'POST':
+        user_form = UserRegistrationForm(request.POST)
+        if user_form.is_valid():
+            new_user = user_form.save(commit=False)
+            new_user.set_password(user_form.cleaned_data['password'])
+            new_user.save()
+            Profile.objects.create(user=new_user)
+            return render(request, 'account/register_done.html', {'new_user': new_user})
+</code></pre></div>
+<p>三个关键点：</p>
+<ol>
+<li><code>save(commit=False)</code> —— 和 Blog 项目 <code>post_comment</code> 视图里的手法一模一样：先拿到未落库的对象，插入额外逻辑，再手动保存。</li>
+<li><code>set_password()</code> —— <strong>绝不能</strong>直接把表单里的明文密码赋值给 <code>user.password</code> 再保存，必须用这个方法，它会用 Django 的密码哈希算法（PBKDF2 等）处理，明文密码永远不落库。</li>
+<li><code>Profile.objects.create(user=new_user)</code> —— User 保存成功后，紧接着手动创建对应的 Profile。这一步如果漏掉，后面所有访问 <code>request.user.profile</code> 的代码都会抛 <code>Profile.DoesNotExist</code>。这也是"User + Profile 两张表"模式的代价之一：多一步容易忘的手动关联，如果用自定义 User 模型直接把字段加进去，就不存在这个问题。</li>
+</ol>
+<h3><code>edit</code>——双表单模式</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@login_required
+def edit(request):
+    if request.method == 'POST':
+        user_form = UserEditForm(instance=request.user, data=request.POST)
+        profile_form = ProfileEditForm(instance=request.user.profile, data=request.POST, files=request.FILES)
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+</code></pre></div>
+<p>一个页面、一次提交，同时更新两张表（<code>User</code> 和 <code>Profile</code>）——这是"User+Profile 分表"模式下必须处理的典型场景：两个 <code>ModelForm</code> 分别绑定各自的 <code>instance</code>，各自校验，都通过了才都保存。<code>files=request.FILES</code> 是因为 <code>ProfileEditForm</code> 里有 <code>photo</code> 这个文件字段，普通 <code>request.POST</code> 拿不到文件数据，必须单独传 <code>FILES</code>。</p>
+<h2>七、<code>urls.py</code>——从手写到内建的关键转变</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">urlpatterns = [
+    path('', include('django.contrib.auth.urls')),
+    path('', views.dashboard, name='dashboard'),
+    path('register/', views.register, name='register'),
+    path('edit/', views.edit, name='edit'),
+]
+</code></pre></div>
+<p>文件里那一大段被注释掉的代码（<code>LoginView</code>、<code>LogoutView</code>、<code>PasswordChangeView</code> 等逐个手写 path）就是最终这一行 <code>include('django.contrib.auth.urls')</code> 的展开版本——这一行等价于自动注册了这些命名 URL：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>URL name</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>login</code> / <code>logout</code></td>
+<td>登录/登出</td>
+</tr>
+<tr>
+<td><code>password_change</code> / <code>password_change_done</code></td>
+<td>已登录用户修改密码</td>
+</tr>
+<tr>
+<td><code>password_reset</code> / <code>password_reset_done</code></td>
+<td>忘记密码，发重置邮件</td>
+</tr>
+<tr>
+<td><code>password_reset_confirm</code> / <code>password_reset_complete</code></td>
+<td>点击邮件里的链接设置新密码</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>这是本章最重要的教学点</strong>：Django 已经把"账号系统"里最繁琐、最容易出安全漏洞的部分（密码重置 token 生成校验、密码修改后 session 失效处理）都写好了，你只需要提供对应的模板文件（也就是 <code>templates/registration/</code> 下那一堆 html），不需要自己写视图逻辑。</p>
+<h2>八、<code>forms.py</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class UserRegistrationForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Repeat password', widget=forms.PasswordInput)
+
+    class Meta:
+        model = get_user_model()
+        fields = ['username', 'first_name', 'email']
+
+    def clean_password2(self):
+        cd = self.cleaned_data
+        if cd['password'] != cd['password2']:
+            raise forms.ValidationError(&quot;Passwords don't match.&quot;)
+        return cd['password2']
+</code></pre></div>
+<p>两个点：</p>
+<ul>
+<li><code>get_user_model()</code> 而不是硬编码 <code>User</code>——和 model 里用 <code>settings.AUTH_USER_MODEL</code> 是同一个原则的两种写法（一个用在需要"类"的地方，一个用在需要"字符串引用"的地方）。</li>
+<li><code>clean_password2</code> 是 Django Form 的字段级校验钩子，方法名规则是 <code>clean_&lt;字段名&gt;</code>，Django 会自动调用。两次密码不一致时在这里统一报错，比在视图里手写 if 判断更符合"表单负责校验"的分工。</li>
+</ul>
+<p><code>UserEditForm</code> 和 <code>ProfileEditForm</code> 就是把 <code>User</code>/<code>Profile</code> 各自能编辑的字段单独拆成两个 <code>ModelForm</code>，呼应上面 <code>edit</code> 视图的双表单模式。</p>
+<h2>九、模板层</h2>
+<p><code>base.html</code> 里有个 Django 5 相关的细节：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">&lt;form action=&quot;{% url &quot;logout&quot; %}&quot; method=&quot;post&quot;&gt;
+  &lt;button type=&quot;submit&quot;&gt;Logout&lt;/button&gt;
+  {% csrf_token %}
+&lt;/form&gt;
+</code></pre></div>
+<p>登出用的是 <strong>POST 表单</strong>而不是一个 <code>&lt;a href="{% url 'logout' %}"&gt;</code> 链接。这是因为新版 Django 的 <code>LogoutView</code> 从 GET 请求触发登出改成了要求 POST——原因是"点击一个链接就能让别人退出登录"本身是一个 CSRF 风险面（恶意页面可以嵌一个 <code>&lt;img src="/logout/"&gt;</code> 让访客在不知情的情况下被登出），所以官方把它收紧为必须 POST + CSRF token。</p>
+<p><code>registration/</code> 目录下的模板都是<strong>覆盖 Django 内建视图默认模板路径</strong>的写法——Django 的 <code>LoginView</code> 默认找 <code>registration/login.html</code>，<code>PasswordResetView</code> 默认找 <code>registration/password_reset_form.html</code>，只要按这些约定路径放模板，视图逻辑完全不用碰。</p>
+<h2>十、端到端业务流程</h2>
+<p><strong>注册</strong>：<code>register.html</code> 提交 → <code>UserRegistrationForm</code> 校验（用户名唯一性由 <code>ModelForm</code> 自动带出、两次密码一致性由 <code>clean_password2</code> 保证）→ 创建 User + Profile → 跳 <code>register_done.html</code> 提示去登录（注意：注册成功后<strong>没有</strong>自动登录，用户还要手动走一遍登录流程）。</p>
+<p><strong>登录</strong>：内建 <code>LoginView</code> 处理 POST，模板 <code>registration/login.html</code> 里那个隐藏的 <code>&lt;input type="hidden" name="next"&gt;</code> 是配合"未登录访问需要登录的页面被重定向到登录页"场景——登录成功后会自动跳回原本想访问的页面，而不是每次都回到 dashboard。</p>
+<p><strong>改密码</strong>：已登录用户填旧密码+新密码两次 → <code>PasswordChangeView</code> 校验旧密码正确性 → 保存新密码的哈希 → 跳 <code>password_change_done.html</code>。</p>
+<p><strong>重置密码</strong>（忘记密码场景）：填邮箱 → <code>PasswordResetView</code> 生成一个基于用户信息和时间戳的一次性 token → 通过 <code>password_reset_email.html</code> 渲染邮件内容（开发环境直接打印到控制台）→ 用户点邮件里 <code>password_reset_confirm</code> 链接（带 <code>uidb64</code> + <code>token</code>）→ token 校验通过则显示设置新密码表单 → 提交后跳 <code>password_reset_complete.html</code>。这一整套 token 生成/校验逻辑全部是 Django 内建的，本章完全没有自己写一行相关代码。</p>
+<h2>十一、Docker/开发环境</h2>
+<p><code>docker-compose.yml</code> 结构和 Blog 项目 Ch01/Ch02 时期一样，是 SQLite（本章 <code>settings.py</code> 里数据库还是 <code>sqlite3</code>，<code>requirements.txt</code> 也没有 <code>psycopg</code>）+ 简单的 <code>web_migrate</code>/<code>web_run</code> 两步启动，还没有引入 Postgres——说明账号体系这一章是刻意保持环境最简，把"接入 Postgres"这类基础设施变化留给后面讲图片/搜索的章节。</p>
+</section>
+<section class="chapter" id="ch05">
+  <div class="chapter-head">
+    <span class="chnum">05</span>
+    <h2 class="chtitle">多种登录方式与消息反馈</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 330" role="img" aria-label="图 05 · 认证后端链式尝试 + 社交登录 Pipeline 在 create_user 后插入 create_profile 步骤"><defs>
+          <marker id="c05-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c05-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c05-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="24" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">AUTHENTICATION_BACKENDS 顺序尝试</text>
+<rect class="box" x="20" y="40" width="190" height="54" rx="4"></rect>
+<text class="lbl-strong" x="115.0" y="61.0" text-anchor="middle" font-size="12.5">1. ModelBackend</text>
+<text class="lbl" x="115.0" y="79.5" text-anchor="middle" font-size="10.5">用户名 + 密码</text>
+<rect class="box" x="250" y="40" width="190" height="54" rx="4"></rect>
+<text class="lbl-strong" x="345.0" y="61.0" text-anchor="middle" font-size="12.5">2. EmailAuthBackend</text>
+<text class="lbl" x="345.0" y="79.5" text-anchor="middle" font-size="10.5">把 username 当邮箱查</text>
+<rect class="box" x="480" y="40" width="190" height="54" rx="4"></rect>
+<text class="lbl-strong" x="575.0" y="61.0" text-anchor="middle" font-size="12.5">3. GoogleOAuth2</text>
+<text class="lbl" x="575.0" y="79.5" text-anchor="middle" font-size="10.5">不走 authenticate()</text>
+<text class="lbl" x="575.0" y="91.5" text-anchor="middle" font-size="10.5">由 OAuth 跳转触发</text>
+<line class="edge" x1="210" y1="67" x2="250" y2="67" marker-end="url(#c05-m)"></line>
+<text class="lbl" x="230.0" y="62.0" text-anchor="middle" font-size="10">None →</text>
+<line class="edge" class="edge-dashed" x1="440" y1="67" x2="480" y2="67" marker-end="url(#c05-m)"></line>
+<text class="lbl" x="460.0" y="62.0" text-anchor="middle" font-size="10">独立入口</text>
+<text class="lbl" x="20" y="118" text-anchor="start" font-size="10.5">同一张登录表单，用户名或邮箱都能命中；三个后端顺序尝试直到一个返回非 None</text>
+<line x1="20" y1="145" x2="700" y2="145" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="168" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">Social Auth Pipeline（10 步，节选）</text>
+<rect class="box" x="20" y="190" width="96" height="60" rx="4"></rect>
+<text class="lbl-strong" x="68.0" y="220.0" text-anchor="middle" font-size="10.5">social_details</text>
+<rect class="box" x="124" y="190" width="96" height="60" rx="4"></rect>
+<text class="lbl-strong" x="172.0" y="220.0" text-anchor="middle" font-size="10.5">social_uid</text>
+<line class="edge" x1="116" y1="220" x2="124" y2="220" marker-end="url(#c05-m)"></line>
+<rect class="box" x="228" y="190" width="96" height="60" rx="4"></rect>
+<text class="lbl-strong" x="276.0" y="220.0" text-anchor="middle" font-size="10.5">get_username</text>
+<line class="edge" x1="220" y1="220" x2="228" y2="220" marker-end="url(#c05-m)"></line>
+<rect class="box" x="332" y="190" width="96" height="60" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="220.0" text-anchor="middle" font-size="10.5">create_user</text>
+<line class="edge" x1="324" y1="220" x2="332" y2="220" marker-end="url(#c05-m)"></line>
+<rect class="box-a" x="436" y="190" width="96" height="60" rx="4"></rect>
+<text class="lbl-strong" x="484.0" y="213.25" text-anchor="middle" font-size="10.5">create_profile</text>
+<text class="lbl-strong" x="484.0" y="226.75" text-anchor="middle" font-size="10.5">(插入)</text>
+<line class="edge" x1="428" y1="220" x2="436" y2="220" marker-end="url(#c05-m)"></line>
+<rect class="box" x="540" y="190" width="96" height="60" rx="4"></rect>
+<text class="lbl-strong" x="588.0" y="220.0" text-anchor="middle" font-size="10.5">associate_user</text>
+<line class="edge" x1="532" y1="220" x2="540" y2="220" marker-end="url(#c05-m)"></line>
+<rect class="box" x="644" y="190" width="96" height="60" rx="4"></rect>
+<text class="lbl-strong" x="692.0" y="220.0" text-anchor="middle" font-size="10.5">user_details</text>
+<line class="edge" x1="636" y1="220" x2="644" y2="220" marker-end="url(#c05-m)"></line>
+<text class="lbl" x="20" y="275" text-anchor="start" font-size="10.5">create_profile 用 get_or_create，兼顾新用户建 Profile 与老用户重复登录</text></svg><figcaption class="cap">图 05 · 认证后端链式尝试 + 社交登录 Pipeline 在 create_user 后插入 create_profile 步骤</figcaption></figure>
+  <h2>一、本章定位</h2>
+<p>Chapter05 不建新项目，是在 Chapter04 的 <code>bookmarks/account</code> 上继续加功能，主题是"<strong>让用户能用不止一种方式登录</strong>"：</p>
+<ol>
+<li>用邮箱代替用户名登录（自定义认证后端）</li>
+<li>用 Google 账号一键登录/注册（<code>social-auth-app-django</code>）</li>
+<li>编辑资料成功/失败给出提示（<code>django.contrib.messages</code>，Ch04 的 CSS 里其实早就预留了 <code>.messages</code> 相关样式，直到本章才真正用上）</li>
+</ol>
+<h2>二、新增依赖</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ python-decouple==3.8
++ social-auth-app-django==5.4.0
++ django-extensions==3.2.3
++ werkzeug==3.0.2
++ pyOpenSSL==24.1.0
+</code></pre></div>
+<ul>
+<li><code>python-decouple</code>：读环境变量，本章第一次在 Bookmarks 项目里用它管理 Google OAuth 的 Key/Secret（不落进代码库）。</li>
+<li><code>social-auth-app-django</code>：Python Social Auth 的 Django 封装，处理 OAuth2 授权码交换、token 存取、pipeline 执行的整套流程。</li>
+<li><code>django-extensions</code> + <code>werkzeug</code> + <code>pyOpenSSL</code>：这三个通常是一组，<code>django-extensions</code> 提供 <code>runserver_plus</code>（带交互式调试器的开发服务器），<code>werkzeug</code> 是它的调试器依赖，<code>pyOpenSSL</code> 让 <code>runserver_plus</code> 能生成自签名证书跑 HTTPS——OAuth 回调调试时经常需要本地也走 HTTPS，这组包就是为此配的。</li>
+</ul>
+<h2>三、认证后端机制：<code>AUTHENTICATION_BACKENDS</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'account.authentication.EmailAuthBackend',
+    'social_core.backends.google.GoogleOAuth2',
+]
+</code></pre></div>
+<p>这是本章的核心机制：Django 调用 <code>authenticate()</code> 时，会<strong>按顺序</strong>依次尝试列表里每一个后端的 <code>authenticate()</code> 方法，谁先返回非 <code>None</code> 的 User 就用谁，全部失败才算登录失败。三个后端分工：</p>
+<ul>
+<li><code>ModelBackend</code>：Django 默认的，按 <code>username</code> + 密码校验。</li>
+<li><code>EmailAuthBackend</code>（自定义）：把登录表单里的 <code>username</code> 字段当邮箱去查。</li>
+<li><code>GoogleOAuth2</code>：不是给普通表单用的，是 Python Social Auth 内部调用的，登录入口是点击"Sign in with Google"链接触发的整套 OAuth 流程，不是走 <code>authenticate(username=, password=)</code>。</li>
+</ul>
+<p>这样设计的好处是：<strong>登录表单完全不用改</strong>，用户在同一个用户名输入框里填用户名或邮箱都能登录，Django 会自动依次试完三个后端。</p>
+<h3><code>account/authentication.py</code></h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class EmailAuthBackend:
+    def authenticate(self, request, username=None, password=None):
+        try:
+            user = User.objects.get(email=username)
+            if user.check_password(password):
+                return user
+            return None
+        except (User.DoesNotExist, User.MultipleObjectsReturned):
+            return None
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+</code></pre></div>
+<p>两个方法都必须实现，这是 Django 认证后端的接口约定：<code>authenticate()</code> 负责登录时校验；<code>get_user()</code> 负责<strong>每次请求</strong>从 session 里的 user_id 反查用户对象（<code>request.user</code> 背后就是靠这个方法工作的）。</p>
+<p>这里有个<strong>值得注意的设计缺陷</strong>：<code>except (User.DoesNotExist, User.MultipleObjectsReturned)</code> 里捕获了 <code>MultipleObjectsReturned</code>，说明作者知道"同一个邮箱可能对应多个 User"这种情况会发生——但真正的解法应该是在 <code>User.email</code> 字段上加 <code>unique=True</code> 约束，从数据层杜绝重复邮箱，而不是在查询时用 try/except 把这种本不该出现的情况"悄悄吞掉"（吞掉之后，这个用户会拿到"登录失败"提示，却不知道真正原因是自己的邮箱在系统里重复了）。默认 <code>auth.User.email</code> 字段本身确实不带 <code>unique=True</code>，这是 Django 自带的已知设计（历史遗留），本章新增的 <code>clean_email</code> 校验（下面会讲）是想在应用层补上这个约束，但只能防住"以后新注册/新编辑"的重复，堵不住已经存在的历史脏数据。</p>
+<h2>四、真正的 Bug 1：<code>clean_email</code> 里的 <code>NameError</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># account/forms.py
+from django import forms
+from django.contrib.auth import get_user_model
+from .models import Profile
+</code></pre></div>
+<p>文件顶部只导入了 <code>get_user_model</code>，<strong>没有导入 <code>User</code></strong>。但 <code>clean_email</code> 里写的是：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class UserRegistrationForm(forms.ModelForm):
+    ...
+    def clean_email(self):
+        data = self.cleaned_data['email']
+        if User.objects.filter(email=data).exists():   # ← User 未定义
+            raise forms.ValidationError('Email already in use.')
+        return data
+</code></pre></div>
+<p><code>UserEditForm.clean_email</code> 同样用了裸的 <code>User</code>。这是<strong>书里示例代码的真实 bug</strong>：只要注册或编辑资料时填了邮箱字段，<code>clean_email</code> 就会执行到这一行，直接抛 <code>NameError: name 'User' is not defined</code>，而不是预期的表单校验错误。修复很简单，把 <code>Meta.model = get_user_model()</code> 改成显式引用即可：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">from django.contrib.auth import get_user_model
+User = get_user_model()
+</code></pre></div>
+<p>或者干脆把两处 <code>User.objects</code> 换成 <code>get_user_model().objects</code>。这是继续深读代码时值得留意的——教学书的示例代码不代表没有 bug，读的时候自己跑一遍表单校验分支就能发现。</p>
+<h2>五、真正的 Bug/不一致 2：<code>photo</code> 字段类型变了，迁移没跟上</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># account/models.py
+class Profile(models.Model):
+    ...
+    # photo = models.ImageField(upload_to='users/%Y/%m/%d/', blank=True)
+    photo = models.CharField(max_length=250, blank=True)
+</code></pre></div>
+<p>从 <code>ImageField</code> 改成了 <code>CharField</code>——原因很合理：Google 登录拿到的头像是<strong>一个图片 URL</strong>，不是一个可以存进 <code>MEDIA_ROOT</code> 的上传文件，<code>social_core.pipeline.user.user_details</code> 这一步会把 Google 返回的头像地址直接写进 <code>profile.photo</code>，用字符串字段存 URL 比用 <code>ImageField</code> 合适。</p>
+<p>但 <code>account/migrations/0001_initial.py</code> 里 <code>photo</code> 字段<strong>仍然是</strong> <code>models.ImageField(...)</code>——模型改了，迁移文件没有同步重新生成。如果把这个仓库当一个真实项目 clone 下来直接 <code>makemigrations</code>，Django 会告诉你 <code>Profile.photo</code> 字段有未应用的变更。这也是"深读代码"该养成的习惯：模型定义和迁移文件必须对应，看到注释掉的字段定义旁边留着旧类型，就要留意背后是不是有没跟上的迁移。</p>
+<h2>六、Social Auth Pipeline</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">SOCIAL_AUTH_PIPELINE = [
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'account.authentication.create_profile',      # ← 插入的自定义步骤
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+]
+</code></pre></div>
+<p>这是一条<strong>流水线</strong>，Google 回调回来之后，会按顺序执行这十步：拿到第三方资料 → 拿到第三方唯一 ID → 检查是否允许授权 → 查是否已有关联账号 → 生成用户名 → <strong>创建 User</strong> → …</p>
+<p>看到 <code>create_user</code> 和 <code>associate_user</code> 中间插了一步 <code>account.authentication.create_profile</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def create_profile(backend, user, *args, **kwargs):
+    Profile.objects.get_or_create(user=user)
+</code></pre></div>
+<p>这一步的作用和 <code>register</code> 视图里手动 <code>Profile.objects.create(user=new_user)</code> 完全对应——<strong>普通注册和社交登录是两条完全独立的用户创建路径</strong>，如果不在 pipeline 里插这一步，通过 Google 登录创建的新用户就没有 Profile，后面任何访问 <code>request.user.profile</code> 的代码（比如 <code>edit</code> 视图）都会报错。这里用 <code>get_or_create</code> 而不是 <code>create</code>，是因为社交登录 pipeline 在"已有账号再次登录"时也会走到这一步，用 <code>get_or_create</code> 保证不会对老用户重复建 Profile 报唯一约束冲突。</p>
+<h2>七、Messages 框架首次登场</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># account/views.py
+@login_required
+def edit(request):
+    if request.method == 'POST':
+        ...
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Profile updated successfully')
+        else:
+            messages.error(request, 'Error updating your profile')
+</code></pre></div>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">&lt;!-- base.html --&gt;
+{% if messages %}
+  &lt;ul class=&quot;messages&quot;&gt;
+    {% for message in messages %}
+      &lt;li class=&quot;{{ message.tags }}&quot;&gt;
+        {{ message|safe }}
+        &lt;a href=&quot;#&quot; class=&quot;close&quot;&gt;x&lt;/a&gt;
+      &lt;/li&gt;
+    {% endfor %}
+  &lt;/ul&gt;
+{% endif %}
+</code></pre></div>
+<p><code>messages.success</code>/<code>messages.error</code> 把提示信息存进 session，下一次渲染任意页面时 <code>{% if messages %}</code> 都能取到并显示一次（显示后自动清空）——这是 Django "一次性横幅提示"的标准做法，本章第一次用上，而 <code>message.tags</code> 输出的正是 <code>success</code>/<code>error</code> 这个级别名，直接对应 Ch04 时 <code>base.css</code> 里就写好的 <code>ul.messages li.success</code>/<code>li.error</code> 样式。之前几章那段 CSS 一直是"预留但没用上"的状态，到这里终于闭环。</p>
+<h2>八、URL 层新增</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># bookmarks/urls.py
+path('social-auth/', include('social_django.urls', namespace='social')),
+</code></pre></div>
+<p>配合模板里的 <code>{% url "social:begin" "google-oauth2" %}</code>——点击"Sign in with Google"实际访问 <code>/social-auth/login/google-oauth2/</code>，这个 URL 完全由 <code>social_django</code> 内部处理（跳转 Google 授权页、接收回调、换 token、跑 pipeline），业务代码里不需要写一行视图。</p>
+<h2>九、端到端流程对比</h2>
+<p><strong>普通邮箱/用户名注册登录</strong>（有 bug 未修复的情况下）：填注册表单 → 一旦邮箱字段被 <code>clean_email</code> 校验 → <strong>直接 500（NameError）</strong>，走不通——这也是为什么要把这个 bug 单独拎出来讲，它不是"边缘情况"，是注册这条主链路当前就跑不通。</p>
+<p><strong>Google 一键登录</strong>（全新用户）：点击"Sign in with Google" → 跳 Google 同意页 → 授权后回调到 <code>/social-auth/complete/google-oauth2/</code> → pipeline 十步依次执行，途中创建 User + Profile（<code>photo</code> 字段写入 Google 头像 URL）→ 自动 <code>login()</code> → 跳转 <code>LOGIN_REDIRECT_URL</code>（dashboard）。全程不经过 <code>account/views.py</code> 里任何一个视图。</p>
+<p><strong>编辑资料</strong>：提交成功/失败都会在下一次页面渲染时看到顶部的绿色/红色提示条——这是本章唯一新增、且<strong>真正跑得通</strong>的用户可见变化。</p>
+<h2>十、Chapter04 → Chapter05 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter04</th>
+<th>Chapter05</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>登录方式</td>
+<td>仅用户名+密码</td>
+<td>用户名/邮箱+密码（多后端）、Google 一键登录</td>
+</tr>
+<tr>
+<td><code>AUTHENTICATION_BACKENDS</code></td>
+<td>未配置（默认仅 ModelBackend）</td>
+<td>三个后端顺序尝试</td>
+</tr>
+<tr>
+<td><code>Profile.photo</code></td>
+<td><code>ImageField</code>（真实文件上传）</td>
+<td><code>CharField</code>（存 URL，但迁移文件未同步，是个遗留问题）</td>
+</tr>
+<tr>
+<td>操作反馈</td>
+<td>无</td>
+<td><code>messages</code> 框架，成功/失败提示</td>
+</tr>
+<tr>
+<td>新用户创建入口</td>
+<td>仅 <code>register</code> 一条路径</td>
+<td><code>register</code> 视图 + 社交登录 pipeline 两条路径，都要保证建 Profile</td>
+</tr>
+<tr>
+<td>已知代码问题</td>
+<td>无</td>
+<td><code>clean_email</code> 缺 <code>User</code> 导入（NameError）；<code>photo</code> 迁移与模型不一致</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch06">
+  <div class="chapter-head">
+    <span class="chnum">06</span>
+    <h2 class="chtitle">图片收藏、书签工具与 AJAX 交互</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 360" role="img" aria-label="图 06 · 书签工具靠“注入脚本 + 新开标签页回站”绕开跨域限制；服务端下载图片处存在 SSRF 隐患"><defs>
+          <marker id="c06-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c06-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c06-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="190" height="60" rx="4"></rect>
+<text class="lbl-strong" x="115.0" y="54.0" text-anchor="middle" font-size="12.5">第三方网站</text>
+<text class="lbl" x="115.0" y="72.5" text-anchor="middle" font-size="10.5">浏览器当前所在页面</text>
+<rect class="box-a" x="260" y="30" width="200" height="60" rx="4"></rect>
+<text class="lbl-strong" x="360.0" y="54.0" text-anchor="middle" font-size="12.5">bookmarklet.js</text>
+<text class="lbl" x="360.0" y="72.5" text-anchor="middle" font-size="10.5">注入 &lt;script&gt;，扫描页面</text>
+<text class="lbl" x="360.0" y="84.5" text-anchor="middle" font-size="10.5">&lt;img&gt; 并弹出选图悬浮框</text>
+<rect class="box" x="510" y="30" width="190" height="60" rx="4"></rect>
+<text class="lbl-strong" x="605.0" y="54.0" text-anchor="middle" font-size="12.5">window.open()</text>
+<text class="lbl" x="605.0" y="72.5" text-anchor="middle" font-size="10.5">新标签页回到</text>
+<text class="lbl" x="605.0" y="84.5" text-anchor="middle" font-size="10.5">images/create/?url=...</text>
+<line class="edge" x1="210" y1="60" x2="260" y2="60" marker-end="url(#c06-m)"></line>
+<text class="lbl" x="235.0" y="55.0" text-anchor="middle" font-size="10">javascript: 书签</text>
+<line class="edge" x1="460" y1="60" x2="510" y2="60" marker-end="url(#c06-m)"></line>
+<path class="edge" d="M605,90 Q450,130 300,150" marker-end="url(#c06-m)"></path>
+<text class="lbl" x="452.5" y="115.0" text-anchor="middle" font-size="10">带 url + title 参数</text>
+<rect class="box" x="220" y="150" width="260" height="56" rx="4"></rect>
+<text class="lbl-strong" x="350.0" y="172.0" text-anchor="middle" font-size="12.5">image_create()</text>
+<text class="lbl" x="350.0" y="190.5" text-anchor="middle" font-size="10.5">GET 预填表单 → POST 提交</text>
+<rect class="box-w" x="220" y="240" width="260" height="70" rx="4"></rect>
+<text class="lbl-strong" x="350.0" y="269.0" text-anchor="middle" font-size="12.5">ImageCreateForm.save()</text>
+<text class="lbl" x="350.0" y="287.5" text-anchor="middle" font-size="10.5">requests.get(image_url)</text>
+<text class="lbl" x="350.0" y="299.5" text-anchor="middle" font-size="10.5">ContentFile(response.content)</text>
+<line class="edge" x1="350" y1="206" x2="350" y2="240" marker-end="url(#c06-m)"></line>
+<text class="lbl-warn" x="220" y="335" text-anchor="start" font-size="10.5">clean_url 只查文件名后缀；无内网 IP 校验、无超时、无大小限制 → SSRF / 资源耗尽风险</text>
+<rect class="box" x="540" y="150" width="160" height="60" rx="4"></rect>
+<text class="lbl-strong" x="620.0" y="174.0" text-anchor="middle" font-size="12.5">点赞 / 无限滚动</text>
+<text class="lbl" x="620.0" y="192.5" text-anchor="middle" font-size="10.5">fetch() + CSRF token</text>
+<text class="lbl" x="620.0" y="204.5" text-anchor="middle" font-size="10.5">（js-cookie 读取）</text>
+<line class="edge" class="edge-dashed" x1="480" y1="178" x2="540" y2="178" marker-end="url(#c06-m)"></line></svg><figcaption class="cap">图 06 · 书签工具靠“注入脚本 + 新开标签页回站”绕开跨域限制；服务端下载图片处存在 SSRF 隐患</figcaption></figure>
+  <h2>一、本章定位</h2>
+<p>Chapter05 的账号体系到这里正式派上用场：新增 <code>images</code> 应用，让登录用户能"收藏图片"，配套三件事——服务端下载存图、缩略图生成、无刷新的点赞和无限滚动。项目层面新增了两个依赖：</p>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ requests==2.31.0
++ easy-thumbnails==2.8.5
+</code></pre></div>
+<p><code>requests</code> 用来在服务端下载用户提交的图片 URL；<code>easy-thumbnails</code> 提供模板标签 <code>{% thumbnail %}</code>，按需生成不同尺寸的缩略图并缓存。</p>
+<h2>二、数据模型：<code>Image</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class Image(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='images_created', on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, blank=True)
+    url = models.URLField(max_length=2000)
+    image = models.ImageField(upload_to='images/%Y/%m/%d/')
+    description = models.TextField(blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    users_like = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='images_liked', blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['-created'])]
+        ordering = ['-created']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('images:detail', args=[self.id, self.slug])
+</code></pre></div>
+<p>几个设计点：</p>
+<ul>
+<li><code>url</code> 字段存的是<strong>图片的原始来源地址</strong>（别的网站上那张图的 URL），<code>image</code> 字段才是下载下来存在自己服务器上的文件——两者都保留，一个当溯源信息，一个是真正展示用的本地资源。</li>
+<li><code>users_like</code> 反向 <code>related_name='images_liked'</code>，配合 <code>user</code> 字段的 <code>related_name='images_created'</code>——一个 User 既能通过 <code>user.images_created</code> 拿到自己上传的图，也能通过 <code>user.images_liked</code> 拿到自己点赞过的图，两个方向的反查语义都起了清晰的名字，不会和默认的 <code>image_set</code> 混淆。</li>
+<li><code>save()</code> 里自动补 slug——这和 Blog 项目 <code>Post</code> 模型如出一辙，但注意这里的 <code>slug</code> <strong>没有</strong> <code>unique_for_date</code> 或唯一约束，纯粹是为了 URL 好看，真正定位一张图靠的是 URL 里的 <code>id</code>（见 <code>get_absolute_url</code> 和 <code>image_detail</code> 视图），slug 只是附加的可读信息，写错了也不影响功能。</li>
+<li><code>get_absolute_url</code> 里的 <code>'images:detail'</code> 使用了 app 命名空间——和 Blog 项目的 <code>'blog:post_detail'</code> 是同一套约定，<code>images/urls.py</code> 里 <code>app_name = 'images'</code> 对应上了。</li>
+</ul>
+<h2>三、<code>forms.py</code>——服务端下载图片这个核心动作</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ImageCreateForm(forms.ModelForm):
+    class Meta:
+        model = Image
+        fields = ['title', 'url', 'description']
+        widgets = {'url': forms.HiddenInput}
+
+    def clean_url(self):
+        url = self.cleaned_data['url']
+        valid_extensions = ['jpg', 'jpeg', 'png']
+        extension = url.rsplit('.', 1)[1].lower()
+        if extension not in valid_extensions:
+            raise forms.ValidationError('The given URL does not match valid image extensions.')
+        return url
+
+    def save(self, force_insert=False, force_update=False, commit=True):
+        image = super().save(commit=False)
+        image_url = self.cleaned_data['url']
+        name = slugify(image.title)
+        extension = image_url.rsplit('.', 1)[1].lower()
+        image_name = f'{name}.{extension}'
+        response = requests.get(image_url)
+        image.image.save(image_name, ContentFile(response.content), save=False)
+        if commit:
+            image.save()
+        return image
+</code></pre></div>
+<ul>
+<li><code>widgets = {'url': forms.HiddenInput}</code>——<code>url</code> 字段用户不需要手填，是书签工具自动带过来的，表单里只是"隐藏地传下去"，界面上用户只填标题和描述。</li>
+<li><code>clean_url</code> 只按<strong>文件名后缀</strong>粗略判断是不是图片——这是一个偏弱的校验，后面会讲它的风险。</li>
+<li><code>save()</code> 重写：先拿到未落库的 <code>image</code> 对象，然后 <code>requests.get(image_url)</code> <strong>服务端主动去抓取</strong>这个 URL 的内容，把返回的字节流通过 <code>ContentFile</code> 包装后存进 <code>ImageField</code>。这是"用户提交一个链接，服务器帮你下载下来存到自己这"这类功能的标准写法（图床、附件抓取、RSS 抓图都是这个模式）。</li>
+</ul>
+<blockquote class="callout-warn"><p><strong>安全性提醒</strong>：这段代码有真实的 SSRF（服务端请求伪造）风险——<code>clean_url</code> 只查了字符串后缀是不是 <code>.jpg/.jpeg/.png</code>，并没有校验这个 URL 解析出的 IP 是不是内网地址（比如提交 <code>http://169.254.169.254/latest/meta-data/xxx.jpg</code> 或指向内网服务的地址），服务端会照样发起请求；<code>requests.get</code> 也没有限制响应体大小、没有设置超时，一个指向巨大文件或者慢速服务的 URL 可以拖垮下载这个请求的 worker。真实项目里这里至少要加：URL 解析后校验目标 IP 不在内网网段、<code>requests.get(..., timeout=5, stream=True)</code> 配合读取字节数上限、以及下载完之后再校验一次真实的图片 Content-Type/文件头，而不是只信任 URL 后缀字符串。</p></blockquote>
+<h2>四、<code>views.py</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@login_required
+def image_create(request):
+    if request.method == 'POST':
+        form = ImageCreateForm(data=request.POST)
+        if form.is_valid():
+            new_image = form.save(commit=False)
+            new_image.user = request.user
+            new_image.save()
+            messages.success(request, 'Image added successfully')
+            return redirect(new_image.get_absolute_url())
+    else:
+        form = ImageCreateForm(data=request.GET)
+    return render(request, 'images/image/create.html', {'section': 'images', 'form': form})
+</code></pre></div>
+<p>同一个视图承担两种输入来源：<strong>GET</strong> 时表单数据来自书签工具跳转过来的 URL 查询参数（预填标题和图片地址，用户只需要确认/补充描述后提交）；<strong>POST</strong> 时才是真正的表单提交。提交成功后 <code>redirect()</code> 到详情页——经典的 <strong>PRG（Post/Redirect/Get）</strong> 模式，避免用户刷新页面时重复提交表单。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">def image_detail(request, id, slug):
+    image = get_object_or_404(Image, id=id, slug=slug)
+    return render(request, 'images/image/detail.html', {'section': 'images', 'image': image})
+</code></pre></div>
+<p>注意这个视图<strong>没有</strong> <code>@login_required</code>——收藏图片需要登录，但<strong>浏览</strong>图片详情页是公开的，任何人都能看。这是刻意的产品设计：站点内容公开展示，互动行为才要求身份。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@login_required
+@require_POST
+def image_like(request):
+    image_id = request.POST.get('id')
+    action = request.POST.get('action')
+    if image_id and action:
+        try:
+            image = Image.objects.get(id=image_id)
+            if action == 'like':
+                image.users_like.add(request.user)
+            else:
+                image.users_like.remove(request.user)
+            return JsonResponse({'status': 'ok'})
+        except Image.DoesNotExist:
+            pass
+    return JsonResponse({'status': 'error'})
+</code></pre></div>
+<p>这是本书<strong>第一个纯 AJAX 接口</strong>——不返回 HTML，返回 <code>JsonResponse</code>。<code>users_like.add()</code>/<code>.remove()</code> 直接操作 M2M 中间表，一次调用搞定关联关系的增删，不需要手动查中间表判断是否已存在（<code>add()</code> 本身是幂等的，重复 add 不会报错）。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@login_required
+def image_list(request):
+    images = Image.objects.all()
+    paginator = Paginator(images, 8)
+    page = request.GET.get('page')
+    images_only = request.GET.get('images_only')
+    try:
+        images = paginator.page(page)
+    except PageNotAnInteger:
+        images = paginator.page(1)
+    except EmptyPage:
+        if images_only:
+            return HttpResponse('')
+        images = paginator.page(paginator.num_pages)
+    if images_only:
+        return render(request, 'images/image/list_images.html', {'section': 'images', 'images': images})
+    return render(request, 'images/image/list.html', {'section': 'images', 'images': images})
+</code></pre></div>
+<p>分页逻辑还是 Blog Ch02 那套手写三异常处理，但多了一个 <code>images_only</code> 分支——<strong>同一个视图</strong>根据这个参数决定返回"完整页面"还是"只有图片列表这一小段 HTML 片段"。这是给下面讲的无限滚动服务的：首次访问走完整页，滚动到底部后前端用 <code>fetch('?images_only=1&amp;page=2')</code> 只要那一小块 HTML，直接拼接到页面里，不用整页刷新。<code>EmptyPage</code> 分支里对 <code>images_only</code> 请求直接返回空字符串——前端用"收到空响应"当作"没有更多图片了"的信号，停止继续发请求。</p>
+<h2>五、书签工具（Bookmarklet）——本章真正的巧思</h2>
+<p><code>dashboard.html</code> 里那个"Bookmark it"按钮不是普通链接：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">&lt;a href=&quot;javascript:{% include &quot;bookmarklet_launcher.js&quot; %}&quot; class=&quot;button&quot;&gt;Bookmark it&lt;/a&gt;
+</code></pre></div>
+<p><code>href</code> 直接是一段 <code>javascript:</code> 协议的代码——这就是"书签工具"的本质：把一段 JS 存成浏览器书签，点击时不是跳转页面，而是在<strong>当前所在的任意网站</strong>上执行这段脚本。<code>bookmarklet_launcher.js</code> 做的事很简单：</p>
+<div class="codewrap"><div class="langtag">js</div><pre><code class="language-js">if(!window.bookmarklet) {
+    bookmarklet_js = document.body.appendChild(document.createElement('script'));
+    bookmarklet_js.src = '//127.0.0.1:8000/static/js/bookmarklet.js?r=' + Math.random();
+    window.bookmarklet = true;
+}
+else {
+    bookmarkletLaunch();
+}
+</code></pre></div>
+<p>第一次点击：往当前页面（不管这是哪个网站）动态插入一个 <code>&lt;script&gt;</code> 标签，去加载<strong>你自己站点</strong>的 <code>bookmarklet.js</code>；<code>?r=随机数</code> 是缓存穿透（cache busting），避免浏览器用旧版本的脚本缓存。<code>window.bookmarklet</code> 标记位保证同一个页面上重复点书签不会重复插入脚本。</p>
+<p>真正的逻辑在 <code>bookmarklet.js</code> 的 <code>bookmarkletLaunch()</code> 里：</p>
+<ol>
+<li>往当前页面注入一个悬浮框（<code>bookmarklet.css</code> 定义样式，<code>z-index</code> 拉到最大保证盖在最上层）。</li>
+<li><code>document.querySelectorAll('img[src$=".jpg"], ...')</code> 扫描当前页面 DOM 里所有图片标签，过滤掉太小的（<code>naturalWidth/Height &gt;= 250</code>，避免把图标、装饰小图也列进来）。</li>
+<li>把符合条件的图片缩略展示在悬浮框里，用户点选一张。</li>
+<li>点选后 <code>window.open(siteUrl + 'images/create/?url=' + encodeURIComponent(imageSelected.src) + '&amp;title=' + encodeURIComponent(document.title), '_blank')</code>——<strong>新开一个标签页</strong>跳回你自己的 Bookmarks 站点，带着选中图片的地址和当前页标题作为 GET 参数，直接命中前面讲的 <code>image_create</code> 视图的 GET 分支，表单被自动预填好。</li>
+</ol>
+<p>这一整套设计的巧妙之处在于：<strong>完全不需要跨域权限、不需要浏览器扩展</strong>，纯靠"往当前页面注入脚本 + 新开标签页回到自己域名"这两个动作绕开了跨站的限制。</p>
+<h2>六、无刷新交互：AJAX 的两个场景</h2>
+<p><code>base.html</code> 新增了公共基础设施：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">&lt;script src=&quot;//cdn.jsdelivr.net/npm/js-cookie@3.0.5/dist/js.cookie.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+  const csrftoken = Cookies.get('csrftoken');
+  document.addEventListener('DOMContentLoaded', (event) =&gt; {
+    {% block domready %}
+    {% endblock %}
+  })
+&lt;/script&gt;
+</code></pre></div>
+<p>因为 <code>fetch()</code> 发起的请求不会像 <code>&lt;form&gt;</code> 那样自动带上 <code>{% csrf_token %}</code>，必须手动从 cookie 里读出 CSRF token 塞进请求头——这是 Django 官方文档里 AJAX 场景处理 CSRF 的标准做法。<code>{% block domready %}</code> 是一个约定：任何子模板想在页面加载完后跑一段 JS，就重写这个 block，不用各自重复写 <code>DOMContentLoaded</code> 监听。</p>
+<p><strong>点赞（<code>detail.html</code>）</strong>：</p>
+<div class="codewrap"><div class="langtag">js</div><pre><code class="language-js">fetch(url, options).then(response =&gt; response.json()).then(data =&gt; {
+  if (data['status'] === 'ok') {
+    var action = previousAction === 'like' ? 'unlike' : 'like';
+    likeButton.dataset.action = action;
+    likeButton.innerHTML = action;
+    likeCount.innerHTML = previousAction === 'like' ? totalLikes + 1 : totalLikes - 1;
+  }
+})
+</code></pre></div>
+<p>请求成功后<strong>直接在前端更新按钮文字和计数</strong>，不重新渲染整个页面，也不重新发请求去查最新点赞数——这是乐观更新的思路：既然后端返回了 <code>ok</code>，前端就相信操作成功了，直接同步 UI 状态。</p>
+<p><strong>无限滚动（<code>list.html</code>）</strong>：</p>
+<div class="codewrap"><div class="langtag">js</div><pre><code class="language-js">window.addEventListener('scroll', function(e) {
+  var margin = document.body.clientHeight - window.innerHeight - 200;
+  if(window.pageYOffset &gt; margin &amp;&amp; !emptyPage &amp;&amp; !blockRequest) {
+    blockRequest = true;
+    page += 1;
+    fetch('?images_only=1&amp;page=' + page).then(...).then(html =&gt; {
+      if (html === '') { emptyPage = true; }
+      else { imageList.insertAdjacentHTML('beforeEnd', html); blockRequest = false; }
+    })
+  }
+});
+const scrollEvent = new Event('scroll');
+window.dispatchEvent(scrollEvent);
+</code></pre></div>
+<p><code>blockRequest</code> 防止用户疯狂滚动时并发发出多个重复请求；<code>emptyPage</code> 一旦为 true 就永久停止继续请求（对应后端 <code>image_list</code> 视图 <code>EmptyPage</code> 分支返回空字符串）；最后手动 <code>dispatchEvent</code> 触发一次 <code>scroll</code> 事件，是为了处理"首屏内容本来就没填满一屏，用户根本没法产生真实滚动"的边界情况，手动补一次检查。</p>
+<h2>七、缩略图：<code>easy-thumbnails</code></h2>
+<div class="codewrap"><div class="langtag">html</div><pre><code class="language-html">&lt;!-- detail.html：按宽度等比缩放 --&gt;
+{% thumbnail image.image 300x0 %}
+
+&lt;!-- list_images.html：固定尺寸智能裁剪 --&gt;
+{% thumbnail image.image 300x300 crop=&quot;smart&quot; as im %}
+</code></pre></div>
+<p><code>300x0</code> 里的 <code>0</code> 表示"只限制宽度，高度等比缩放"；<code>crop="smart"</code> 则是裁成固定的 300×300 正方形，用智能裁剪算法（分析图片内容找视觉重心）而不是简单居中裁剪。缩略图不是上传时预生成的，是<strong>第一次被模板请求时按需生成并缓存到磁盘</strong>，后续同尺寸请求直接读缓存。</p>
+<h2>八、Chapter05 → Chapter06 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter05</th>
+<th>Chapter06</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>新增 app</td>
+<td>无</td>
+<td><code>images</code>（图片收藏、点赞、无限滚动）</td>
+</tr>
+<tr>
+<td><code>account.Profile.photo</code></td>
+<td><code>CharField</code>（存 URL）</td>
+<td>改回 <code>ImageField</code>（真实文件上传）—— Ch05 那次迁移不同步的问题在这里被"顺带"解决了</td>
+</tr>
+<tr>
+<td>前端</td>
+<td>纯服务端渲染</td>
+<td>首次引入 <code>fetch</code> AJAX（点赞、无限滚动）+ 书签工具（跨站注入 JS）</td>
+</tr>
+<tr>
+<td>图片处理</td>
+<td>无</td>
+<td><code>requests</code> 服务端下载 + <code>easy-thumbnails</code> 动态缩略图</td>
+</tr>
+<tr>
+<td>安全关注点</td>
+<td><code>clean_email</code> NameError</td>
+<td><code>ImageCreateForm.save()</code> 的 SSRF/资源耗尽风险（见上方提醒）</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section class="chapter" id="ch07">
+  <div class="chapter-head">
+    <span class="chnum">07</span>
+    <h2 class="chtitle">关注系统、动态流与 Redis 排行榜</h2>
+  </div>
+  <figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 420" role="img" aria-label="图 07 · add_to_class 动态挂关注字段；GenericForeignKey 撑起多态动态流；Redis Sorted Set 做浏览排行"><defs>
+          <marker id="c07-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c07-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="c07-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">关注关系（add_to_class 动态注入）</text>
+<rect class="box" x="20" y="36" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="61.0" text-anchor="middle" font-size="12.5">User A</text>
+<rect class="box" x="230" y="36" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="305.0" y="61.0" text-anchor="middle" font-size="12.5">User B</text>
+<line class="edge" x1="170" y1="55" x2="230" y2="55" marker-end="url(#c07-m)"></line>
+<text class="lbl" x="200.0" y="50.0" text-anchor="middle" font-size="10">following</text>
+<line class="edge" class="edge-dashed" x1="230" y1="70" x2="170" y2="70" marker-end="url(#c07-m)"></line>
+<text class="lbl" x="200.0" y="65.0" text-anchor="middle" font-size="10">followers（反向）</text>
+<rect class="box-a" x="430" y="30" width="240" height="60" rx="4"></rect>
+<text class="lbl-strong" x="550.0" y="54.0" text-anchor="middle" font-size="12.5">Contact（through 表）</text>
+<text class="lbl" x="550.0" y="72.5" text-anchor="middle" font-size="10.5">user_from / user_to / created</text>
+<text class="lbl" x="550.0" y="84.5" text-anchor="middle" font-size="10.5">symmetrical=False</text>
+<line x1="20" y1="115" x2="700" y2="115" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="136" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">动态流：Action + GenericForeignKey</text>
+<rect class="box" x="20" y="150" width="160" height="56" rx="4"></rect>
+<text class="lbl-strong" x="100.0" y="172.0" text-anchor="middle" font-size="12.5">create_action()</text>
+<text class="lbl" x="100.0" y="190.5" text-anchor="middle" font-size="10.5">60s 内去重</text>
+<text class="lbl" x="100.0" y="202.5" text-anchor="middle" font-size="10.5">(user, verb, target)</text>
+<rect class="box-a" x="220" y="150" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="305.0" y="172.0" text-anchor="middle" font-size="12.5">Action</text>
+<text class="lbl" x="305.0" y="190.5" text-anchor="middle" font-size="10.5">target_ct + target_id</text>
+<text class="lbl" x="305.0" y="202.5" text-anchor="middle" font-size="10.5">→ 任意模型</text>
+<rect class="box" x="430" y="150" width="120" height="56" rx="4"></rect>
+<text class="lbl-strong" x="490.0" y="178.0" text-anchor="middle" font-size="12.5">Image</text>
+<rect class="box" x="430" y="220" width="120" height="56" rx="4"></rect>
+<text class="lbl-strong" x="490.0" y="248.0" text-anchor="middle" font-size="12.5">User</text>
+<line class="edge" x1="180" y1="178" x2="220" y2="178" marker-end="url(#c07-m)"></line>
+<line class="edge" x1="390" y1="168" x2="430" y2="178" marker-end="url(#c07-m)"></line>
+<text class="lbl" x="410.0" y="168.0" text-anchor="middle" font-size="10">target</text>
+<line class="edge" x1="390" y1="188" x2="430" y2="240" marker-end="url(#c07-m)"></line>
+<text class="lbl" x="410.0" y="209.0" text-anchor="middle" font-size="10">target</text>
+<rect class="box" x="20" y="230" width="160" height="60" rx="4"></rect>
+<text class="lbl-strong" x="100.0" y="254.0" text-anchor="middle" font-size="12.5">dashboard()</text>
+<text class="lbl" x="100.0" y="272.5" text-anchor="middle" font-size="10.5">exclude(self)</text>
+<text class="lbl" x="100.0" y="284.5" text-anchor="middle" font-size="10.5">following 有值才过滤，</text>
+<text class="lbl" x="100.0" y="296.5" text-anchor="middle" font-size="10.5">否则展示全站兜底</text>
+<line x1="20" y1="310" x2="700" y2="310" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="332" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">Redis 排行榜</text>
+<rect class="box" x="20" y="346" width="210" height="56" rx="4"></rect>
+<text class="lbl-strong" x="125.0" y="368.0" text-anchor="middle" font-size="12.5">image_detail()</text>
+<text class="lbl" x="125.0" y="386.5" text-anchor="middle" font-size="10.5">INCR views</text>
+<text class="lbl" x="125.0" y="398.5" text-anchor="middle" font-size="10.5">ZINCRBY image_ranking +1</text>
+<rect class="box-a" x="270" y="346" width="230" height="56" rx="4"></rect>
+<text class="lbl-strong" x="385.0" y="368.0" text-anchor="middle" font-size="12.5">image_ranking()</text>
+<text class="lbl" x="385.0" y="386.5" text-anchor="middle" font-size="10.5">ZRANGE 取 Top10 ID</text>
+<text class="lbl" x="385.0" y="398.5" text-anchor="middle" font-size="10.5">→ 数据库补详情 → Python 重排序</text>
+<line class="edge" x1="230" y1="374" x2="270" y2="374" marker-end="url(#c07-m)"></line></svg><figcaption class="cap">图 07 · add_to_class 动态挂关注字段；GenericForeignKey 撑起多态动态流；Redis Sorted Set 做浏览排行</figcaption></figure>
+  <p>第七章信息量很大——这一章把 Bookmarks 项目从"能收藏图片"升级成了一个真正的<strong>社交网络</strong>：关注系统、动态流、Redis 排行榜全部在这一章落地。而且这一章恰好印证了之前聊 TSD 时说的那个隐患——因为项目一直没上自定义 User 模型，这里为了给 <code>User</code> 加关注关系，不得不用一些"外挂"手法。</p>
+<h2>一、本章定位与新增依赖</h2>
+<div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ django-debug-toolbar==4.3.0
++ redis==5.0.4
+</code></pre></div>
+<p><code>docker-compose.yml</code> 新增了一个 <code>cache</code> 服务（Redis 7.2.4），<code>web</code> 服务加了 <code>env_file: .env</code>。三条主线：</p>
+<ol>
+<li><strong>关注系统</strong>（<code>account.Contact</code> + 动态给 <code>User</code> 加 <code>following</code>/<code>followers</code>）</li>
+<li><strong>动态流/Activity Stream</strong>（新 app <code>actions</code>，用 GenericForeignKey 做多态关联）</li>
+<li><strong>Redis 浏览计数 + 排行榜</strong>（<code>images</code> 里新增 <code>image_ranking</code> 视图）</li>
+</ol>
+<p>顺带引入了 <code>django-debug-toolbar</code> 这个开发期利器。</p>
+<h2>二、关注系统：给别人的模型"打补丁"</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># account/models.py
+class Contact(models.Model):
+    user_from = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='rel_from_set', on_delete=models.CASCADE)
+    user_to = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='rel_to_set', on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        indexes = [models.Index(fields=['-created'])]
+        ordering = ['-created']
+
+# 动态给 User 类挂一个字段
+user_model = get_user_model()
+user_model.add_to_class(
+    'following',
+    models.ManyToManyField('self', through=Contact, related_name='followers', symmetrical=False),
+)
+</code></pre></div>
+<p>这是本章<strong>最值得拿出来细讲</strong>的一段代码。想让"关注"关系挂在 <code>User</code> 上，最自然的做法是直接在 User 模型类里加一个 <code>following</code> 字段——但这个项目从 Chapter04 到现在<strong>一直用的是 Django 默认的 <code>auth.User</code></strong>，你没法去改 Django 内部那个类的源码。于是作者用了 <code>add_to_class()</code>：在 <code>account/models.py</code> 模块被加载时，硬生生往 <code>User</code> 类上"挂"一个新的多对多字段。</p>
+<p><strong>这正是之前聊《Two Scoops of Django》时说的那个警告应验了</strong>——"项目起步就该用自定义 User 模型"，原因就是像这样后期想往 User 上加字段/关系时，只能靠 <code>add_to_class</code> 这种带 monkey-patch 味道的手法绕过去；如果一开始就是 <code>class User(AbstractUser)</code>，这里直接在类体里写一行 <code>following = models.ManyToManyField(...)</code> 就完事了，不需要这段模块级别的"动态注入"代码，可读性和 IDE 补全都会好很多。</p>
+<p>几个字段设计细节：</p>
+<ul>
+<li><code>symmetrical=False</code>——自关联的多对多默认是<strong>对称</strong>的（Django 假设"我的朋友"这种双向关系，A 关联 B 自动等于 B 关联 A），但"关注"是单向的（A 关注 B 不代表 B 关注 A），必须显式关掉对称性。</li>
+<li><code>through=Contact</code>——因为需要在关系上附加额外信息（<code>created</code> 时间戳）并且要能按 <code>user_from</code>/<code>user_to</code> 精确查询/删除某一条关注记录，用自动生成的隐式 M2M 中间表做不到这些，所以必须显式声明 <code>through</code>。</li>
+<li><code>related_name='followers'</code>——所以 <code>user.following.all()</code> 是"我关注的人"，<code>user.followers.all()</code> 是"关注我的人"，一套字段名同时覆盖了两个查询方向。</li>
+</ul>
+<p><code>account/migrations/0002_contact.py</code> 是标准的建表迁移，依赖 <code>account</code> 的 0001 迁移和可替换的 <code>AUTH_USER_MODEL</code>。</p>
+<h2>三、<code>user_follow</code> 视图</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@require_POST
+@login_required
+def user_follow(request):
+    user_id = request.POST.get('id')
+    action = request.POST.get('action')
+    if user_id and action:
+        try:
+            user = User.objects.get(id=user_id)
+            if action == 'follow':
+                Contact.objects.get_or_create(user_from=request.user, user_to=user)
+                create_action(request.user, 'is following', user)
+            else:
+                Contact.objects.filter(user_from=request.user, user_to=user).delete()
+            return JsonResponse({'status': 'ok'})
+        except User.DoesNotExist:
+            return JsonResponse({'status': 'error'})
+    return JsonResponse({'status': 'error'})
+</code></pre></div>
+<p>和 Chapter06 的 <code>image_like</code> 是一模一样的套路（AJAX + <code>get_or_create</code>/<code>filter().delete()</code> 切换状态），<code>user/detail.html</code> 里的关注按钮 JS 也和点赞按钮 JS 几乎是复制粘贴（乐观更新按钮文字和计数）——这里能看出这本书里<strong>同一类交互模式在不同业务场景下反复复用</strong>的写法习惯。</p>
+<p><code>user_list</code>/<code>user_detail</code> 两个视图都很简单：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@login_required
+def user_list(request):
+    users = User.objects.filter(is_active=True)
+    return render(request, 'account/user/list.html', {'section': 'people', 'users': users})
+
+@login_required
+def user_detail(request, username):
+    user = get_object_or_404(User, username=username, is_active=True)
+    return render(request, 'account/user/detail.html', {'section': 'people', 'user': user})
+</code></pre></div>
+<p><code>user/detail.html</code> 里还顺手用 <code>{% include "images/image/list_images.html" with images=user.images_created.all %}</code> 复用了 Chapter06 图片列表的局部模板，展示这个用户收藏过的图片。</p>
+<h2>四、<code>ABSOLUTE_URL_OVERRIDES</code>——另一处"没有自定义 User 模型"的补丁</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># settings.py
+ABSOLUTE_URL_OVERRIDES = {
+    'auth.user': lambda u: reverse_lazy('user_detail', args=[u.username])
+}
+</code></pre></div>
+<p>模板里到处用 <code>{{ user.get_absolute_url }}</code>（<code>actions/action/detail.html</code>、<code>user/list.html</code> 都在用），但 <code>auth.User</code> 类本身没有 <code>get_absolute_url()</code> 方法。<code>ABSOLUTE_URL_OVERRIDES</code> 是 Django 提供的一个全局配置字典，专门解决"我没法改这个模型的类定义，但又想让它支持 <code>get_absolute_url()</code>"的问题——用一个 lambda 全局注册，Django 在调用 <code>user.get_absolute_url()</code> 时会先查这个字典。这又是一处<strong>如果一开始用自定义 User 模型，直接在类里写方法就够了</strong>的例子，两处补丁放在一起看，TSD 那条建议的说服力就很直观了。</p>
+<h2>五、<code>actions</code> 应用：动态流</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># actions/models.py
+class Action(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='actions', on_delete=models.CASCADE)
+    verb = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+    target_ct = models.ForeignKey(ContentType, blank=True, null=True, related_name='target_obj', on_delete=models.CASCADE)
+    target_id = models.PositiveIntegerField(null=True, blank=True)
+    target = GenericForeignKey('target_ct', 'target_id')
+    class Meta:
+        indexes = [models.Index(fields=['-created']), models.Index(fields=['target_ct', 'target_id'])]
+        ordering = ['-created']
+</code></pre></div>
+<p><code>target_ct</code> + <code>target_id</code> + <code>GenericForeignKey</code>——这是本书<strong>第一次真正用上 contenttypes 框架做多态关联</strong>。之前 Blog 项目的 <code>Comment.post</code> 是普通外键，只能指向 <code>Post</code>；这里的 <code>Action.target</code> 能指向<strong>任意模型的任意一条记录</strong>（一个 <code>Image</code>、一个 <code>User</code>、以后可能是别的什么），因为动态流本身就需要"用户对某个不确定类型的对象做了某个动作"这种通用表达。</p>
+<h3><code>create_action</code>——带防抖的写入工具</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># actions/utils.py
+def create_action(user, verb, target=None):
+    now = timezone.now()
+    last_minute = now - datetime.timedelta(seconds=60)
+    similar_actions = Action.objects.filter(user_id=user.id, verb=verb, created__gte=last_minute)
+    if target:
+        target_ct = ContentType.objects.get_for_model(target)
+        similar_actions = similar_actions.filter(target_ct=target_ct, target_id=target.id)
+    if not similar_actions:
+        action = Action(user=user, verb=verb, target=target)
+        action.save()
+        return True
+    return False
+</code></pre></div>
+<p>在真正插入之前，先查"过去 60 秒内，这个用户对同一个目标做过同样动作的记录是否已经存在"——如果存在就<strong>不重复插入</strong>。这是为了防止用户手抖连续点赞/取消点赞好几次，动态流里刷出一串一模一样的"张三 likes 某图片"。这是个很实用的"业务层去重"模式，比事后清理垃圾数据要轻量。</p>
+<p>四个业务动作会调用它：注册（<code>'has created an account'</code>）、收藏图片（<code>'bookmarked image'</code>，target=图片）、点赞（<code>'likes'</code>，target=图片）、关注（<code>'is following'</code>，target=被关注的人）。</p>
+<p><code>actions/views.py</code> 是空文件——本章的动态流没有独立的视图/URL，只通过 <code>dashboard</code> 视图查询 + 局部模板 <code>include</code> 展示。<code>actions/admin.py</code> 注册了 <code>ActionAdmin(list_display=['user','verb','target','created'], list_filter=['created'], search_fields=['verb'])</code>，方便在后台直接查动态记录。</p>
+<h3><code>dashboard</code> 视图的动态流查询</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@login_required
+def dashboard(request):
+    actions = Action.objects.exclude(user=request.user)
+    following_ids = request.user.following.values_list('id', flat=True)
+    if following_ids:
+        actions = actions.filter(user_id__in=following_ids)
+    actions = actions.select_related('user', 'user__profile').prefetch_related('target')[:10]
+    return render(request, 'account/dashboard.html', {'section': 'dashboard', 'actions': actions})
+</code></pre></div>
+<ul>
+<li><code>exclude(user=request.user)</code>——自己的动作不用在自己的首页里再看一遍。</li>
+<li><strong>冷启动兜底</strong>：如果 <code>following_ids</code> 是空的（新用户还没关注任何人），就不加过滤条件，直接展示<strong>全站</strong>的动态——这样新用户的首页不会是一片空白，这是个很实际的产品细节。</li>
+<li><code>.select_related('user', 'user__profile')</code>：跨两层外键（<code>Action.user</code> 和 <code>User.profile</code>）一次 JOIN 查完，避免列表里每条动态都单独查一次作者信息和头像。</li>
+<li><code>.prefetch_related('target')</code>：因为 <code>target</code> 是 <code>GenericForeignKey</code>，指向的表不固定，普通 SQL JOIN 做不到，Django 会按 <code>ContentType</code> 分组批量查询，比对列表里每条动态单独查一次 target 已经好很多，但依然比不上普通外键的一次 JOIN 高效——这是 GenericForeignKey 这类"万能关联"必须付出的查询代价。</li>
+</ul>
+<p><code>actions/action/detail.html</code> 是个可复用局部模板，同时渲染"谁做的（头像）"和"对象是什么（如果 target 有 <code>image</code> 字段就显示缩略图）"，用 <code>{% if target.image %}</code> 做的是鸭子类型判断——完全不关心 target 具体是哪个模型，只要它凑巧有 <code>image</code> 属性就显示。</p>
+<p><code>register</code> 视图在创建 Profile 之后新增一行：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">create_action(new_user, 'has created an account')
+</code></pre></div>
+<h2>六、Redis：浏览计数与排行榜</h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB)
+
+def image_detail(request, id, slug):
+    image = get_object_or_404(Image, id=id, slug=slug)
+    total_views = r.incr(f'image:{image.id}:views')
+    r.zincrby('image_ranking', 1, image.id)
+    ...
+
+def image_ranking(request):
+    image_ranking = r.zrange('image_ranking', 0, -1, desc=True)[:10]
+    image_ranking_ids = [int(id) for id in image_ranking]
+    most_viewed = list(Image.objects.filter(id__in=image_ranking_ids))
+    most_viewed.sort(key=lambda x: image_ranking_ids.index(x.id))
+    return render(request, 'images/image/ranking.html', {'section': 'images', 'most_viewed': most_viewed})
+</code></pre></div>
+<ul>
+<li><code>r.incr(...)</code>——Redis 字符串类型的原子自增，每次访问详情页 +1，返回值直接就是当前总浏览数，不用额外再查一次。</li>
+<li><code>r.zincrby('image_ranking', 1, image.id)</code>——Redis <strong>有序集合</strong>（Sorted Set），成员是图片 ID，分数是浏览次数，每次访问对应图片分数 +1。</li>
+<li><code>r.zrange(..., desc=True)[:10]</code>——直接从 Redis 取分数最高的前 10 个 ID，这一步排序是 Redis 内部结构原生支持的，不需要应用层再排。</li>
+<li>但拿到 ID 列表后还要回数据库查详情，而 <code>filter(id__in=image_ranking_ids)</code> <strong>不保证</strong>返回顺序和传入的 ID 顺序一致——所以额外用 <code>.sort(key=lambda x: image_ranking_ids.index(x.id))</code> 在 Python 层按 Redis 给出的名次重新排一遍。这是"跨存储拼接数据"时一个容易被忽略的细节：Redis 负责排序，数据库负责补充详情字段，两者顺序要手动对齐。</li>
+</ul>
+<p><code>images/urls.py</code> 新增 <code>path('ranking/', views.image_ranking, name='ranking')</code>，<code>images/image/ranking.html</code> 是个简单的有序列表模板；<code>images/image/detail.html</code> 也新增了浏览次数的展示。</p>
+<p><strong>为什么浏览计数用 Redis，点赞数却继续用数据库字段？</strong> 看 <code>images/signals.py</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">@receiver(m2m_changed, sender=Image.users_like.through)
+def users_like_changed(sender, instance, **kwargs):
+    instance.total_likes = instance.users_like.count()
+    instance.save()
+</code></pre></div>
+<p><code>total_likes</code> 是数据库字段（<code>images/models.py</code> 新增 <code>total_likes = models.PositiveIntegerField(default=0)</code> + <code>models.Index(fields=['-total_likes'])</code>，支持"按点赞数排序"的查询）——点赞频率远低于浏览频率，用数据库字段 + 信号维护足够；而<strong>浏览量是纯只读高频写入</strong>（几乎每次请求都要 +1），如果也存成数据库字段，频繁 <code>UPDATE</code> 会带来不小的行锁开销，Redis 的原子自增结构就是为这种场景设计的。这是"选对存储介质"的一个很好的对比案例。</p>
+<p><code>m2m_changed</code> 信号在 <code>AppConfig.ready()</code> 里导入注册：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">class ImagesConfig(AppConfig):
+    def ready(self):
+        import images.signals
+</code></pre></div>
+<p>这是 Django 官方推荐的信号注册方式——放在 <code>ready()</code> 里而不是 <code>models.py</code> 顶层直接 import，避免应用还没完全加载完就触发信号相关的循环导入问题。</p>
+<p><strong>这里也正好是"该用 signal"的一个好例子</strong>，可以和之前 TDD 里 <code>PostRevision</code> 改成显式调用的判断对照着看：<code>total_likes</code> 这个副作用只应该跟着 <code>users_like</code> 这个 M2M 关系本身的任何变化发生（不管是通过 <code>image_like</code> 视图改的，还是以后管理员在 admin 后台直接改的，甚至未来某个批量导入脚本改的），signal 能保证不管从哪个入口改了这层关系，<code>total_likes</code> 都自动同步；而 <code>PostRevision</code> 那种"只应该跟着一次特定的编辑操作发生"的副作用，才更适合显式调用。<strong>判断标准是：副作用绑定的是"数据本身的变化"还是"某一次特定的业务动作"。</strong></p>
+<p><code>image_create</code> 和 <code>image_like</code> 视图也都各自补上了 <code>create_action(request.user, 'bookmarked image', new_image)</code> / <code>create_action(request.user, 'likes', image)</code> 调用，把这两个动作也接入了动态流。<code>images/migrations/0002_image_total_likes_and_more.py</code> 是标准的字段+索引新增迁移。</p>
+<h2>七、<code>django-debug-toolbar</code></h2>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python">INSTALLED_APPS = [..., 'debug_toolbar']
+MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware', ...]  # 必须放最前面
+INTERNAL_IPS = ['127.0.0.1']
+</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code class="language-python"># urls.py
+path('__debug__/', include('debug_toolbar.urls')),
+</code></pre></div>
+<p><code>DebugToolbarMiddleware</code> 放中间件列表最前面，是为了能包裹住整个请求-响应周期，统计每个阶段的耗时和 SQL 查询次数；<code>INTERNAL_IPS</code> 限制只有从这些 IP 发起的请求才会显示工具栏，防止意外在生产环境暴露内部信息。<strong>但这只是一层"访问限制"，不是"生产安全"</strong>——真正的生产环境应该整个 <code>debug_toolbar</code> 都不出现在 <code>INSTALLED_APPS</code>/<code>MIDDLEWARE</code> 里，这又呼应了之前在 TDD 文档里提过的"settings 该按环境拆分"（<code>base/dev/production</code>）——这类只该在开发环境存在的东西，本就不该靠一个 IP 白名单去防，而应该从配置源头就不加载。</p>
+<h2>八、<code>prompts/task.md</code>——又一份作者的练习草稿</h2>
+<p>和 Chapter03 那份一样，这不是书的正文实现，是作者留下的 AI 提示词草稿，内容是"我想用 Django 信号在 User 创建时自动建 Profile"。这份草稿其实是对当前 <code>register</code> 视图里手动 <code>Profile.objects.create(user=new_user)</code> 做法的一个"备选方案"——如果真的按草稿实现，能彻底堵住之前在 Chapter04/05 里反复提到的"忘记建 Profile"这个隐患，不管用户是走注册视图还是走社交登录 pipeline，signal 都能兜底。但目前代码库里这两条创建路径依然是分别手动调用，没有采用这个草稿里的方案。</p>
+<h2>九、端到端流程</h2>
+<p><strong>关注某人</strong>：点击关注按钮 → AJAX POST 到 <code>user_follow</code> → <code>Contact.objects.get_or_create(...)</code> 建关系 + <code>create_action(..., 'is following', user)</code> 写动态 → 按钮乐观更新为"已关注"。</p>
+<p><strong>打开首页</strong>：<code>dashboard</code> 视图查询关注的人（或冷启动兜底显示全站）的最近 10 条动态 → <code>select_related</code>/<code>prefetch_related</code> 优化查询 → 逐条 include <code>actions/action/detail.html</code> 渲染。</p>
+<p><strong>查看一张图</strong>：Redis 浏览计数 +1、写入排行榜 zset；点赞 → M2M 变化触发 <code>total_likes</code> 信号同步 + 写动态记录。</p>
+<p><strong>查看排行榜</strong>：<code>image_ranking</code> 视图从 Redis zset 取 Top10 ID → 数据库补详情 → 按 Redis 给的名次在 Python 里重新排序。</p>
+<h2>十、Chapter06 → Chapter07 变化小结</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Chapter06</th>
+<th>Chapter07</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>用户关系</td>
+<td>无</td>
+<td>关注系统（<code>Contact</code> + 动态注入的 <code>following</code>/<code>followers</code>）</td>
+</tr>
+<tr>
+<td>首页内容</td>
+<td>无动态</td>
+<td>动态流（<code>actions</code> app，GenericForeignKey 多态关联）</td>
+</tr>
+<tr>
+<td>图片统计</td>
+<td>无</td>
+<td>Redis 浏览计数 + 排行榜；<code>total_likes</code> 数据库字段（signal 维护）</td>
+</tr>
+<tr>
+<td>开发工具</td>
+<td>无</td>
+<td><code>django-debug-toolbar</code></td>
+</tr>
+<tr>
+<td>技术债</td>
+<td>SSRF 风险</td>
+<td>因未采用自定义 User 模型而产生的两处"补丁式"设计（<code>add_to_class</code>、<code>ABSOLUTE_URL_OVERRIDES</code>）</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+    <div class="footdoc">
+      由 Claude 对照 Django 5 By Example 官方代码仓库逐章阅读整理生成 · 图示为教学示意，非源码逐行还原
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>
