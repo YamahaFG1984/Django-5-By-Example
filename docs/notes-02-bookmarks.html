@@ -15,9 +15,9 @@
   --danger:#9c3b2c; --danger-soft:#f7e9e6;
   --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
   --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
-  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
-  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
-  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono",monospace;
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif CJK SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC",monospace;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -180,6 +180,21 @@ main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
 .diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
 .diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
 .diagram svg{ display:block; width:100%; height:auto; }
+.diagram svg .box{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.25; }
+.diagram svg .box-a{ fill:var(--accent2-soft); stroke:var(--accent2); stroke-width:1.25; }
+.diagram svg .box-w{ fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.25; }
+.diagram svg text{ font-family:var(--font-mono); dominant-baseline:middle; }
+.diagram svg .lbl{ fill:var(--ink-soft); }
+.diagram svg .lbl-strong{ fill:var(--ink); font-weight:700; }
+.diagram svg .lbl-accent{ fill:var(--accent2-strong); font-weight:700; }
+.diagram svg .lbl-warn{ fill:var(--danger); font-weight:700; }
+.diagram svg .edge{ stroke:var(--ink-faint); stroke-width:1.4; fill:none; }
+.diagram svg .edge-a{ stroke:var(--accent2); stroke-width:1.6; fill:none; }
+.diagram svg .edge-w{ stroke:var(--danger); stroke-width:1.6; fill:none; }
+.diagram svg .edge-dashed{ stroke-dasharray:4 3; }
+.diagram svg marker path{ fill:var(--ink-faint); }
+.diagram svg marker.m-a path{ fill:var(--accent2); }
+.diagram svg marker.m-w path{ fill:var(--danger); }
 .diagram .cap{
   font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
   margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
@@ -256,7 +271,7 @@ main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
 <text class="lbl-strong" x="630.0" y="52.0" text-anchor="middle" font-size="12.5">该用 Custom User？</text>
 <text class="lbl" x="630.0" y="70.5" text-anchor="middle" font-size="10.5">TSD：项目起步就该用</text>
 <text class="lbl" x="630.0" y="82.5" text-anchor="middle" font-size="10.5">自定义 User 模型</text>
-<line class="edge-w" class="edge-dashed" x1="470" y1="58" x2="560" y2="58" marker-end="url(#c04-mw)"></line>
+<line class="edge-w edge-dashed" x1="470" y1="58" x2="560" y2="58" marker-end="url(#c04-mw)"></line>
 <rect class="box-a" x="40" y="160" width="190" height="70" rx="4"></rect>
 <text class="lbl-strong" x="135.0" y="189.0" text-anchor="middle" font-size="12.5">register()</text>
 <text class="lbl" x="135.0" y="207.5" text-anchor="middle" font-size="10.5">set_password()</text>
@@ -488,7 +503,7 @@ def edit(request):
 <text class="lbl" x="575.0" y="91.5" text-anchor="middle" font-size="10.5">由 OAuth 跳转触发</text>
 <line class="edge" x1="210" y1="67" x2="250" y2="67" marker-end="url(#c05-m)"></line>
 <text class="lbl" x="230.0" y="62.0" text-anchor="middle" font-size="10">None →</text>
-<line class="edge" class="edge-dashed" x1="440" y1="67" x2="480" y2="67" marker-end="url(#c05-m)"></line>
+<line class="edge edge-dashed" x1="440" y1="67" x2="480" y2="67" marker-end="url(#c05-m)"></line>
 <text class="lbl" x="460.0" y="62.0" text-anchor="middle" font-size="10">独立入口</text>
 <text class="lbl" x="20" y="118" text-anchor="start" font-size="10.5">同一张登录表单，用户名或邮箱都能命中；三个后端顺序尝试直到一个返回非 None</text>
 <line x1="20" y1="145" x2="700" y2="145" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
@@ -739,7 +754,7 @@ path('social-auth/', include('social_django.urls', namespace='social')),
 <text class="lbl-strong" x="620.0" y="174.0" text-anchor="middle" font-size="12.5">点赞 / 无限滚动</text>
 <text class="lbl" x="620.0" y="192.5" text-anchor="middle" font-size="10.5">fetch() + CSRF token</text>
 <text class="lbl" x="620.0" y="204.5" text-anchor="middle" font-size="10.5">（js-cookie 读取）</text>
-<line class="edge" class="edge-dashed" x1="480" y1="178" x2="540" y2="178" marker-end="url(#c06-m)"></line></svg><figcaption class="cap">图 06 · 书签工具靠“注入脚本 + 新开标签页回站”绕开跨域限制；服务端下载图片处存在 SSRF 隐患</figcaption></figure>
+<line class="edge edge-dashed" x1="480" y1="178" x2="540" y2="178" marker-end="url(#c06-m)"></line></svg><figcaption class="cap">图 06 · 书签工具靠“注入脚本 + 新开标签页回站”绕开跨域限制；服务端下载图片处存在 SSRF 隐患</figcaption></figure>
   <h2>一、本章定位</h2>
 <p>Chapter05 的账号体系到这里正式派上用场：新增 <code>images</code> 应用，让登录用户能"收藏图片"，配套三件事——服务端下载存图、缩略图生成、无刷新的点赞和无限滚动。项目层面新增了两个依赖：</p>
 <div class="codewrap"><div class="langtag">diff</div><pre><code class="language-diff">+ requests==2.31.0
@@ -998,7 +1013,7 @@ window.dispatchEvent(scrollEvent);
 <text class="lbl-strong" x="305.0" y="61.0" text-anchor="middle" font-size="12.5">User B</text>
 <line class="edge" x1="170" y1="55" x2="230" y2="55" marker-end="url(#c07-m)"></line>
 <text class="lbl" x="200.0" y="50.0" text-anchor="middle" font-size="10">following</text>
-<line class="edge" class="edge-dashed" x1="230" y1="70" x2="170" y2="70" marker-end="url(#c07-m)"></line>
+<line class="edge edge-dashed" x1="230" y1="70" x2="170" y2="70" marker-end="url(#c07-m)"></line>
 <text class="lbl" x="200.0" y="65.0" text-anchor="middle" font-size="10">followers（反向）</text>
 <rect class="box-a" x="430" y="30" width="240" height="60" rx="4"></rect>
 <text class="lbl-strong" x="550.0" y="54.0" text-anchor="middle" font-size="12.5">Contact（through 表）</text>
