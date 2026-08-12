@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「Bookmark it」书签工具功能详解 · Django 5 By Example 源码深读</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext x=%2250%22 y=%2262%22 font-size=%2262%22 text-anchor=%22middle%22%3E%F0%9F%94%96%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif CJK SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram svg .box{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.25; }
+.diagram svg .box-a{ fill:var(--accent2-soft); stroke:var(--accent2); stroke-width:1.25; }
+.diagram svg .box-w{ fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.25; }
+.diagram svg text{ font-family:var(--font-mono); dominant-baseline:middle; }
+.diagram svg .lbl{ fill:var(--ink-soft); }
+.diagram svg .lbl-strong{ fill:var(--ink); font-weight:700; }
+.diagram svg .lbl-accent{ fill:var(--accent2-strong); font-weight:700; }
+.diagram svg .lbl-warn{ fill:var(--danger); font-weight:700; }
+.diagram svg .edge{ stroke:var(--ink-faint); stroke-width:1.4; fill:none; }
+.diagram svg .edge-a{ stroke:var(--accent2); stroke-width:1.6; fill:none; }
+.diagram svg .edge-w{ stroke:var(--danger); stroke-width:1.6; fill:none; }
+.diagram svg .edge-dashed{ stroke-dasharray:4 3; }
+.diagram svg marker path{ fill:var(--ink-faint); }
+.diagram svg marker.m-a path{ fill:var(--accent2); }
+.diagram svg marker.m-w path{ fill:var(--danger); }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+
+.toc nav a .n{ min-width:2.6em; }
+.masthead .backlink{ display:inline-block; margin-top:18px; font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5 By Example · Bookmarks 项目 · 专题深读</span>
+      <h1>&#x1F516;&nbsp; 「Bookmark it」书签工具详解</h1>
+      <p>从一次点击，到图片真正落进你自己的数据库——逐段拆解 Chapter06 里这个看似简单实则牵涉两次页面跳转、一次跨站脚本注入、一次服务端出站请求的完整链路。</p>
+    </div>
+    <nav>
+      <a href="#overview"><span class="n">总览</span>一句话总览</a><a href="#bigpicture"><span class="n">全貌</span>完整时序图：从选图到入库</a><a href="#concept"><span class="n">概念</span>一、Bookmarklet 是什么：javascript: 协议的巧妙用法</a><a href="#loader"><span class="n">加载</span>二、为什么拆成两段：启动器 + 真正逻辑</a><a href="#scan"><span class="n">选图</span>三、bookmarklet.js：扫描页面 + 悬浮框选图</a><a href="#view"><span class="n">回站</span>四、image_create 视图的双重身份：GET 预填 / POST 提交</a><a href="#save"><span class="n">落库</span>五、真正的服务端下载：ImageCreateForm.save()</a><a href="#qa"><span class="n">答疑</span>六、几个常见疑问</a><a href="#summary"><span class="n">小结</span>七、一句话讲给完全不懂的人听</a>
+    </nav>
+    <div class="series">
+      <div class="label">相关阅读</div>
+      <a href="notes-02-bookmarks.html">&#x1F516; Bookmarks 项目深读笔记（全章）</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">专题深读 · 源码逐行讲解</span>
+      <h1>「Bookmark it」书签工具到底是怎么实现的</h1>
+      <p class="sub">涉及文件：<code>account/templates/account/dashboard.html</code>、<code>images/templates/bookmarklet_launcher.js</code>、<code>images/static/js/bookmarklet.js</code>、<code>images/views.py</code>、<code>images/forms.py</code>、<code>images/models.py</code>、<code>images/urls.py</code>、<code>images/templates/images/image/create.html</code>。</p>
+      <div class="meta">
+        <span>基于 Chapter06/bookmarks 逐行阅读整理</span>
+        <span>含 5 张手绘架构 / 时序示意图</span>
+      </div>
+    </div>
+    <section class="chapter" id="overview">
+<h2>一句话总览</h2>
+
+<p><strong>「Bookmark it」不是一个普通的「收藏当前网页」按钮，而是一个 <em>Bookmarklet</em>（书签工具）</strong>——它是一段存进浏览器书签栏的 JavaScript 代码。点击它，不会打开新页面，而是在<strong>你当前正停留的任意第三方网站</strong>上原地执行这段代码：扫描这个网页里的所有图片，弹出一个悬浮选择框，等你点选一张后，把这张图的地址「带回」你自己的 Bookmarks 网站，帮你把它存进数据库。</p>
+<p>整个功能横跨四个文件、两次页面往返、一次服务端出站请求，本文按「先看全貌，再逐段拆解」的顺序讲清楚。涉及代码全部来自 <code>Chapter06/bookmarks/images/</code> 与 <code>account/templates/account/dashboard.html</code>。</p>
+
+</section><section class="chapter" id="bigpicture">
+<h2>完整时序图：从选图到入库</h2>
+
+<p>先看整体：一次完整的「Bookmark it」操作，实际上跨越了<strong>两个域名</strong>（第三方网页 / 你的 Bookmarks 站点）、<strong>两次浏览器往返</strong>（先注入脚本，再新开标签页跳转）、<strong>一次服务端出站请求</strong>（Django 服务器主动去下载图片）。下图把从「用户在别的网站点一下书签」到「图片文件真正落到你服务器磁盘、数据库多一条记录」的全过程画在一张时序图里，后面几节再逐段放大讲解每一步。</p>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 720" role="img" aria-label="图 3 · 端到端时序：从第三方网页选图，到图片真正落库到你自己服务器的完整链路（PRG 两段式提交）"><defs>
+          <marker id="bk3-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk3-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk3-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl-strong" x="90" y="26" text-anchor="middle" font-size="12">第三方网页</text>
+<text class="lbl-strong" x="340" y="26" text-anchor="middle" font-size="12">浏览器（用户设备）</text>
+<text class="lbl-strong" x="580" y="26" text-anchor="middle" font-size="12">Bookmarks 服务器</text>
+<text class="lbl-strong" x="710" y="26" text-anchor="middle" font-size="12">数据/文件</text>
+<line x1="20" y1="38" x2="750" y2="38" style="stroke:var(--line);stroke-width:1"></line>
+<rect class="box" x="20" y="55" width="140" height="40" rx="4"></rect>
+<text class="lbl-strong" x="90.0" y="69.0" text-anchor="middle" font-size="12.5">当前网页 DOM</text>
+<text class="lbl" x="90.0" y="87.5" text-anchor="middle" font-size="10.5">含多张 &lt;img&gt;</text>
+<rect class="box" x="210" y="55" width="180" height="40" rx="4"></rect>
+<text class="lbl-strong" x="300.0" y="69.0" text-anchor="middle" font-size="12.5">点击 Bookmark it</text>
+<text class="lbl" x="300.0" y="87.5" text-anchor="middle" font-size="10.5">javascript: 启动器执行</text>
+<line class="edge edge-dashed" x1="160" y1="75" x2="210" y2="75" marker-end="url(#bk3-m)"></line>
+<rect class="box" x="210" y="117" width="180" height="44" rx="4"></rect>
+<text class="lbl-strong" x="300.0" y="133.0" text-anchor="middle" font-size="12.5">注入 &lt;script&gt;</text>
+<text class="lbl" x="300.0" y="151.5" text-anchor="middle" font-size="10.5">加载 bookmarklet.js</text>
+<rect class="box-a" x="470" y="117" width="200" height="44" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="139.0" text-anchor="middle" font-size="11">GET /static/js/bookmarklet.js</text>
+<line class="edge" x1="390" y1="139" x2="470" y2="139" marker-end="url(#bk3-m)"></line>
+<text class="lbl" x="430" y="107.0" text-anchor="middle" font-size="9.5">跨站请求静态资源</text>
+<rect class="box" x="20" y="187" width="140" height="50" rx="4"></rect>
+<text class="lbl-strong" x="90.0" y="206.0" text-anchor="middle" font-size="12.5">扫描页面 &lt;img&gt;</text>
+<text class="lbl" x="90.0" y="224.5" text-anchor="middle" font-size="10.5">过滤尺寸</text>
+<text class="lbl" x="90.0" y="236.5" text-anchor="middle" font-size="10.5">≥250×250</text>
+<rect class="box" x="210" y="187" width="180" height="50" rx="4"></rect>
+<text class="lbl-strong" x="300.0" y="206.0" text-anchor="middle" font-size="12.5">悬浮框展示候选图</text>
+<text class="lbl" x="300.0" y="224.5" text-anchor="middle" font-size="10.5">bookmarklet.css</text>
+<text class="lbl" x="300.0" y="236.5" text-anchor="middle" font-size="10.5">渲染选图 UI</text>
+<line class="edge" x1="160" y1="212" x2="210" y2="212" marker-end="url(#bk3-m)"></line>
+<line class="edge edge-dashed" x1="300" y1="161" x2="300" y2="187" marker-end="url(#bk3-m)"></line>
+<rect class="box" x="150" y="261" width="260" height="46" rx="4"></rect>
+<text class="lbl-strong" x="280.0" y="278.0" text-anchor="middle" font-size="12.5">用户点选一张图</text>
+<text class="lbl" x="280.0" y="296.5" text-anchor="middle" font-size="10.5">window.open(images/create/?</text>
+<text class="lbl" x="280.0" y="308.5" text-anchor="middle" font-size="10.5">url=...&amp;title=...) 新标签页</text>
+<line class="edge" x1="300" y1="237" x2="300" y2="261" marker-end="url(#bk3-m)"></line>
+<rect class="box" x="470" y="329" width="220" height="50" rx="4"></rect>
+<text class="lbl-strong" x="580.0" y="348.0" text-anchor="middle" font-size="12.5">image_create() · GET 分支</text>
+<text class="lbl" x="580.0" y="366.5" text-anchor="middle" font-size="10.5">form = ImageCreateForm(</text>
+<text class="lbl" x="580.0" y="378.5" text-anchor="middle" font-size="10.5">  data=request.GET)</text>
+<path class="edge" d="M410,284 Q440,255 470,354" marker-end="url(#bk3-m)"></path>
+<text class="lbl" x="440.0" y="314.0" text-anchor="middle" font-size="10">新标签页跳转</text>
+<rect class="box" x="150" y="399" width="260" height="50" rx="4"></rect>
+<text class="lbl-strong" x="280.0" y="418.0" text-anchor="middle" font-size="12.5">create.html 预填表单</text>
+<text class="lbl" x="280.0" y="436.5" text-anchor="middle" font-size="10.5">用户补充/确认后</text>
+<text class="lbl" x="280.0" y="448.5" text-anchor="middle" font-size="10.5">点「Bookmark it!」提交</text>
+<path class="edge" d="M470,379 Q400,389 300,409" marker-end="url(#bk3-m)"></path>
+<rect class="box-a" x="470" y="469" width="220" height="50" rx="4"></rect>
+<text class="lbl-strong" x="580.0" y="488.0" text-anchor="middle" font-size="12.5">image_create() · POST 分支</text>
+<text class="lbl" x="580.0" y="506.5" text-anchor="middle" font-size="10.5">ImageCreateForm(data=</text>
+<text class="lbl" x="580.0" y="518.5" text-anchor="middle" font-size="10.5">  request.POST) 校验+保存</text>
+<line class="edge" x1="410" y1="424" x2="470" y2="494" marker-end="url(#bk3-m)"></line>
+<text class="lbl" x="440.0" y="454.0" text-anchor="middle" font-size="10">POST 提交</text>
+<rect class="box-a" x="470" y="539" width="220" height="84" rx="4"></rect>
+<text class="lbl-strong" x="580.0" y="575.0" text-anchor="middle" font-size="12.5">form.save()</text>
+<text class="lbl" x="580.0" y="593.5" text-anchor="middle" font-size="10.5">clean_url 校验后缀</text>
+<text class="lbl" x="580.0" y="605.5" text-anchor="middle" font-size="10.5">requests.get(image_url)</text>
+<text class="lbl" x="580.0" y="617.5" text-anchor="middle" font-size="10.5">ContentFile(response.content)</text>
+<line class="edge" x1="580" y1="519" x2="580" y2="539" marker-end="url(#bk3-m)"></line>
+<rect class="box" x="700" y="556" width="50" height="50" rx="4"></rect>
+<text class="lbl-strong" x="725.0" y="581.0" text-anchor="middle" font-size="12.5"></text>
+<text class="lbl" x="725" y="574" text-anchor="middle" font-size="8.8">Image 表</text>
+<text class="lbl" x="725" y="585" text-anchor="middle" font-size="8.8">+ 媒体文件</text>
+<line class="edge-a" x1="690" y1="581" x2="700" y2="581" marker-end="url(#bk3-ma)"></line>
+<rect class="box" x="470" y="637" width="220" height="44" rx="4"></rect>
+<text class="lbl-strong" x="580.0" y="653.0" text-anchor="middle" font-size="11">redirect(image.get_absolute_url())</text>
+<text class="lbl" x="580.0" y="670.0" text-anchor="middle" font-size="10.5">PRG 模式：避免刷新重复提交</text>
+<line class="edge" x1="580" y1="623" x2="580" y2="637" marker-end="url(#bk3-m)"></line></svg><figcaption class="cap">图 3 · 端到端时序：从第三方网页选图，到图片真正落库到你自己服务器的完整链路（PRG 两段式提交）</figcaption></figure>
+
+</section><section class="chapter" id="concept">
+<h2>一、Bookmarklet 是什么：javascript: 协议的巧妙用法</h2>
+
+<p>普通书签存的是一个网址，点击后浏览器跳转到那个地址。Bookmarklet 存的不是网址，而是一段 <code>javascript:</code> 开头的代码——浏览器看到链接是 <code>javascript:</code> 协议，就不会跳转页面，而是<strong>在当前打开的这个页面的上下文里直接执行这段代码</strong>，效果等价于你打开浏览器控制台，把这段代码粘贴进去回车。</p>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 260" role="img" aria-label="图 1 · Bookmarklet 的本质：javascript: 协议让书签栏存的不是地址，而是一段可执行代码"><defs>
+          <marker id="bk1-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk1-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk1-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="30" y="100" width="190" height="60" rx="4"></rect>
+<text class="lbl-strong" x="125.0" y="124.0" text-anchor="middle" font-size="12.5">浏览器书签栏</text>
+<text class="lbl" x="125.0" y="142.5" text-anchor="middle" font-size="10.5">一个普通书签，</text>
+<text class="lbl" x="125.0" y="154.5" text-anchor="middle" font-size="10.5">但网址栏是 javascript: 开头</text>
+<rect class="box-a" x="300" y="50" width="190" height="60" rx="4"></rect>
+<text class="lbl-strong" x="395.0" y="74.0" text-anchor="middle" font-size="12.5">当前打开的任意网页</text>
+<text class="lbl" x="395.0" y="92.5" text-anchor="middle" font-size="10.5">比如某个图片博客 / 新闻站</text>
+<rect class="box" x="300" y="160" width="190" height="60" rx="4"></rect>
+<text class="lbl-strong" x="395.0" y="184.0" text-anchor="middle" font-size="12.5">浏览器 JS 引擎</text>
+<text class="lbl" x="395.0" y="202.5" text-anchor="middle" font-size="10.5">在这个网页的上下文里</text>
+<text class="lbl" x="395.0" y="214.5" text-anchor="middle" font-size="10.5">直接执行这段代码</text>
+<line class="edge" x1="220" y1="120" x2="300" y2="80" marker-end="url(#bk1-m)"></line>
+<text class="lbl" x="260.0" y="95.0" text-anchor="middle" font-size="10">点击书签</text>
+<line class="edge" x1="395" y1="110" x2="395" y2="160" marker-end="url(#bk1-m)"></line>
+<text class="lbl" x="400" y="138" text-anchor="start" font-size="10">等价于在控制台粘贴代码回车</text>
+<text class="lbl" x="30" y="24" text-anchor="start" font-size="11">普通书签存的是「网址」，Bookmarklet 存的是「一段 JS 代码」——点击后不跳转页面，</text>
+<text class="lbl" x="30" y="40" text-anchor="start" font-size="11">而是把这段代码注入到你当前停留的这个网页里执行，拿到该网页的 DOM 访问权限。</text></svg><figcaption class="cap">图 1 · Bookmarklet 的本质：javascript: 协议让书签栏存的不是地址，而是一段可执行代码</figcaption></figure>
+<p>这正是 dashboard 页面里那个按钮的写法（<code>account/templates/account/dashboard.html</code> 第 10 行）：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code>&lt;p&gt;Drag the following button to your bookmarks toolbar to bookmark images from other websites →
+  &lt;a href=&quot;javascript:{% include &quot;bookmarklet_launcher.js&quot; %}&quot; class=&quot;button&quot;&gt;Bookmark it&lt;/a&gt;&lt;/p&gt;</code></pre></div>
+<p><code>href</code> 属性的值不是一个 URL，而是直接把 <code>bookmarklet_launcher.js</code> 这个模板文件的内容原样嵌进去——用户把这个按钮拖到浏览器收藏栏，浏览器就把这段 JS 代码存成了一个「网址」。以后不管用户身处哪个网站，只要点一下这个书签，这段代码就会在当前网站的页面里跑起来。</p>
+<p>这是 Bookmarklet 的核心价值：<strong>不需要浏览器扩展、不需要用户安装任何东西</strong>，纯靠浏览器对 <code>javascript:</code> 协议的原生支持，就获得了「在任意网页上运行自己代码」的能力。</p>
+
+</section><section class="chapter" id="loader">
+<h2>二、为什么拆成两段：启动器 + 真正逻辑</h2>
+
+<p>如果你把 <code>bookmarklet.js</code> 里几十行的完整逻辑全部塞进 <code>href</code> 属性，会有两个问题：一是 <code>href</code> 属性能塞多长、能不能带特殊字符都不太可靠；二是以后想修 bug、加功能，用户书签栏里存的代码是「死」的——除非让用户重新拖一次书签，否则永远是旧版本。</p>
+<p>Chapter06 的方案是拆成两段——<code>href</code> 里只放一个几行的「启动器」（<code>bookmarklet_launcher.js</code>），启动器的唯一任务是去加载真正干活的 <code>bookmarklet.js</code>：</p>
+<div class="codewrap"><div class="langtag">javascript</div><pre><code>(function(){
+  if(!window.bookmarklet) {
+    bookmarklet_js = document.body.appendChild(document.createElement(&#x27;script&#x27;));
+    bookmarklet_js.src = &#x27;//127.0.0.1:8000/static/js/bookmarklet.js?r=&#x27;+Math.floor(Math.random()*9999999999999999);
+    window.bookmarklet = true;
+  }
+  else {
+    bookmarkletLaunch();
+  }
+})();</code></pre></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 310" role="img" aria-label="图 2 · 两段式加载：href 里只放「启动器」，真正逻辑从自己站点按需拉取，且可随时升级"><defs>
+          <marker id="bk2-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk2-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk2-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="40" width="210" height="70" rx="4"></rect>
+<text class="lbl-strong" x="125.0" y="69.0" text-anchor="middle" font-size="12.5">dashboard.html 里的按钮</text>
+<text class="lbl" x="125.0" y="87.5" text-anchor="middle" font-size="10.5">href="javascript:{% include</text>
+<text class="lbl" x="125.0" y="99.5" text-anchor="middle" font-size="10.5">'bookmarklet_launcher.js' %}"</text>
+<rect class="box" x="280" y="30" width="210" height="56" rx="4"></rect>
+<text class="lbl-strong" x="385.0" y="52.0" text-anchor="middle" font-size="12.5">bookmarklet_launcher.js</text>
+<text class="lbl" x="385.0" y="70.5" text-anchor="middle" font-size="10.5">极小的「占位脚本」</text>
+<text class="lbl" x="385.0" y="82.5" text-anchor="middle" font-size="10.5">打包进 href 属性本体</text>
+<line class="edge" x1="230" y1="75" x2="280" y2="58" marker-end="url(#bk2-m)"></line>
+<text class="lbl" x="255.0" y="61.5" text-anchor="middle" font-size="10">点击后立即执行</text>
+<rect class="box" x="280" y="130" width="210" height="70" rx="4"></rect>
+<text class="lbl-strong" x="385.0" y="159.0" text-anchor="middle" font-size="12.5">首次点击</text>
+<text class="lbl" x="385.0" y="177.5" text-anchor="middle" font-size="10.5">window.bookmarklet 未定义</text>
+<text class="lbl" x="385.0" y="189.5" text-anchor="middle" font-size="10.5">→ 动态插入 &lt;script src=...&gt;</text>
+<rect class="box-a" x="530" y="130" width="170" height="70" rx="4"></rect>
+<text class="lbl-strong" x="615.0" y="159.0" text-anchor="middle" font-size="12.5">bookmarklet.js</text>
+<text class="lbl" x="615.0" y="177.5" text-anchor="middle" font-size="10.5">真正的逻辑：</text>
+<text class="lbl" x="615.0" y="189.5" text-anchor="middle" font-size="10.5">扫描 DOM + 弹悬浮框</text>
+<line class="edge" x1="385" y1="100" x2="385" y2="130" marker-end="url(#bk2-m)"></line>
+<line class="edge" x1="490" y1="160" x2="530" y2="160" marker-end="url(#bk2-m)"></line>
+<text class="lbl" x="494" y="148.0" text-anchor="middle" font-size="9.5">?r=随机数</text>
+<text class="lbl" x="494" y="162.5" text-anchor="middle" font-size="9.5">（缓存穿透）</text>
+<rect class="box" x="280" y="230" width="210" height="60" rx="4"></rect>
+<text class="lbl-strong" x="385.0" y="254.0" text-anchor="middle" font-size="12.5">再次点击</text>
+<text class="lbl" x="385.0" y="272.5" text-anchor="middle" font-size="10.5">window.bookmarklet 已是 true</text>
+<text class="lbl" x="385.0" y="284.5" text-anchor="middle" font-size="10.5">→ 直接调用 bookmarkletLaunch()</text>
+<line class="edge edge-dashed" x1="385" y1="200" x2="385" y2="230" marker-end="url(#bk2-m)"></line>
+<text class="lbl" x="20" y="145.0" text-anchor="start" font-size="10.5">为什么拆两段？</text>
+<text class="lbl" x="20" y="160.5" text-anchor="start" font-size="10.5">href 属性长度/字符</text>
+<text class="lbl" x="20" y="176.0" text-anchor="start" font-size="10.5">都有限，只能塞一段</text>
+<text class="lbl" x="20" y="191.5" text-anchor="start" font-size="10.5">启动器；真正的逻辑</text>
+<text class="lbl" x="20" y="207.0" text-anchor="start" font-size="10.5">放在自己站点，随时</text>
+<text class="lbl" x="20" y="222.5" text-anchor="start" font-size="10.5">能更新，用户书签栏</text>
+<text class="lbl" x="20" y="238.0" text-anchor="start" font-size="10.5">里的代码永远不用变。</text></svg><figcaption class="cap">图 2 · 两段式加载：href 里只放「启动器」，真正逻辑从自己站点按需拉取，且可随时升级</figcaption></figure>
+<p>逐行看这个判断逻辑：</p>
+<ul>
+<li><strong>第一次点击</strong>：<code>window.bookmarklet</code> 还没定义，走 <code>if</code> 分支——往当前页面的 <code>&lt;body&gt;</code> 动态插入一个 <code>&lt;script&gt;</code> 标签，<code>src</code> 指向<strong>你自己站点</strong>的 <code>bookmarklet.js</code>；同时把 <code>window.bookmarklet</code> 标记为 <code>true</code>。</li>
+<li><code>?r=Math.random()</code> 是<strong>缓存穿透</strong>（cache busting）：每次请求带一个不同的随机查询参数，让浏览器不要用缓存里的旧版本脚本，保证用户始终跑的是你服务器上最新的逻辑——书签栏里的启动器代码本身永远不用变，真正的功能可以随时在服务端悄悄升级。</li>
+<li><strong>再次点击</strong>（同一个页面上，比如用户关掉悬浮框后又点了一次）：<code>window.bookmarklet</code> 已经是 <code>true</code>，直接走 <code>else</code> 分支调用 <code>bookmarkletLaunch()</code>——不用再重新插入 <code>&lt;script&gt;</code> 标签、不用再发一次网络请求。</li>
+</ul>
+
+</section><section class="chapter" id="scan">
+<h2>三、bookmarklet.js：扫描页面 + 悬浮框选图</h2>
+
+<p>真正的逻辑在 <code>images/static/js/bookmarklet.js</code> 里，先加载一份 CSS，再往页面注入一个悬浮框骨架，最后定义 <code>bookmarkletLaunch()</code> 函数并立即调用一次：</p>
+<div class="codewrap"><div class="langtag">javascript</div><pre><code>function bookmarkletLaunch() {
+  bookmarklet = document.getElementById(&#x27;bookmarklet&#x27;);
+  var imagesFound = bookmarklet.querySelector(&#x27;.images&#x27;);
+  imagesFound.innerHTML = &#x27;&#x27;;
+  bookmarklet.style.display = &#x27;block&#x27;;
+
+  // find images in the DOM with the minimum dimensions
+  images = document.querySelectorAll(&#x27;img[src$=&quot;.jpg&quot;], img[src$=&quot;.jpeg&quot;], img[src$=&quot;.png&quot;]&#x27;);
+  images.forEach(image =&gt; {
+    if(image.naturalWidth &gt;= minWidth &amp;&amp; image.naturalHeight &gt;= minHeight)
+    {
+      var imageFound = document.createElement(&#x27;img&#x27;);
+      imageFound.src = image.src;
+      imagesFound.append(imageFound);
+    }
+  })
+
+  // select image event
+  imagesFound.querySelectorAll(&#x27;img&#x27;).forEach(image =&gt; {
+    image.addEventListener(&#x27;click&#x27;, function(event){
+      imageSelected = event.target;
+      bookmarklet.style.display = &#x27;none&#x27;;
+      window.open(siteUrl + &#x27;images/create/?url=&#x27;
+                  + encodeURIComponent(imageSelected.src)
+                  + &#x27;&amp;title=&#x27;
+                  + encodeURIComponent(document.title),
+                  &#x27;_blank&#x27;);
+    })
+  })
+}</code></pre></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 370" role="img" aria-label="图 4 · 悬浮框选图 UI：扫描 → 过滤 → 展示 → 用户点选 → 把图片地址「转达」回自己站点"><defs>
+          <marker id="bk4-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk4-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk4-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="300" height="50" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="49.0" text-anchor="middle" font-size="11">querySelectorAll('img[src$=".jpg"], ...')</text>
+<text class="lbl" x="170.0" y="66.0" text-anchor="middle" font-size="10.5">扫描当前页面全部 &lt;img&gt;</text>
+<rect class="box-a" x="360" y="30" width="320" height="76" rx="4"></rect>
+<text class="lbl-strong" x="520.0" y="62.0" text-anchor="middle" font-size="12.5">尺寸过滤</text>
+<text class="lbl" x="520.0" y="80.5" text-anchor="middle" font-size="10.5">naturalWidth/Height &gt;= 250</text>
+<text class="lbl" x="520.0" y="92.5" text-anchor="middle" font-size="10.5">→ 排除 icon / 装饰小图 / 埋点像素</text>
+<line class="edge" x1="320" y1="55" x2="360" y2="62" marker-end="url(#bk4-m)"></line>
+<rect class="box" x="20" y="140" width="300" height="60" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="164.0" text-anchor="middle" font-size="12.5">悬浮框 &lt;div id="bookmarklet"&gt;</text>
+<text class="lbl" x="170.0" y="182.5" text-anchor="middle" font-size="10.5">克隆候选图为缩略图列表</text>
+<text class="lbl" x="170.0" y="194.5" text-anchor="middle" font-size="10.5">z-index 拉满盖在页面最上层</text>
+<path class="edge" d="M500,106 Q340,120 170,140" marker-end="url(#bk4-m)"></path>
+<rect class="box" x="400" y="140" width="280" height="60" rx="4"></rect>
+<text class="lbl-strong" x="540.0" y="164.0" text-anchor="middle" font-size="12.5">click 事件监听</text>
+<text class="lbl" x="540.0" y="182.5" text-anchor="middle" font-size="10.5">每张候选缩略图各绑定一个</text>
+<text class="lbl" x="540.0" y="194.5" text-anchor="middle" font-size="10.5">click → 拿到 event.target.src</text>
+<line class="edge edge-dashed" x1="320" y1="170" x2="400" y2="170" marker-end="url(#bk4-m)"></line>
+<rect class="box-w" x="60" y="250" width="600" height="66" rx="4"></rect>
+<text class="lbl-strong" x="360.0" y="276.0" text-anchor="middle" font-size="11">window.open(siteUrl + 'images/create/?url=' +</text>
+<text class="lbl-strong" x="360.0" y="290.0" text-anchor="middle" font-size="11">  encodeURIComponent(src) + '&amp;title=' + encodeURIComponent(document.title))</text>
+<path class="edge" d="M540,200 Q480,225 400,250" marker-end="url(#bk4-m)"></path>
+<text class="lbl" x="60" y="340.0" text-anchor="start" font-size="10.5">关键点：不发 AJAX 跨域请求图片，而是把图片地址当「文本参数」传回自己站点新标签页——</text>
+<text class="lbl" x="60" y="355.5" text-anchor="start" font-size="10.5">完全绕开浏览器同源策略/CORS，因为没有任何跨域的网络请求发生，只是拼了一个 URL。</text></svg><figcaption class="cap">图 4 · 悬浮框选图 UI：扫描 → 过滤 → 展示 → 用户点选 → 把图片地址「转达」回自己站点</figcaption></figure>
+<p>拆开看四步：</p>
+<ul>
+<li><strong>扫描</strong>：<code>document.querySelectorAll('img[src$=".jpg"], ...')</code> 用 CSS 属性选择器的「结尾匹配」语法（<code>$=</code>），把当前页面 DOM 里所有 <code>src</code> 以 <code>.jpg</code>/<code>.jpeg</code>/<code>.png</code> 结尾的 <code>&lt;img&gt;</code> 全部找出来。</li>
+<li><strong>过滤</strong>：<code>minWidth</code>/<code>minHeight</code> 都是 250，只保留 <code>naturalWidth</code>/<code>naturalHeight</code>（图片的真实像素尺寸，不是 CSS 显示尺寸）都不小于 250 的——把网站导航栏图标、装饰性小图、一像素统计埋点图都挡在外面，只留下「看起来像正文配图」的大图。</li>
+<li><strong>展示</strong>：把筛出来的图片地址克隆成新的 <code>&lt;img&gt;</code> 塞进悬浮框的 <code>.images</code> 容器里，靠 <code>bookmarklet.css</code>（<code>z-index</code> 拉到最高）盖在原网页最上层，形成一个「选图面板」。</li>
+<li><strong>选中并转交</strong>：每张候选缩略图都绑定一个 <code>click</code> 监听。用户点了哪张，就拿到它的 <code>src</code>，调用 <code>window.open()</code> 新开一个标签页，跳到<strong>你自己的 Bookmarks 站点</strong>，把选中图片的地址和当前网页标题作为 <strong>GET 查询参数</strong>拼在 URL 里。</li>
+</ul>
+<p>这一步是整套设计里最容易被忽略但最关键的一点：<strong>浏览器全程没有对图片发起任何跨域网络请求</strong>——没有 <code>fetch</code>、没有 <code>XMLHttpRequest</code> 去读取那张图的内容，只是读了一下 DOM 上已经在渲染的 <code>&lt;img&gt;</code> 元素的 <code>src</code> 字符串属性，然后把这个字符串当普通文本，通过 URL 参数「转达」给自己的站点。既不需要目标网站开放 CORS，也不违反同源策略，因为压根没有发生跨域请求这回事。</p>
+
+</section><section class="chapter" id="view">
+<h2>四、image_create 视图的双重身份：GET 预填 / POST 提交</h2>
+
+<p>新标签页打开后命中的是 <code>images/urls.py</code> 里的这一条路由：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>urlpatterns = [
+    path(&#x27;create/&#x27;, views.image_create, name=&#x27;create&#x27;),
+    path(&#x27;detail/&lt;int:id&gt;/&lt;slug:slug&gt;/&#x27;, views.image_detail, name=&#x27;detail&#x27;),
+    path(&#x27;like/&#x27;, views.image_like, name=&#x27;like&#x27;),
+    path(&#x27;&#x27;, views.image_list, name=&#x27;list&#x27;),
+]</code></pre></div>
+<p>而 <code>image_create()</code> 这一个视图函数，同时服务于两种完全不同的请求场景——这是新手读这段代码时最容易看晕的地方：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>@login_required
+def image_create(request):
+    if request.method == &#x27;POST&#x27;:
+        # form is sent
+        form = ImageCreateForm(data=request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            new_image = form.save(commit=False)
+            new_image.user = request.user
+            new_image.save()
+            messages.success(request, &#x27;Image added successfully&#x27;)
+            return redirect(new_image.get_absolute_url())
+    else:
+        # build form with data provided by the bookmarklet via GET
+        form = ImageCreateForm(data=request.GET)
+    return render(
+        request,
+        &#x27;images/image/create.html&#x27;,
+        {&#x27;section&#x27;: &#x27;images&#x27;, &#x27;form&#x27;: form},
+    )</code></pre></div>
+<ul>
+<li><strong>GET 分支</strong>（书签工具新开标签页跳过来的第一次请求）：<code>request.GET</code> 里带着 <code>url</code> 和 <code>title</code> 两个参数，直接用它们实例化一个<strong>未绑定提交、只是预填了初始值</strong>的表单，渲染出确认页面——用户在页面上看到的图片预览和自动填好的标题，就是从这里来的。</li>
+<li><strong>POST 分支</strong>（用户在确认页面点了「Bookmark it!」按钮之后）：这才是真正的表单提交与校验，校验通过后调用 <code>form.save()</code> 把图片存下来，成功后 <code>redirect()</code> 跳到图片详情页。</li>
+</ul>
+<p>对应的模板 <code>images/templates/images/image/create.html</code>：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code>{% extends &quot;base.html&quot; %}
+{% block content %}
+  &lt;h1&gt;Bookmark an image&lt;/h1&gt;
+  &lt;img src=&quot;{{ request.GET.url }}&quot; class=&quot;image-preview&quot;&gt;
+  &lt;form method=&quot;post&quot;&gt;
+    {{ form.as_p }}
+    {% csrf_token %}
+    &lt;input type=&quot;submit&quot; value=&quot;Bookmark it!&quot;&gt;
+  &lt;/form&gt;
+{% endblock %}</code></pre></div>
+<p>注意 <code>&lt;img src="{{ request.GET.url }}"&gt;</code> 这一行：预览图直接从<strong>浏览器</strong>去加载第三方网站的原图地址显示出来，此时还没有发生任何服务端下载——用户看到的预览，其实是浏览器直接向那个第三方 URL 发起的图片请求，跟你的 Django 服务器毫无关系。真正的「服务端下载」发生在用户点击提交之后，见下一节。</p>
+<blockquote><p>为什么提交成功后用 <code>redirect()</code> 而不是直接 <code>render()</code> 详情页？这是经典的 <strong>PRG（Post/Redirect/Get）模式</strong>：如果 POST 成功后直接渲染结果页，用户按浏览器刷新键会导致表单被重复提交（重复创建图片记录）；改成重定向后，浏览器地址栏变成详情页的 GET 请求，刷新只是重新 GET 一次详情页，不会重复提交表单。</p></blockquote>
+
+</section><section class="chapter" id="save">
+<h2>五、真正的服务端下载：ImageCreateForm.save()</h2>
+
+<p>表单定义在 <code>images/forms.py</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class ImageCreateForm(forms.ModelForm):
+    class Meta:
+        model = Image
+        fields = [&#x27;title&#x27;, &#x27;url&#x27;, &#x27;description&#x27;]
+        widgets = {
+            &#x27;url&#x27;: forms.HiddenInput,
+        }
+
+    def clean_url(self):
+        url = self.cleaned_data[&#x27;url&#x27;]
+        valid_extensions = [&#x27;jpg&#x27;, &#x27;jpeg&#x27;, &#x27;png&#x27;]
+        extension = url.rsplit(&#x27;.&#x27;, 1)[1].lower()
+        if extension not in valid_extensions:
+            raise forms.ValidationError(
+                &#x27;The given URL does not match valid image extensions.&#x27;
+            )
+        return url
+
+    def save(self, force_insert=False, force_update=False, commit=True):
+        image = super().save(commit=False)
+        image_url = self.cleaned_data[&#x27;url&#x27;]
+        name = slugify(image.title)
+        extension = image_url.rsplit(&#x27;.&#x27;, 1)[1].lower()
+        image_name = f&#x27;{name}.{extension}&#x27;
+        # download image from the given URL
+        response = requests.get(image_url)
+        image.image.save(
+            image_name,
+            ContentFile(response.content),
+            save=False
+        )
+        if commit:
+            image.save()
+        return image</code></pre></div>
+<p>几个值得注意的设计点：</p>
+<ul>
+<li><code>widgets = {'url': forms.HiddenInput}</code>——用户在确认页面看不到、也不需要手填 <code>url</code> 这个字段，它是 GET 参数预填进来、原样跟着表单一起提交的「隐藏字段」，用户界面上只露出标题和描述两个可编辑项。</li>
+<li><code>clean_url()</code> 是 Django 表单的标准校验钩子（<code>clean_&lt;fieldname&gt;</code> 命名约定自动生效），这里只做了一件事：看 URL <strong>结尾的文件扩展名</strong>是不是 <code>jpg</code>/<code>jpeg</code>/<code>png</code>。</li>
+<li>真正「下载图片」发生在重写过的 <code>save()</code> 方法里：<code>requests.get(image_url)</code> 由 <strong>Django 服务器本身</strong>发起一次真实的出站 HTTP 请求，把响应体 <code>response.content</code>（图片的原始二进制数据）包进 <code>ContentFile</code>，再通过 <code>image.image.save(name, ContentFile(...), save=False)</code> 存进 <code>ImageField</code> 关联的媒体目录。</li>
+</ul>
+<p>存储目标由 <code>images/models.py</code> 里的 <code>Image</code> 模型定义：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class Image(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name=&#x27;images_created&#x27;, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, blank=True)
+    url = models.URLField(max_length=2000)
+    image = models.ImageField(upload_to=&#x27;images/%Y/%m/%d/&#x27;)
+    description = models.TextField(blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    users_like = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name=&#x27;images_liked&#x27;, blank=True)</code></pre></div>
+<p><code>url</code> 字段本身也留了下来——数据库里同时保存着「原始来源地址」（<code>url</code>，纯文本）和「服务器本地这份图片文件」（<code>image</code>，真正的文件字段）。以后详情页展示的是本地这份拷贝，不再依赖原网站是否还在线。</p>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 720 400" role="img" aria-label="图 5 · form.save() 服务端下载图片：校验只看「文件名后缀」，未校验目标主机/超时/大小，存在 SSRF 与资源耗尽风险"><defs>
+          <marker id="bk5-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk5-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="bk5-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="30" width="220" height="50" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="49.0" text-anchor="middle" font-size="12.5">ImageCreateForm.clean_url()</text>
+<text class="lbl" x="130.0" y="67.5" text-anchor="middle" font-size="10.5">只检查 URL 末尾扩展名</text>
+<text class="lbl" x="130.0" y="79.5" text-anchor="middle" font-size="10.5">是否为 jpg/jpeg/png</text>
+<rect class="box-a" x="300" y="30" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="400.0" y="49.0" text-anchor="middle" font-size="12.5">requests.get(image_url)</text>
+<text class="lbl" x="400.0" y="67.5" text-anchor="middle" font-size="10.5">服务器发起真实的</text>
+<text class="lbl" x="400.0" y="79.5" text-anchor="middle" font-size="10.5">出站 HTTP 请求</text>
+<line class="edge" x1="240" y1="55" x2="300" y2="55" marker-end="url(#bk5-m)"></line>
+<rect class="box-w" x="560" y="20" width="140" height="70" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="42.25" text-anchor="middle" font-size="10.5">image_url 指向</text>
+<text class="lbl-strong" x="630.0" y="55.75" text-anchor="middle" font-size="10.5">任意可达地址</text>
+<text class="lbl" x="630.0" y="72.25" text-anchor="middle" font-size="10.5">http(s):// 且看似</text>
+<text class="lbl" x="630.0" y="84.25" text-anchor="middle" font-size="10.5">以 .jpg 结尾即可通过校验</text>
+<line class="edge edge-dashed" x1="500" y1="55" x2="560" y2="55" marker-end="url(#bk5-m)"></line>
+<rect class="box" x="20" y="130" width="220" height="60" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="154.0" text-anchor="middle" font-size="12.5">ContentFile(response.content)</text>
+<text class="lbl" x="130.0" y="172.5" text-anchor="middle" font-size="10.5">把响应体直接</text>
+<text class="lbl" x="130.0" y="184.5" text-anchor="middle" font-size="10.5">当图片二进制写盘</text>
+<line class="edge" x1="130" y1="80" x2="130" y2="130" marker-end="url(#bk5-m)"></line>
+<rect class="box" x="300" y="130" width="200" height="60" rx="4"></rect>
+<text class="lbl-strong" x="400.0" y="154.0" text-anchor="middle" font-size="12.5">image.image.save(name, ...)</text>
+<text class="lbl" x="400.0" y="172.5" text-anchor="middle" font-size="10.5">存到 MEDIA_ROOT/</text>
+<text class="lbl" x="400.0" y="184.5" text-anchor="middle" font-size="10.5">images/年/月/日/</text>
+<line class="edge" x1="240" y1="160" x2="300" y2="160" marker-end="url(#bk5-m)"></line>
+<line x1="20" y1="220" x2="700" y2="220" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl-strong" x="20" y="244" text-anchor="start" font-size="12">⚠️ 安全性提醒 —— clean_url 没做的事</text>
+<rect class="box-w" x="20" y="258" width="320" height="120" rx="4"></rect>
+<text class="lbl-strong" x="180.0" y="312.0" text-anchor="middle" font-size="12.5">没有校验目标主机</text>
+<text class="lbl" x="180.0" y="330.5" text-anchor="middle" font-size="10.5">可以填 http://127.0.0.1/admin、</text>
+<text class="lbl" x="180.0" y="342.5" text-anchor="middle" font-size="10.5">http://169.254.169.254/...（云</text>
+<text class="lbl" x="180.0" y="354.5" text-anchor="middle" font-size="10.5">元数据接口）等内网/本机地址</text>
+<text class="lbl" x="180.0" y="366.5" text-anchor="middle" font-size="10.5">→ 服务端发起请求 = SSRF</text>
+<rect class="box-w" x="370" y="258" width="330" height="120" rx="4"></rect>
+<text class="lbl-strong" x="535.0" y="312.0" text-anchor="middle" font-size="12.5">没有超时 / 大小限制</text>
+<text class="lbl" x="535.0" y="330.5" text-anchor="middle" font-size="10.5">requests.get() 不设 timeout，</text>
+<text class="lbl" x="535.0" y="342.5" text-anchor="middle" font-size="10.5">响应体不限制大小，恶意方可让</text>
+<text class="lbl" x="535.0" y="354.5" text-anchor="middle" font-size="10.5">服务器长时间挂起或下载超大</text>
+<text class="lbl" x="535.0" y="366.5" text-anchor="middle" font-size="10.5">文件 → 资源耗尽 / 简易 DoS</text></svg><figcaption class="cap">图 5 · form.save() 服务端下载图片：校验只看「文件名后缀」，未校验目标主机/超时/大小，存在 SSRF 与资源耗尽风险</figcaption></figure>
+<blockquote class="callout-warn"><p><strong>安全性提醒 —— <code>clean_url</code> 校验的盲区</strong></p>
+<p><strong>没有校验目标主机</strong>：只要 URL 结尾看着像 <code>.jpg</code>，<code>http://127.0.0.1/admin.jpg</code>、<code>http://169.254.169.254/latest/meta-data.jpg</code>（云厂商的实例元数据接口，常被用来窃取云凭据）这类指向内网或本机的地址都能通过校验——服务器会代替攻击者去请求这些原本无法从公网直接访问的内部地址，这是一个典型的 <strong>SSRF（服务端请求伪造）</strong>场景。</p>
+<p><strong>没有超时、没有大小限制</strong>：<code>requests.get(image_url)</code> 既没有传 <code>timeout</code> 参数，也没有限制响应体大小。一个恶意的「图片」地址可以让这次请求长时间挂起（拖垮 worker 进程），或者返回一个几个 GB 的文件把磁盘和内存吃满——低成本的资源耗尽/简易 DoS。</p></blockquote>
+
+</section><section class="chapter" id="qa">
+<h2>六、几个常见疑问</h2>
+
+<p><strong>Q：为什么选完图要新开一个标签页，而不是用 AJAX 直接把图片传回去？</strong></p>
+<p>因为 AJAX（<code>fetch</code>/<code>XMLHttpRequest</code>）请求受<strong>同源策略</strong>约束：当前页面属于第三方网站的域名，脚本想直接向你的 Bookmarks 域名发起带数据的跨域请求，除非目标服务器显式配置 CORS 允许，否则会被浏览器拦截。<code>window.open()</code> 新开标签页则完全不受此限制——它只是导航到一个新地址，地址里带的查询参数不算「跨域请求数据」，这正是本文第三节末尾强调的巧妙之处。</p>
+<p><strong>Q：为什么服务端还要重新下载一遍图片，而不是直接把 <code>url</code> 存进数据库当图片地址用？</strong></p>
+<p>如果只存远程 URL，展示图片时永远依赖原网站在线、图片没被删除或改动；原网站也可能随时对图片打水印、限制防盗链（Referer 校验），导致你的页面显示不出图。服务端下载一份「据为己有」，是把图片变成自己站点长期稳定可控的资产——代价就是上一节提到的 SSRF/资源耗尽风险，这是本章设计上一个「图方便」但不完全安全的取舍。</p>
+<p><strong>Q：如果同一张图被两个不同用户各自 bookmark 一次，会存两份文件吗？</strong></p>
+<p>会。<code>Image</code> 模型没有对 <code>url</code> 做唯一性约束或去重查询，每次提交都会重新触发一次 <code>requests.get()</code> 下载并生成一条新记录、一份新文件——多用户收藏同一张网图，服务器磁盘上会有多份物理拷贝。这不是本章要解决的问题，但读代码时值得留意。</p>
+
+</section><section class="chapter" id="summary">
+<h2>七、一句话讲给完全不懂的人听</h2>
+
+<p>把整个「Bookmark it」按钮想象成一个「远程遥控器」：你把遥控器（一段 JS 代码）挂在浏览器书签栏上，走到哪个网站都能掏出来按一下；按下去之后，遥控器先叫来一个「帮手」（<code>bookmarklet.js</code>），帮手在你当前站着的这个网页里东张西望，把看着像样的大图都摆出来给你挑；你选中一张后，帮手不会自己动手去「拿」这张图，而是写一张纸条（URL 参数：图片地址 + 网页标题），让你亲自带着纸条走回自己家（新标签页跳转回 Bookmarks 站点）；到家门口，管家（<code>image_create</code> 视图）看了纸条内容，先给你看一眼预览、问你确认标题和描述；你点头确认后，管家才真正派人出门（服务端 <code>requests.get()</code>）把那张图完整地搬回家里存好（<code>Image</code> 模型 + 媒体文件）。</p>
+<p>全程你的浏览器只做了「看图、选图、走一趟」三件事，真正「动手搬东西」的是你自己的服务器——这也是为什么下载环节的安全边界（校验搬回来的到底是不是一张安全的、来路正当的图）必须在服务器这一端做扎实，而不能指望浏览器帮你把关。</p>
+
+</section>
+    <div class="footdoc">
+      由 Claude 对照 Django 5 By Example 官方代码仓库逐行阅读整理生成 · 图示为教学示意，非源码逐行还原
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>
