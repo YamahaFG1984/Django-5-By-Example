@@ -1,0 +1,1359 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRF 接口实战指南</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext x=%2250%22 y=%2262%22 font-size=%2262%22 text-anchor=%22middle%22%3E%F0%9F%94%8C%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif CJK SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram svg .box{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.25; }
+.diagram svg .box-a{ fill:var(--accent2-soft); stroke:var(--accent2); stroke-width:1.25; }
+.diagram svg .box-w{ fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.25; }
+.diagram svg text{ font-family:var(--font-mono); dominant-baseline:middle; }
+.diagram svg .lbl{ fill:var(--ink-soft); }
+.diagram svg .lbl-strong{ fill:var(--ink); font-weight:700; }
+.diagram svg .lbl-accent{ fill:var(--accent2-strong); font-weight:700; }
+.diagram svg .lbl-warn{ fill:var(--danger); font-weight:700; }
+.diagram svg .edge{ stroke:var(--ink-faint); stroke-width:1.4; fill:none; }
+.diagram svg .edge-a{ stroke:var(--accent2); stroke-width:1.6; fill:none; }
+.diagram svg .edge-w{ stroke:var(--danger); stroke-width:1.6; fill:none; }
+.diagram svg .edge-dashed{ stroke-dasharray:4 3; }
+.diagram svg marker path{ fill:var(--ink-faint); }
+.diagram svg marker.m-a path{ fill:var(--accent2); }
+.diagram svg marker.m-w path{ fill:var(--danger); }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+
+
+:root{
+  --ok:#2f6d3f; --ok-soft:#e4f0e5; --ok-line:#8fbf9b;
+  --sev-hi:#9c3b2c; --sev-mid:#a86a0b; --sev-lo:#5b6357;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+    --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+  }
+}
+:root[data-theme="dark"]{
+  --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+  --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+}
+
+/* ---- lede / summary panel ---- */
+.lede{
+  border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:22px 24px; margin:0 0 30px; box-shadow:var(--shadow);
+}
+.lede h3{ margin:0 0 12px; font-size:.83rem; font-family:var(--font-mono);
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent2); font-weight:700; }
+.lede ol{ margin:0; padding-left:1.3em; }
+.lede li{ margin:0 0 .55em; }
+.lede li:last-child{ margin-bottom:0; }
+
+/* ---- finding cards ---- */
+.finding{
+  border:1px solid var(--line-strong); border-left:4px solid var(--sev-hi);
+  border-radius:5px; background:var(--surface); padding:18px 20px; margin:0 0 20px;
+  box-shadow:var(--shadow);
+}
+.finding.mid{ border-left-color:var(--sev-mid); }
+.finding.lo{ border-left-color:var(--sev-lo); }
+.finding .fhead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.finding .fid{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.09em; font-weight:700;
+  color:var(--paper); background:var(--sev-hi); padding:2px 7px; border-radius:3px;
+}
+.finding.mid .fid{ background:var(--sev-mid); }
+.finding.lo .fid{ background:var(--sev-lo); }
+.finding .ftitle{ font-weight:700; font-size:1.02rem; color:var(--ink); flex:1 1 auto; min-width:12ch; }
+.finding .fmeta{ font-family:var(--font-mono); font-size:.72rem; color:var(--ink-faint); }
+.finding p{ margin:0 0 .85em; }
+.finding p:last-child{ margin-bottom:0; }
+.finding dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:baseline; }
+.finding dt{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); white-space:nowrap; padding-top:.15em;
+}
+.finding dd{ margin:0; }
+
+/* ---- verified evidence terminal ---- */
+.term{
+  border:1px solid var(--code-border); border-radius:6px; overflow:hidden;
+  margin:0 0 1.3em; box-shadow:var(--shadow);
+}
+.term .thead{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ok); background:var(--ok-soft); padding:6px 14px; border-bottom:1px solid var(--ok-line);
+  display:flex; align-items:center; gap:8px;
+}
+.term pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink); padding:14px 16px;
+  overflow-x:auto; font-family:var(--font-mono); font-size:.8rem; line-height:1.6;
+}
+.term pre b{ color:var(--danger); font-weight:700; }
+.term pre i{ color:var(--ok); font-style:normal; font-weight:700; }
+
+/* ---- good / bad code pairing ---- */
+.pair{ display:grid; gap:14px; margin:0 0 1.4em; }
+@media (min-width:820px){ .pair.two{ grid-template-columns:1fr 1fr; } }
+.pane{ border:1px solid var(--code-border); border-radius:6px; overflow:hidden; min-width:0; }
+.pane > .ph{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  padding:6px 13px; border-bottom:1px solid var(--code-border); font-weight:700;
+}
+.pane.bad > .ph{ color:var(--danger); background:var(--danger-soft); }
+.pane.good > .ph{ color:var(--ok); background:var(--ok-soft); }
+.pane pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink);
+  padding:14px 16px; overflow-x:auto; font-family:var(--font-mono);
+  font-size:.79rem; line-height:1.62;
+}
+
+/* ---- three-way framework comparison ---- */
+.cmp{ display:grid; gap:14px; margin:0 0 1.6em; }
+@media (min-width:900px){ .cmp.three{ grid-template-columns:repeat(3,1fr); } }
+.fw{ border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:0 0 16px; min-width:0; box-shadow:var(--shadow); overflow:hidden; }
+.fw > h4{
+  margin:0 0 12px; padding:10px 16px; font-size:.86rem; font-family:var(--font-mono);
+  letter-spacing:.06em; font-weight:700; border-bottom:1px solid var(--line);
+  background:var(--surface-2); color:var(--accent2-strong);
+}
+.fw .fwbody{ padding:0 16px; }
+.fw p{ margin:0 0 .8em; font-size:.9rem; }
+.fw pre{
+  margin:0 0 .9em; background:var(--code-bg); border:1px solid var(--code-border);
+  border-radius:5px; padding:11px 12px; overflow-x:auto;
+  font-family:var(--font-mono); font-size:.74rem; line-height:1.55; color:var(--code-ink);
+}
+.fw ul{ margin:0; padding-left:1.15em; font-size:.86rem; }
+.fw li{ margin:0 0 .42em; }
+
+/* ---- decision matrix ---- */
+.matrix{ overflow-x:auto; margin:0 0 1.5em; border:1px solid var(--line); border-radius:6px; }
+.matrix table{ width:100%; border-collapse:collapse; font-size:.86rem; min-width:640px; margin:0; }
+.matrix th{
+  text-align:left; padding:10px 13px; background:var(--accent2-soft); color:var(--accent2-strong);
+  font-weight:700; border-bottom:1px solid var(--line-strong); vertical-align:bottom;
+}
+.matrix td{ padding:10px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.matrix tr:last-child td{ border-bottom:none; }
+.matrix tr:nth-child(even) td{ background:var(--surface-2); }
+.matrix td.lv{ font-family:var(--font-mono); font-weight:700; color:var(--accent-strong); white-space:nowrap; }
+
+/* ---- checklist ---- */
+.check{ list-style:none; padding:0; margin:0 0 1.5em; display:flex; flex-direction:column; gap:10px; }
+.check li{
+  display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:baseline;
+  border:1px solid var(--line); border-radius:5px; padding:12px 15px; background:var(--surface);
+  margin:0; font-size:.93rem;
+}
+.check li > .mk{ font-family:var(--font-mono); font-weight:700; color:var(--accent2); font-size:.8rem; }
+.check li b{ color:var(--accent-strong); }
+
+/* the guide uses one <h2> per section like the chapter pages, so inherit that rule */
+.chapter h4{ font-size:.97rem; margin:1.7em 0 .6em; font-weight:700; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5.2 · 专题指南</span>
+      <h1>&#x1F50C;&nbsp; DRF 接口实战指南</h1>
+      <p>配置、视图分层、序列化器、认证鉴权与性能，对照本仓库 educa 的真实 API 代码逐处分析，并与 Spring、Hono.js 的同场景做法对比。</p>
+    </div>
+    <nav>
+      <a href="#tldr"><span class="n">速览</span>本文结论速览</a><a href="#config"><span class="n">配置</span>DRF 在 Django 5.2 下的配置与接线</a><a href="#levels"><span class="n">分层</span>请求流水线与视图选型</a><a href="#audit"><span class="n">现状</span>本仓库 API 代码逐处分析</a><a href="#findings"><span class="n">缺陷</span>六个已验证的缺陷与修复</a><a href="#security"><span class="n">认证</span>认证、权限与限流</a><a href="#checklist"><span class="n">清单</span>上线前检查清单</a><a href="#compare"><span class="n">对比</span>同样的 API：Spring 与 Hono.js 怎么写</a>
+    </nav>
+    <div class="series">
+      <div class="label">相关阅读</div>
+      <a href="guide-redis-caching.html">&#x26A1; Redis 缓存实战指南</a>
+      <a href="notes-04-educa.html">&#x1F393; educa 项目深读笔记</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">专题指南 · 配置 / 选型 / 缺陷分析 / 横向对比</span>
+      <h1>Django REST Framework 接口实战指南</h1>
+      <p class="sub">面向 Django 5.2 + DRF 3.15。所有关于框架行为的论断均在本机实测验证，所有项目分析均来自本仓库 <code>Chapter15~17/educa/courses/api/</code> 的真实代码。</p>
+      <div class="meta">
+        <span>Django 5.2 · DRF 3.15.1</span>
+        <span>含 6 张架构示意图</span>
+        <span>6 个已复现的缺陷</span>
+      </div>
+    </div>
+    <section class="chapter" id="tldr">
+<h2>本文结论速览</h2>
+
+<div class="lede">
+<h3>三条最重要的结论</h3>
+<ol>
+<li><strong>本仓库 API 最贵的那个端点有严重的 N+1。</strong> 实测 <code>/api/courses/1/contents/</code> 对一门 5 模块 30 内容项的课程发出 <strong>39 条 SQL</strong>，其中 30 条是逐个解 <code>GenericForeignKey</code>。用 Django 5.0+ 的 <code>GenericPrefetch</code> 重写后是 <strong>5 条</strong>。详见 <a href="#findings">F-01</a>。</li>
+<li><strong><code>SubjectViewSet</code> 的分页目前是不稳定的。</strong> <code>annotate()</code> 引入 GROUP BY，Django 会<strong>静默丢弃</strong> <code>Meta.ordering</code>，生成的 SQL 里没有 <code>ORDER BY</code>——DRF 每次请求都在打印 <code>UnorderedObjectListWarning</code>，而无序查询的分页可能跨页重复或漏掉记录。详见 <a href="#findings">F-02</a>。</li>
+<li><strong>两个自定义端点意外关掉了 session 认证。</strong> <code>@action</code> 上写 <code>authentication_classes=[BasicAuthentication]</code> 是<strong>替换</strong>而非追加，于是同一个浏览器 session 能读 <code>/api/courses/</code>（200）却在 <code>/api/courses/1/contents/</code> 上收到 401。详见 <a href="#findings">F-03</a>。</li>
+</ol>
+</div>
+<p>本文的结构与<a href="guide-redis-caching.html">缓存指南</a>一致：先讲 <strong>Django 5.2 + DRF 3.15 的配置与选型</strong>，再<strong>逐处分析本仓库的 API 代码</strong>，然后是<strong>六个已验证的缺陷及修复</strong>、<strong>性能</strong>与<strong>认证鉴权</strong>专题，最后是<strong>上线清单</strong>与 <strong>Spring / Hono.js 对比</strong>。所有关于框架行为的论断都在本机 Django 5.2 + DRF 3.15.1 上跑通验证，实测输出以绿色标题的终端块标注。</p>
+<blockquote><p><strong>一点前提说明</strong>：本仓库的 API 代码位于 <code>Chapter15~17/educa/courses/api/</code>，我逐字节比对过——<strong>三章完全一致</strong>，说明它在 Chapter15 引入后就没再改动。所以下文说「本项目」时，指的是这份从 Ch15 到 Ch17 都相同的代码。</p></blockquote>
+
+</section><section class="chapter" id="config">
+<h2>一、DRF 在 Django 5.2 下的配置与接线</h2>
+
+<p>DRF 不在 Django 标准库里，需要单独安装并注册。本仓库 <code>requirements.txt</code> 锁的是 <code>djangorestframework==3.15.1</code>，配 Django 5.2 是当前的稳定组合。</p>
+
+<h3>1.1 本项目的实际配置：只有一行</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># educa/settings/base.py
+INSTALLED_APPS = [
+    ...
+    &#x27;rest_framework&#x27;,
+    ...
+]
+
+REST_FRAMEWORK = {
+    &#x27;DEFAULT_PERMISSION_CLASSES&#x27;: [
+        &#x27;rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly&#x27;
+    ]
+}</code></pre></div>
+<p>除了这一项，其余全部走 DRF 默认值。这些默认值是什么，实测打印如下：</p>
+<div class="term"><div class="thead">实测 · 本项目生效的 DRF 配置</div><pre>DEFAULT_AUTHENTICATION_CLASSES   ['SessionAuthentication', 'BasicAuthentication']
+DEFAULT_RENDERER_CLASSES         ['JSONRenderer', 'BrowsableAPIRenderer']
+DEFAULT_THROTTLE_CLASSES         <b>[]  &lt;- 空</b>
+DEFAULT_PAGINATION_CLASS         <b>None  &lt;- 未启用</b>
+DEFAULT_VERSIONING_CLASS         <b>None  &lt;- 未启用</b>
+DEFAULT_FILTER_BACKENDS          <b>[]  &lt;- 空</b></pre></div>
+<p>其中 <code>DEFAULT_PAGINATION_CLASS</code> 为 <code>None</code> 值得注意：本项目的分页是<strong>逐视图</strong>配的（两个 ViewSet 各写了一次 <code>pagination_class = StandardPagination</code>），所以<strong>任何新加的视图如果忘了配，就会一次性返回全表</strong>。这正是应该用全局默认值兜底的场景。</p>
+
+<h3>1.2 生产环境该显式配的项</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>REST_FRAMEWORK = {
+    # 认证：生产 API 不要留 BasicAuthentication（每次请求都传密码）
+    &#x27;DEFAULT_AUTHENTICATION_CLASSES&#x27;: [
+        &#x27;rest_framework_simplejwt.authentication.JWTAuthentication&#x27;,
+        # 只在需要浏览器内调试时保留：
+        # &#x27;rest_framework.authentication.SessionAuthentication&#x27;,
+    ],
+
+    # 权限：默认拒绝，再由各视图显式放开，而不是反过来
+    &#x27;DEFAULT_PERMISSION_CLASSES&#x27;: [
+        &#x27;rest_framework.permissions.IsAuthenticated&#x27;,
+    ],
+
+    # 分页：配了全局默认，新视图忘记设置也不会返回全表
+    &#x27;DEFAULT_PAGINATION_CLASS&#x27;: &#x27;courses.api.pagination.StandardPagination&#x27;,
+    &#x27;PAGE_SIZE&#x27;: 20,
+
+    # 限流：本项目完全没有，实测连打 30 次全部 200
+    &#x27;DEFAULT_THROTTLE_CLASSES&#x27;: [
+        &#x27;rest_framework.throttling.AnonRateThrottle&#x27;,
+        &#x27;rest_framework.throttling.UserRateThrottle&#x27;,
+    ],
+    &#x27;DEFAULT_THROTTLE_RATES&#x27;: {
+        &#x27;anon&#x27;: &#x27;60/hour&#x27;,
+        &#x27;user&#x27;: &#x27;1000/hour&#x27;,
+    },
+
+    # 渲染：生产环境关掉可浏览 API（见 1.3）
+    &#x27;DEFAULT_RENDERER_CLASSES&#x27;: [
+        &#x27;rest_framework.renderers.JSONRenderer&#x27;,
+    ],
+
+    # 过滤/搜索/排序：需要 pip install django-filter
+    &#x27;DEFAULT_FILTER_BACKENDS&#x27;: [
+        &#x27;django_filters.rest_framework.DjangoFilterBackend&#x27;,
+        &#x27;rest_framework.filters.SearchFilter&#x27;,
+        &#x27;rest_framework.filters.OrderingFilter&#x27;,
+    ],
+
+    # 异常返回结构统一（可选，但强烈建议自定义）
+    &#x27;EXCEPTION_HANDLER&#x27;: &#x27;courses.api.exceptions.custom_exception_handler&#x27;,
+}</code></pre></div>
+
+<h3>1.3 可浏览 API 在生产是开着的</h3>
+<p>DRF 默认的 <code>DEFAULT_RENDERER_CLASSES</code> 包含 <code>BrowsableAPIRenderer</code>，它<strong>不看 <code>DEBUG</code></strong>——只要请求头带 <code>Accept: text/html</code>（浏览器直接访问就是这样），就会返回一整套 HTML 调试界面：</p>
+<div class="term"><div class="thead">实测 · DEBUG=False 下请求 API</div><pre>Accept: text/html -> 200 text/html; charset=utf-8
+返回的是 HTML 页面 : <b>True</b></pre></div>
+<p>这不算漏洞，但它会把完整的字段结构、可用方法、分页参数暴露给任何访问者，而且每次渲染都要跑一遍模板，比返回 JSON 慢得多。生产环境应当按 1.2 那样只保留 <code>JSONRenderer</code>，或者用 <code>DEBUG</code> 做条件切换。</p>
+
+<h3>1.4 URL 接线</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># educa/urls.py
+path(&#x27;api/&#x27;, include(&#x27;courses.api.urls&#x27;, namespace=&#x27;api&#x27;)),</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># courses/api/urls.py
+from rest_framework import routers
+
+app_name = &#x27;courses&#x27;
+
+router = routers.DefaultRouter()
+router.register(&#x27;courses&#x27;, views.CourseViewSet)
+router.register(&#x27;subjects&#x27;, views.SubjectViewSet)
+
+urlpatterns = [
+    path(&#x27;&#x27;, include(router.urls)),
+]</code></pre></div>
+<p><code>register()</code> 没传 <code>basename</code>，DRF 会从 ViewSet 的 <code>queryset</code> 属性反推（这里得到 <code>course</code> / <code>subject</code>）。<strong>如果哪个 ViewSet 只重写了 <code>get_queryset()</code> 而没有类级 <code>queryset</code>，这里就会直接抛错</strong>，必须显式传 <code>basename</code>——这是 Router 最常见的报错来源。</p>
+
+</section><section class="chapter" id="levels">
+<h2>二、请求流水线与视图选型</h2>
+
+<h3>2.1 一个请求在 DRF 里经过什么</h3>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 430" role="img" aria-label="图 1 · DRF 的请求流水线：认证 → 权限 → 限流发生在视图之前，序列化 → 渲染发生在视图之后"><defs>
+          <marker id="da1-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da1-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da1-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">进入阶段：DRF 在视图代码执行之前依次做四件事</text>
+<rect class="box-a" x="20" y="36" width="170" height="70" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="65.0" text-anchor="middle" font-size="12.5">① 解析请求</text>
+<text class="lbl" x="105.0" y="83.5" text-anchor="middle" font-size="10.5">Parser</text>
+<text class="lbl" x="105.0" y="95.5" text-anchor="middle" font-size="10.5">JSON / 表单 / 文件</text>
+<rect class="box-a" x="200" y="36" width="170" height="70" rx="4"></rect>
+<text class="lbl-strong" x="285.0" y="65.0" text-anchor="middle" font-size="12.5">② 认证</text>
+<text class="lbl" x="285.0" y="83.5" text-anchor="middle" font-size="10.5">Authentication</text>
+<text class="lbl" x="285.0" y="95.5" text-anchor="middle" font-size="10.5">确定 request.user</text>
+<rect class="box-a" x="380" y="36" width="170" height="70" rx="4"></rect>
+<text class="lbl-strong" x="465.0" y="65.0" text-anchor="middle" font-size="12.5">③ 权限</text>
+<text class="lbl" x="465.0" y="83.5" text-anchor="middle" font-size="10.5">Permission</text>
+<text class="lbl" x="465.0" y="95.5" text-anchor="middle" font-size="10.5">准入判断</text>
+<rect class="box-w" x="560" y="36" width="170" height="70" rx="4"></rect>
+<text class="lbl-strong" x="645.0" y="65.0" text-anchor="middle" font-size="12.5">④ 限流</text>
+<text class="lbl" x="645.0" y="83.5" text-anchor="middle" font-size="10.5">Throttle</text>
+<text class="lbl" x="645.0" y="95.5" text-anchor="middle" font-size="10.5">本项目未启用</text>
+<line class="edge" x1="190" y1="71" x2="200" y2="71" marker-end="url(#da1-m)"></line>
+<line class="edge" x1="370" y1="71" x2="380" y2="71" marker-end="url(#da1-m)"></line>
+<line class="edge" x1="550" y1="71" x2="560" y2="71" marker-end="url(#da1-m)"></line>
+<rect class="box" x="200" y="140" width="350" height="50" rx="4"></rect>
+<text class="lbl-strong" x="375.0" y="159.0" text-anchor="middle" font-size="12.5">视图 / ViewSet 方法体</text>
+<text class="lbl" x="375.0" y="177.5" text-anchor="middle" font-size="10.5">list / retrieve / 自定义 @action</text>
+<line class="edge" x1="375" y1="106" x2="375" y2="140" marker-end="url(#da1-m)"></line>
+<line x1="20" y1="220" x2="740" y2="220" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="430" y="242" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">返回阶段：把 Python 对象变成 HTTP 响应</text>
+<rect class="box-a" x="20" y="256" width="200" height="66" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="283.0" text-anchor="middle" font-size="12.5">Serializer</text>
+<text class="lbl" x="120.0" y="301.5" text-anchor="middle" font-size="10.5">to_representation()</text>
+<text class="lbl" x="120.0" y="313.5" text-anchor="middle" font-size="10.5">模型实例 → 原生 Python 类型</text>
+<rect class="box-a" x="270" y="256" width="200" height="66" rx="4"></rect>
+<text class="lbl-strong" x="370.0" y="283.0" text-anchor="middle" font-size="12.5">Renderer</text>
+<text class="lbl" x="370.0" y="301.5" text-anchor="middle" font-size="10.5">JSONRenderer</text>
+<text class="lbl" x="370.0" y="313.5" text-anchor="middle" font-size="10.5">BrowsableAPIRenderer</text>
+<rect class="box" x="520" y="256" width="200" height="66" rx="4"></rect>
+<text class="lbl-strong" x="620.0" y="283.0" text-anchor="middle" font-size="12.5">Response</text>
+<text class="lbl" x="620.0" y="301.5" text-anchor="middle" font-size="10.5">带 Content-Type</text>
+<text class="lbl" x="620.0" y="313.5" text-anchor="middle" font-size="10.5">与状态码</text>
+<line class="edge" x1="220" y1="289" x2="270" y2="289" marker-end="url(#da1-m)"></line>
+<line class="edge" x1="470" y1="289" x2="520" y2="289" marker-end="url(#da1-m)"></line>
+<path class="edge" d="M375,190 Q200,225 120,256" marker-end="url(#da1-m)"></path>
+<text class="lbl" x="20" y="355.0" text-anchor="start" font-size="10.5">关键点：权限检查发生在视图代码之前，所以「有没有权限」和「查得到查不到」是两件事——</text>
+<text class="lbl" x="20" y="370.5" text-anchor="start" font-size="10.5">对象级权限（IsEnrolled）则要等 get_object() 拿到对象后才触发，属于视图体内部。</text>
+<text class="lbl-warn" x="20" y="400.0" text-anchor="start" font-size="10.5">本项目在 ④ 上是空的：没有配置任何限流，实测连打 30 次全部 200。</text></svg><figcaption class="cap">图 1 · DRF 的请求流水线：认证 → 权限 → 限流发生在视图之前，序列化 → 渲染发生在视图之后</figcaption></figure>
+<p>理解这条流水线能解释很多「为什么」。比如：<strong>权限检查在视图代码之前</strong>，所以「无权限」返回 403 而不是让你查出空结果；而<strong>对象级权限必须等 <code>get_object()</code> 拿到对象</strong>，所以它是在视图体内部触发的，这就是为什么 <code>IsEnrolled</code> 只能写 <code>has_object_permission</code>。</p>
+<blockquote><p>401 与 403 的区别也由这条流水线决定：DRF 在权限不足时，如果<strong>当前请求没有通过任何认证</strong>就返回 <strong>401</strong>（告诉你「你需要先登录」），已认证但权限不够才返回 <strong>403</strong>。本项目实测正好覆盖了这三种状态，见 <a href="#security">第六节</a>。</p></blockquote>
+
+<h3>2.2 视图的四层抽象</h3>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 420" role="img" aria-label="图 2 · DRF 的视图抽象阶梯：越往下写得越少，但可覆盖的接缝也越少"><defs>
+          <marker id="da2-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da2-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da2-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="120" y="36" width="330" height="68" rx="4"></rect>
+<text class="lbl-strong" x="285.0" y="64.0" text-anchor="middle" font-size="12.5">APIView</text>
+<text class="lbl" x="285.0" y="82.5" text-anchor="middle" font-size="10.5">只帮你处理请求解析 / 认证 / 权限 / 渲染，</text>
+<text class="lbl" x="285.0" y="94.5" text-anchor="middle" font-size="10.5">每个 HTTP 方法自己写</text>
+<text class="lbl" x="470" y="62.0" text-anchor="start" font-size="10.5">最灵活</text>
+<rect class="box" x="120" y="116" width="330" height="68" rx="4"></rect>
+<text class="lbl-strong" x="285.0" y="144.0" text-anchor="middle" font-size="12.5">GenericAPIView + Mixins</text>
+<text class="lbl" x="285.0" y="162.5" text-anchor="middle" font-size="10.5">补上 queryset / serializer_class / 分页，</text>
+<text class="lbl" x="285.0" y="174.5" text-anchor="middle" font-size="10.5">按需混入 List / Create / Retrieve…</text>
+<rect class="box-a" x="120" y="196" width="330" height="68" rx="4"></rect>
+<text class="lbl-strong" x="285.0" y="224.0" text-anchor="middle" font-size="12.5">generics.XxxAPIView</text>
+<text class="lbl" x="285.0" y="242.5" text-anchor="middle" font-size="10.5">ListAPIView、RetrieveAPIView 等，</text>
+<text class="lbl" x="285.0" y="254.5" text-anchor="middle" font-size="10.5">一个类对应一个端点</text>
+<text class="lbl" x="470" y="222.0" text-anchor="start" font-size="10.5">本项目早期写法（已注释）</text>
+<rect class="box-a" x="120" y="276" width="330" height="68" rx="4"></rect>
+<text class="lbl-strong" x="285.0" y="304.0" text-anchor="middle" font-size="12.5">ViewSet / ModelViewSet</text>
+<text class="lbl" x="285.0" y="322.5" text-anchor="middle" font-size="10.5">一个类对应一组端点，</text>
+<text class="lbl" x="285.0" y="334.5" text-anchor="middle" font-size="10.5">交给 Router 自动生成 URL</text>
+<text class="lbl" x="470" y="302.0" text-anchor="start" font-size="10.5">本项目现在的写法</text>
+<line class="edge" x1="285" y1="104" x2="285" y2="116" marker-end="url(#da2-m)"></line>
+<line class="edge" x1="285" y1="184" x2="285" y2="196" marker-end="url(#da2-m)"></line>
+<line class="edge" x1="285" y1="264" x2="285" y2="276" marker-end="url(#da2-m)"></line>
+<text class="lbl" x="20" y="60.0" text-anchor="start" font-size="10.5">抽象更低</text>
+<text class="lbl" x="20" y="75.5" text-anchor="start" font-size="10.5">代码更多</text>
+<text class="lbl" x="20" y="91.0" text-anchor="start" font-size="10.5">控制更强</text>
+<text class="lbl" x="20" y="300.0" text-anchor="start" font-size="10.5">抽象更高</text>
+<text class="lbl" x="20" y="315.5" text-anchor="start" font-size="10.5">代码更少</text>
+<text class="lbl" x="20" y="331.0" text-anchor="start" font-size="10.5">约定更多</text>
+<line x1="20" y1="366" x2="740" y2="366" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="388.0" text-anchor="start" font-size="10.5">选型不是「越高越好」：ReadOnlyModelViewSet 一行就能生成 list + retrieve，但一旦要给某个端点单独换</text>
+<text class="lbl" x="20" y="403.5" text-anchor="start" font-size="10.5">认证方式、换序列化器、加过滤，就得靠 @action 和一堆类属性覆盖去打补丁——本项目 F-03 正是这么来的。</text></svg><figcaption class="cap">图 2 · DRF 的视图抽象阶梯：越往下写得越少，但可覆盖的接缝也越少</figcaption></figure>
+<p>本仓库 <code>courses/api/urls.py</code> 里还留着一段注释掉的旧代码，正好记录了这个演进过程：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>urlpatterns = [
+    # path(&#x27;subjects/&#x27;, views.SubjectListView.as_view(), name=&#x27;subject_list&#x27;),
+    # path(&#x27;subjects/&lt;pk&gt;/&#x27;, views.SubjectDetailView.as_view(), name=&#x27;subject_detail&#x27;),
+    # path(&#x27;courses/&lt;pk&gt;/enroll/&#x27;, views.CourseEnrollView.as_view(), name=&#x27;course_enroll&#x27;),
+    path(&#x27;&#x27;, include(router.urls)),
+]</code></pre></div>
+<p>三个独立的 <code>generics</code> 视图 + 手写 URL，被一个 <code>ReadOnlyModelViewSet</code> + Router 取代。代码是少了，但也要清楚代价：<strong>URL 不再出现在代码里</strong>，想知道有哪些端点得去看 Router 的生成规则或跑 <code>show_urls</code>。</p>
+
+<div class="matrix">
+<table>
+<thead><tr><th>写法</th><th>一个类对应</th><th>适合</th><th>不适合</th></tr></thead>
+<tbody>
+<tr><td class="lv">APIView</td><td>一个 URL，方法自己写</td><td>不是 CRUD 的端点：登录、导出、Webhook 回调</td><td>标准 CRUD——会写一堆重复代码</td></tr>
+<tr><td class="lv">generics.*</td><td>一个 URL 的一组方法</td><td>端点之间差异较大、需要各自定制的场景</td><td>——是最平衡的选择，很多团队全程只用这层</td></tr>
+<tr><td class="lv">ViewSet</td><td>一组 URL</td><td>资源型 CRUD，配 Router 使用</td><td>端点之间要用不同认证/权限/序列化器时，覆盖会变得零碎</td></tr>
+<tr><td class="lv">ModelViewSet</td><td>一组 URL 的全部 CRUD</td><td>后台管理类接口、内部工具</td><td><strong>对外 API</strong>——它默认把增删改全开了，很容易超出你本意暴露的范围</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote><p>本项目用的是 <code>ReadOnlyModelViewSet</code>（只生成 <code>list</code> 与 <code>retrieve</code>），这是个好选择——需要写操作时再用 <code>@action</code> 精确加一个 <code>enroll</code> 端点，而不是直接上 <code>ModelViewSet</code> 把 POST/PUT/PATCH/DELETE 全开。实测 <code>DELETE /api/courses/2/</code> 返回 403，正是因为这些方法压根没被注册。</p></blockquote>
+
+</section><section class="chapter" id="audit">
+<h2>三、本仓库 API 代码逐处分析</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 470" role="img" aria-label="图 3 · 本仓库 API 的实际端点拓扑：Router 生成 4 个只读端点，两个 @action 单独覆盖了认证与权限"><defs>
+          <marker id="da3-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da3-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da3-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="30" width="200" height="62" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="55.0" text-anchor="middle" font-size="11.5">DefaultRouter</text>
+<text class="lbl" x="120.0" y="72.5" text-anchor="middle" font-size="10.5">register('courses', CourseViewSet)</text>
+<text class="lbl" x="120.0" y="84.5" text-anchor="middle" font-size="10.5">register('subjects', SubjectViewSet)</text>
+<text class="lbl" x="280" y="24" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">自动生成的端点</text>
+<rect class="box-a" x="280" y="36" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="53.0" text-anchor="middle" font-size="11.5">GET /api/subjects/</text>
+<text class="lbl" x="405.0" y="70.5" text-anchor="middle" font-size="10.5">分页 10 条</text>
+<rect class="box-a" x="280" y="94" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="117.0" text-anchor="middle" font-size="11.5">GET /api/subjects/{id}/</text>
+<rect class="box-a" x="280" y="152" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="169.0" text-anchor="middle" font-size="11.5">GET /api/courses/</text>
+<text class="lbl" x="405.0" y="186.5" text-anchor="middle" font-size="10.5">分页 10 条</text>
+<rect class="box-a" x="280" y="210" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="233.0" text-anchor="middle" font-size="11.5">GET /api/courses/{id}/</text>
+<line class="edge" x1="220" y1="61" x2="280" y2="61" marker-end="url(#da3-m)"></line>
+<path class="edge" d="M220,70 Q250,130 280,175" marker-end="url(#da3-m)"></path>
+<text class="lbl" x="545" y="52" text-anchor="start" font-size="10">DjangoModelPermissions</text>
+<text class="lbl" x="545" y="67" text-anchor="start" font-size="10">OrAnonReadOnly</text>
+<text class="lbl" x="545" y="82" text-anchor="start" font-size="10">→ 匿名可读</text>
+<text class="lbl" x="545" y="168" text-anchor="start" font-size="10">同上，匿名可读</text>
+<line x1="20" y1="272" x2="740" y2="272" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="294" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">两个 @action 自定义端点：认证与权限被单独覆盖</text>
+<rect class="box-w" x="20" y="308" width="250" height="68" rx="4"></rect>
+<text class="lbl-strong" x="145.0" y="336.0" text-anchor="middle" font-size="12.5">POST /api/courses/{id}/enroll/</text>
+<text class="lbl" x="145.0" y="354.5" text-anchor="middle" font-size="10.5">BasicAuthentication</text>
+<text class="lbl" x="145.0" y="366.5" text-anchor="middle" font-size="10.5">IsAuthenticated</text>
+<rect class="box-a" x="20" y="392" width="250" height="68" rx="4"></rect>
+<text class="lbl-strong" x="145.0" y="420.0" text-anchor="middle" font-size="12.5">GET /api/courses/{id}/contents/</text>
+<text class="lbl" x="145.0" y="438.5" text-anchor="middle" font-size="10.5">BasicAuthentication</text>
+<text class="lbl" x="145.0" y="450.5" text-anchor="middle" font-size="10.5">IsAuthenticated + IsEnrolled</text>
+<rect class="box-w" x="330" y="308" width="200" height="68" rx="4"></rect>
+<text class="lbl-strong" x="430.0" y="336.0" text-anchor="middle" font-size="12.5">任何登录用户都能报名</text>
+<text class="lbl" x="430.0" y="354.5" text-anchor="middle" font-size="10.5">无付费 / 资格校验</text>
+<text class="lbl" x="430.0" y="366.5" text-anchor="middle" font-size="10.5">且没有退课端点</text>
+<line class="edge-w" x1="270" y1="342" x2="330" y2="342" marker-end="url(#da3-mw)"></line>
+<rect class="box-a" x="330" y="392" width="200" height="68" rx="4"></rect>
+<text class="lbl-strong" x="430.0" y="420.0" text-anchor="middle" font-size="12.5">对象级权限生效</text>
+<text class="lbl" x="430.0" y="438.5" text-anchor="middle" font-size="10.5">401 匿名 / 403 未报名</text>
+<text class="lbl" x="430.0" y="450.5" text-anchor="middle" font-size="10.5">/ 200 已报名</text>
+<line class="edge-a" x1="270" y1="426" x2="330" y2="426" marker-end="url(#da3-ma)"></line>
+<text class="lbl-warn" x="550" y="330" text-anchor="start" font-size="10">覆盖 authentication_classes</text>
+<text class="lbl-warn" x="550" y="345" text-anchor="start" font-size="10">= 关掉 SessionAuthentication</text>
+<text class="lbl-warn" x="550" y="360" text-anchor="start" font-size="10">→ session 登录用户在这两个</text>
+<text class="lbl-warn" x="550" y="375" text-anchor="start" font-size="10">端点收到 401（缺陷 F-03）</text></svg><figcaption class="cap">图 3 · 本仓库 API 的实际端点拓扑：Router 生成 4 个只读端点，两个 @action 单独覆盖了认证与权限</figcaption></figure>
+
+<h3>3.1 序列化器：五个类，三种典型手法</h3>
+<p><strong>手法一：用 <code>SerializerMethodField</code> 塞入计算字段。</strong></p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class SubjectSerializer(serializers.ModelSerializer):
+    total_courses = serializers.IntegerField()
+    popular_courses = serializers.SerializerMethodField()
+
+    def get_popular_courses(self, obj):
+        courses = obj.courses.annotate(
+            total_students=Count(&#x27;students&#x27;)
+        ).order_by(&#x27;-total_students&#x27;)[:3]
+        return [f&#x27;{c.title} ({c.total_students} students)&#x27; for c in courses]
+
+    class Meta:
+        model = Subject
+        fields = [&#x27;id&#x27;, &#x27;title&#x27;, &#x27;slug&#x27;, &#x27;total_courses&#x27;, &#x27;popular_courses&#x27;]</code></pre></div>
+<p>这一个类里藏了三个值得注意的点：</p>
+<ul>
+<li><code>total_courses = serializers.IntegerField()</code> 声明了一个<strong>模型上并不存在</strong>的字段，它依赖 ViewSet 的 queryset 事先 <code>annotate()</code> 出来。这是一个<strong>隐式契约</strong>——序列化器和 queryset 被绑死了，但代码里没有任何地方写明这件事。</li>
+<li><code>get_popular_courses()</code> 每次被调用都会执行一次数据库查询，而它<strong>对列表里每个对象都会调用一次</strong>——这就是 N+1（见 <a href="#findings">F-01</a>）。</li>
+<li>返回的是拼好的字符串 <code>"Course A (12 students)"</code>，而不是 <code>{"title": ..., "students": ...}</code>。客户端想单独拿学生数就得<strong>正则解析字符串</strong>。这是把展示层逻辑塞进了 API 契约。</li>
+</ul>
+<div class="term"><div class="thead">实测 · 隐式契约的脆弱性</div><pre>A) 用 ViewSet 里那个带 annotate 的 queryset：
+    {'id': 1, 'title': 'Subject 0', ..., 'total_courses': 1, 'popular_courses': [...]}
+
+B) 换成普通 queryset（比如在别处复用这个序列化器）：
+    <b>AttributeError</b>: Got AttributeError when attempting to get a value for
+    field `total_courses` on serializer `SubjectSerializer`.
+    Original exception text was: 'Subject' object has no attribute 'total_courses'.</pre></div>
+<blockquote><p>更稳妥的写法是让序列化器自己声明这个依赖，而不是默默假设：<code>total_courses = serializers.IntegerField(read_only=True, default=0)</code>，或者干脆用 <code>SerializerMethodField</code> 配合 <code>obj.courses.count()</code>（虽然那样会引入另一个 N+1）。真正干净的做法是把 annotate 收进序列化器的 <code>setup_eager_loading()</code> 类方法，让两者绑在一起。</p></blockquote>
+
+<p><strong>手法二：嵌套序列化器表达层级。</strong></p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class CourseSerializer(serializers.ModelSerializer):
+    modules = ModuleSerializer(many=True, read_only=True)      # 一层嵌套
+
+class ModuleWithContentsSerializer(serializers.ModelSerializer):
+    contents = ContentSerializer(many=True)                     # 两层
+
+class CourseWithContentsSerializer(serializers.ModelSerializer):
+    modules = ModuleWithContentsSerializer(many=True)           # 三层：课程→模块→内容→item</code></pre></div>
+<p>用两套序列化器区分「列表视图的轻量表示」和「详情视图的完整表示」，这个思路是对的——列表页不该把每门课的全部内容都吐出来。问题在于第二套嵌套了三层，而 queryset 只 <code>prefetch_related('modules')</code> 一层，剩下两层全是 N+1。</p>
+
+<p><strong>手法三：自定义 <code>RelatedField</code> 处理多态关联。</strong></p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class ItemRelatedField(serializers.RelatedField):
+    def to_representation(self, value):
+        return value.render()          # 返回渲染好的 HTML 字符串
+
+
+class ContentSerializer(serializers.ModelSerializer):
+    item = ItemRelatedField(read_only=True)
+
+    class Meta:
+        model = Content
+        fields = [&#x27;order&#x27;, &#x27;item&#x27;]</code></pre></div>
+<p><code>Content.item</code> 是个 <code>GenericForeignKey</code>，可能指向 <code>Text</code>、<code>Video</code>、<code>Image</code>、<code>File</code> 四种模型中的任意一种。用自定义 <code>RelatedField</code> 统一处理多态是标准做法，但这里 <code>to_representation</code> 返回的是 <code>value.render()</code>——也就是<strong>把模板渲染出来的 HTML 塞进 JSON</strong>：</p>
+<div class="term"><div class="thead">实测 · 响应体里 item 字段的实际内容</div><pre>type: <b>str</b>
+值  : '&lt;div class="text"&gt;T0&lt;/div&gt;\n'</pre></div>
+<blockquote class="callout-warn"><p><strong>这是一个需要清醒对待的设计取舍。</strong> 好处是客户端拿到就能直接插进 DOM，教材里做演示很方便。代价有三条：其一，API 的消费方被限定为「能渲染 HTML 的客户端」——iOS/Android 原生应用、另一个后端服务拿到这段 HTML 基本无法使用；其二，<strong>服务端模板变更会直接改变 API 响应</strong>，API 契约和前端模板耦合在一起；其三，<code>render()</code> 里如果模板没有正确转义用户输入，就等于把 XSS 载荷通过 JSON 分发出去。</p>
+<p>面向真实客户端的 API 应该返回结构化数据（<code>{"type": "text", "content": "..."}</code>），把「怎么渲染」留给客户端决定。</p></blockquote>
+
+<h3>3.2 视图：两个 ViewSet 与两个自定义端点</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Course.objects.prefetch_related(&#x27;modules&#x27;)
+    serializer_class = CourseSerializer
+    pagination_class = StandardPagination
+
+    @action(detail=True, methods=[&#x27;post&#x27;],
+            authentication_classes=[BasicAuthentication],
+            permission_classes=[IsAuthenticated])
+    def enroll(self, request, *args, **kwargs):
+        course = self.get_object()
+        course.students.add(request.user)
+        return Response({&#x27;enrolled&#x27;: True})
+
+    @action(detail=True, methods=[&#x27;get&#x27;],
+            serializer_class=CourseWithContentsSerializer,
+            authentication_classes=[BasicAuthentication],
+            permission_classes=[IsAuthenticated, IsEnrolled])
+    def contents(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)</code></pre></div>
+<p><code>@action(detail=True)</code> 会生成 <code>/api/courses/{id}/enroll/</code> 这样的 URL。<code>contents</code> 直接复用 <code>self.retrieve()</code>，只是换了个序列化器——这是很漂亮的复用。</p>
+<p>但这两个装饰器参数里埋着 <a href="#findings">F-03</a> 和 <a href="#findings">F-04</a>：<code>authentication_classes</code> 是<strong>替换</strong>不是追加；而 <code>enroll</code> 除了「已登录」之外<strong>没有任何业务校验</strong>。</p>
+
+<h3>3.3 分页与权限：两个小而正确的类</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class StandardPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = &#x27;page_size&#x27;      # 允许客户端调整
+    max_page_size = 50                       # 但设上限，防止 ?page_size=999999
+
+
+class IsEnrolled(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.students.filter(id=request.user.id).exists()</code></pre></div>
+<p>这两个类都写得不错。<code>max_page_size</code> 是很多人会忘的一项——不设上限，客户端就能用 <code>?page_size=1000000</code> 把分页彻底绕过去。<code>IsEnrolled</code> 用 <code>.filter(...).exists()</code> 而不是 <code>request.user in obj.students.all()</code>，避免把整个学员列表拉进内存，也是对的。</p>
+<div class="term"><div class="thead">实测 · IsEnrolled 的三种状态都正确</div><pre>匿名                              -> <i>401</i>
+已登录但未报名 (outsider)          -> <i>403</i>
+已报名 (student)                  -> <i>200</i></pre></div>
+
+</section><section class="chapter" id="findings">
+<h2>四、六个已验证的缺陷与修复</h2>
+
+<p>以下六条全部在本机 Django 5.2 + DRF 3.15.1 上用仓库的真实代码结构复现，测试数据规模为 10 学科 / 30 课程 / 150 模块 / 900 内容项。</p>
+
+<div class="finding"><div class="fhead"><span class="fid">F-01</span><span class="ftitle">嵌套序列化器与 GenericForeignKey 造成 N+1</span><span class="fmeta">已复现 · 性能</span></div><dl><dt>位置</dt><dd><code>courses/api/serializers.py</code> + <code>courses/api/views.py</code></dd><dt>触发</dt><dd>任何一次 <code>/api/subjects/</code> 或 <code>/api/courses/{id}/contents/</code> 请求</dd><dt>影响</dt><dd>查询数随数据量线性增长；单次请求 39 条 SQL，其中 30 条可以合并成 2 条</dd></dl></div>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 440" role="img" aria-label="图 4 · N+1 的来源：prefetch_related('modules') 只覆盖一层，GenericForeignKey 需要 GenericPrefetch 才能批量取"><defs>
+          <marker id="da4-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da4-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da4-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="30" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="55.0" text-anchor="middle" font-size="11.5">queryset</text>
+<text class="lbl" x="130.0" y="72.5" text-anchor="middle" font-size="10.5">Course.objects</text>
+<text class="lbl" x="130.0" y="84.5" text-anchor="middle" font-size="10.5">  .prefetch_related('modules')</text>
+<text class="lbl" x="20" y="106" text-anchor="start" font-size="10">只预取了 modules 一层</text>
+<rect class="box-w" x="300" y="30" width="230" height="62" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="55.0" text-anchor="middle" font-size="12.5">CourseWithContentsSerializer</text>
+<text class="lbl" x="415.0" y="73.5" text-anchor="middle" font-size="10.5">modules → contents → item</text>
+<line class="edge" x1="240" y1="61" x2="300" y2="61" marker-end="url(#da4-m)"></line>
+<line x1="20" y1="140" x2="740" y2="140" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="162" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">序列化时逐层展开</text>
+<rect class="box" x="20" y="176" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="195.0" text-anchor="middle" font-size="12.5">1 门课程</text>
+<text class="lbl" x="95.0" y="213.5" text-anchor="middle" font-size="10.5">1 条查询</text>
+<rect class="box-a" x="210" y="176" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="285.0" y="195.0" text-anchor="middle" font-size="12.5">5 个模块</text>
+<text class="lbl" x="285.0" y="213.5" text-anchor="middle" font-size="10.5">已 prefetch</text>
+<rect class="box-w" x="400" y="176" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="475.0" y="195.0" text-anchor="middle" font-size="12.5">30 个 Content</text>
+<text class="lbl" x="475.0" y="213.5" text-anchor="middle" font-size="10.5">1 条查询/模块</text>
+<rect class="box-w" x="590" y="176" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="665.0" y="195.0" text-anchor="middle" font-size="12.5">30 个 item</text>
+<text class="lbl" x="665.0" y="213.5" text-anchor="middle" font-size="10.5">每个 1 条查询</text>
+<line class="edge" x1="170" y1="201" x2="210" y2="201" marker-end="url(#da4-m)"></line>
+<line class="edge" x1="360" y1="201" x2="400" y2="201" marker-end="url(#da4-m)"></line>
+<line class="edge-w" x1="550" y1="201" x2="590" y2="201" marker-end="url(#da4-mw)"></line>
+<rect class="box-w" x="400" y="258" width="340" height="62" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="283.0" text-anchor="middle" font-size="11">GenericForeignKey 无法被普通 prefetch_related 覆盖</text>
+<text class="lbl" x="570.0" y="300.0" text-anchor="middle" font-size="10.5">content_type + object_id 要先读出来</text>
+<text class="lbl" x="570.0" y="312.0" text-anchor="middle" font-size="10.5">才知道该去查 Text 表还是 Video 表</text>
+<line class="edge-w" x1="665" y1="226" x2="665" y2="258" marker-end="url(#da4-mw)"></line>
+<line x1="20" y1="348" x2="740" y2="348" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<rect class="box-w" x="20" y="364" width="340" height="58" rx="4"></rect>
+<text class="lbl-strong" x="190.0" y="387.0" text-anchor="middle" font-size="12.5">实测现状：39 条查询</text>
+<text class="lbl" x="190.0" y="405.5" text-anchor="middle" font-size="10.5">其中 30 条是逐个解 item</text>
+<rect class="box-a" x="400" y="364" width="340" height="58" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="387.0" text-anchor="middle" font-size="12.5">加 GenericPrefetch 后：5 条查询</text>
+<text class="lbl" x="570.0" y="405.5" text-anchor="middle" font-size="10.5">Django 5.0+ 内置，按类型批量取</text>
+<line class="edge-a" x1="360" y1="393" x2="400" y2="393" marker-end="url(#da4-ma)"></line></svg><figcaption class="cap">图 4 · N+1 的来源：prefetch_related('modules') 只覆盖一层，GenericForeignKey 需要 GenericPrefetch 才能批量取</figcaption></figure>
+<div class="term"><div class="thead">实测 · 查询数随分页大小线性增长</div><pre>/api/subjects/?page_size=2   -> 4 条查询   (1 count + 1 list + <b>2</b> popular_courses)
+/api/subjects/?page_size=5   -> 7 条查询   (1 count + 1 list + <b>5</b> popular_courses)
+/api/subjects/?page_size=10  -> 12 条查询  (1 count + 1 list + <b>10</b> popular_courses)
+
+单门课含 5 个模块 / 30 个内容项
+/api/courses/1/contents/  -> <b>39 条查询</b>
+  其中 30 条是逐个解 GenericForeignKey 的 item 查询
+
+同样取全部内容，加上 GenericPrefetch 之后 -> <i>5 条查询</i></pre></div>
+<p><strong>根因有两处。</strong>其一，<code>SerializerMethodField</code> 里的查询对列表每个元素都会执行一次，DRF 不会、也无法帮你合并。其二，<code>GenericForeignKey</code> 无法被普通的 <code>prefetch_related</code> 覆盖——因为要先读出 <code>content_type</code> 才知道该去查哪张表。</p>
+<p><strong>修复。</strong> Django 5.0 起内置了 <code>GenericPrefetch</code>，正是为这个场景设计的：</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：只预取一层</div><pre>class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Course.objects.prefetch_related(&#x27;modules&#x27;)</pre></div>
+<div class="pane good"><div class="ph">✓ 按 action 提供各自的 queryset</div><pre>from django.contrib.contenttypes.prefetch import GenericPrefetch
+from django.db.models import Prefetch
+
+class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Course.objects.prefetch_related(&#x27;modules&#x27;)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == &#x27;contents&#x27;:
+            qs = Course.objects.prefetch_related(
+                Prefetch(&#x27;modules&#x27;, queryset=Module.objects.prefetch_related(
+                    Prefetch(&#x27;contents&#x27;, queryset=Content.objects.prefetch_related(
+                        GenericPrefetch(&#x27;item&#x27;, [
+                            Text.objects.all(), Video.objects.all(),
+                            Image.objects.all(), File.objects.all(),
+                        ])
+                    ))
+                ))
+            )
+        return qs</pre></div>
+</div>
+<p><code>popular_courses</code> 那处则要换思路——<code>SerializerMethodField</code> 里做查询几乎必然 N+1。可行的做法是在 queryset 上一次性把需要的数据取出来，序列化器只负责读：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 用一次 Prefetch 把每个 subject 的热门课程取出来，再在序列化器里读缓存
+class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = (
+        Subject.objects
+        .annotate(total_courses=Count(&#x27;courses&#x27;))
+        .prefetch_related(
+            Prefetch(
+                &#x27;courses&#x27;,
+                queryset=Course.objects.annotate(
+                    total_students=Count(&#x27;students&#x27;)
+                ).order_by(&#x27;-total_students&#x27;),
+                to_attr=&#x27;ranked_courses&#x27;,      # 预取结果挂到这个属性上
+            )
+        )
+        .order_by(&#x27;title&#x27;)                     # 顺带修掉 F-02
+    )
+
+
+class SubjectSerializer(serializers.ModelSerializer):
+    def get_popular_courses(self, obj):
+        # 不再查库，直接读预取好的列表
+        return [
+            f&#x27;{c.title} ({c.total_students} students)&#x27;
+            for c in obj.ranked_courses[:3]
+        ]</code></pre></div>
+<blockquote><p><strong>怎么在开发期就发现 N+1？</strong> 本仓库已经装了 <code>django-debug-toolbar</code>，但它只对 HTML 页面生效，看不到 API 的 JSON 响应。给 API 加一层保护的实用做法是写测试断言查询数：<code>with self.assertNumQueries(5): self.client.get('/api/courses/1/contents/')</code>——这样以后谁改序列化器引入了 N+1，CI 会直接失败。</p></blockquote>
+
+<div class="finding"><div class="fhead"><span class="fid">F-02</span><span class="ftitle">annotate() 静默丢弃 Meta.ordering，分页失去稳定顺序</span><span class="fmeta">已复现 · 正确性</span></div><dl><dt>位置</dt><dd><code>courses/api/views.py</code> · <code>SubjectViewSet.queryset</code></dd><dt>触发</dt><dd>任何一次分页的 <code>/api/subjects/</code> 请求</dd><dt>影响</dt><dd>跨页记录可能重复或被跳过；DRF 每次请求都打印 <code>UnorderedObjectListWarning</code></dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 5 · annotate() 引入 GROUP BY 后 Meta.ordering 静默失效，分页因此失去稳定顺序"><defs>
+          <marker id="da5-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da5-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da5-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="30" width="230" height="62" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="55.0" text-anchor="middle" font-size="12.5">Subject.Meta</text>
+<text class="lbl" x="135.0" y="73.5" text-anchor="middle" font-size="10.5">ordering = ['title']</text>
+<rect class="box-w" x="300" y="30" width="250" height="62" rx="4"></rect>
+<text class="lbl-strong" x="425.0" y="48.0" text-anchor="middle" font-size="11">Subject.objects.annotate(</text>
+<text class="lbl-strong" x="425.0" y="62.0" text-anchor="middle" font-size="11">  total_courses=Count('courses'))</text>
+<text class="lbl" x="425.0" y="79.0" text-anchor="middle" font-size="10.5">产生 GROUP BY</text>
+<line class="edge" x1="250" y1="61" x2="300" y2="61" marker-end="url(#da5-m)"></line>
+<rect class="box-w" x="300" y="130" width="250" height="68" rx="4"></rect>
+<text class="lbl-strong" x="425.0" y="158.0" text-anchor="middle" font-size="11.5">Django: .ordered == False</text>
+<text class="lbl" x="425.0" y="175.5" text-anchor="middle" font-size="10.5">「默认排序对 GROUP BY 查询无效」</text>
+<text class="lbl" x="425.0" y="187.5" text-anchor="middle" font-size="10.5">——这是 Django 源码里的原话</text>
+<line class="edge-w" x1="425" y1="92" x2="425" y2="130" marker-end="url(#da5-mw)"></line>
+<rect class="box-w" x="300" y="236" width="250" height="56" rx="4"></rect>
+<text class="lbl-strong" x="425.0" y="264.0" text-anchor="middle" font-size="11.5">生成的 SQL 没有 ORDER BY</text>
+<line class="edge-w" x1="425" y1="198" x2="425" y2="236" marker-end="url(#da5-mw)"></line>
+<rect class="box-w" x="20" y="236" width="230" height="56" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="251.0" text-anchor="middle" font-size="11">DRF 发出 Unordered</text>
+<text class="lbl-strong" x="135.0" y="265.0" text-anchor="middle" font-size="11">ObjectListWarning</text>
+<text class="lbl" x="135.0" y="282.0" text-anchor="middle" font-size="10.5">但只是 warning，不报错</text>
+<line class="edge-w" x1="300" y1="264" x2="250" y2="264" marker-end="url(#da5-mw)"></line>
+<rect class="box-w" x="600" y="130" width="140" height="162" rx="4"></rect>
+<text class="lbl-strong" x="670.0" y="190.5" text-anchor="middle" font-size="11.5">分页结果</text>
+<text class="lbl-strong" x="670.0" y="205.0" text-anchor="middle" font-size="11.5">可能重复</text>
+<text class="lbl-strong" x="670.0" y="219.5" text-anchor="middle" font-size="11.5">或丢项</text>
+<text class="lbl" x="670.0" y="237.0" text-anchor="middle" font-size="10.5">数据库对无序查询</text>
+<text class="lbl" x="670.0" y="249.0" text-anchor="middle" font-size="10.5">不保证两次</text>
+<text class="lbl" x="670.0" y="261.0" text-anchor="middle" font-size="10.5">LIMIT/OFFSET</text>
+<text class="lbl" x="670.0" y="273.0" text-anchor="middle" font-size="10.5">返回同样的顺序</text>
+<line class="edge-w" x1="550" y1="211" x2="600" y2="211" marker-end="url(#da5-mw)"></line>
+<line x1="20" y1="322" x2="740" y2="322" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="344.0" text-anchor="start" font-size="10.5">修复：在 annotate 之后显式 .order_by('title')。一行的事，但不加就是静默的分页错乱——</text>
+<text class="lbl" x="20" y="359.5" text-anchor="start" font-size="10.5">实测本项目的 SubjectViewSet 正处于这个状态，控制台每次请求都会打印那条 warning。</text></svg><figcaption class="cap">图 5 · annotate() 引入 GROUP BY 后 Meta.ordering 静默失效，分页因此失去稳定顺序</figcaption></figure>
+<p><strong>根因。</strong> <code>Subject</code> 明明有 <code>Meta.ordering = ['title']</code>，但 <code>annotate(Count(...))</code> 会引入 <code>GROUP BY</code>，而 Django 对此有一条明确规则——直接看 <code>QuerySet.ordered</code> 的源码，注释是 Django 自己写的：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># django/db/models/query.py（5.2 源码）
+@property
+def ordered(self):
+    if isinstance(self, EmptyQuerySet):
+        return True
+    if self.query.extra_order_by or self.query.order_by:
+        return True
+    elif (
+        self.query.default_ordering
+        and self.query.get_meta().ordering
+        and
+        # A default ordering doesn&#x27;t affect GROUP BY queries.
+        not self.query.group_by          # ← 有 GROUP BY 就不认 Meta.ordering
+    ):
+        return True
+    else:
+        return False</code></pre></div>
+<div class="term"><div class="thead">实测 · Meta.ordering 被静默丢弃</div><pre>Subject.Meta.ordering        = ['title']
+
+Subject.objects.all()                     .ordered = True
+Subject.objects.annotate(Count('courses')).ordered = <b>False</b>   &lt;-- 仓库现状
+...再 .order_by('title')                   .ordered = <i>True</i>
+
+annotate 后的 SQL 结尾：
+   ...GROUP BY "courses_subject"."id", "courses_subject"."title", "courses_subject"."slug"
+   含 ORDER BY : <b>False</b>
+
+加了 .order_by('title') 之后：
+   ...GROUP BY ... <i>ORDER BY "courses_subject"."title" ASC</i>
+   含 ORDER BY : <i>True</i></pre></div>
+<p>没有 <code>ORDER BY</code> 的查询，数据库<strong>不保证</strong>两次 <code>LIMIT/OFFSET</code> 返回相同顺序。PostgreSQL 在并发写入、计划变更或并行扫描时确实会改变返回顺序，结果就是用户翻到第 2 页时看到第 1 页出现过的记录，而另一些记录一次都没出现。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状</div><pre>queryset = Subject.objects.annotate(
+    total_courses=Count(&#x27;courses&#x27;))</pre></div>
+<div class="pane good"><div class="ph">✓ 显式排序</div><pre>queryset = Subject.objects.annotate(
+    total_courses=Count(&#x27;courses&#x27;)
+).order_by(&#x27;title&#x27;)</pre></div>
+</div>
+<blockquote><p>顺带一条通用建议：<strong>凡是要分页的 queryset，都应该有一个确定且唯一的排序键</strong>。按 <code>title</code> 排序在标题重复时仍可能不稳定，更稳妥的是 <code>.order_by('title', 'id')</code>——加上主键做最终决胜，保证顺序完全确定。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-03</span><span class="ftitle">@action 覆盖 authentication_classes 意外关掉了 session 认证</span><span class="fmeta">已复现 · 一致性</span></div><dl><dt>位置</dt><dd><code>courses/api/views.py</code> · <code>enroll</code> 与 <code>contents</code></dd><dt>触发</dt><dd>浏览器 session 登录后访问这两个端点</dd><dt>影响</dt><dd>同一个登录状态在部分端点可用、部分端点 401；可浏览 API 也无法调试这两个端点</dd></dl></div>
+<p>DRF 的 <code>authentication_classes</code>（以及 <code>permission_classes</code>）语义是<strong>整体替换</strong>，不是在默认值上追加。项目全局是 <code>[SessionAuthentication, BasicAuthentication]</code>，而 <code>@action</code> 里写了 <code>authentication_classes=[BasicAuthentication]</code>，于是这两个端点上 <code>SessionAuthentication</code> 就消失了：</p>
+<div class="term"><div class="thead">实测 · 同一个 session 登录状态</div><pre>session 登录后 GET /api/courses/  -> <i>200</i>
+session 登录后 GET contents/      -> <b>401</b>   &lt;- 同一个浏览器、同一个登录态</pre></div>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：替换掉了全局认证方式</div><pre>@action(detail=True, methods=[&#x27;get&#x27;],
+        serializer_class=CourseWithContentsSerializer,
+        authentication_classes=[BasicAuthentication],
+        permission_classes=[IsAuthenticated, IsEnrolled])
+def contents(self, request, *args, **kwargs):
+    return self.retrieve(request, *args, **kwargs)</pre></div>
+<div class="pane good"><div class="ph">✓ 认证交给全局配置，这里只管权限</div><pre>@action(detail=True, methods=[&#x27;get&#x27;],
+        serializer_class=CourseWithContentsSerializer,
+        permission_classes=[IsAuthenticated, IsEnrolled])
+def contents(self, request, *args, **kwargs):
+    return self.retrieve(request, *args, **kwargs)</pre></div>
+</div>
+<p>认证方式应该是<strong>全站统一</strong>的策略，配在 <code>DEFAULT_AUTHENTICATION_CLASSES</code>；权限才是<strong>逐端点</strong>的决策。把两者混在同一个装饰器里，就很容易在调整其一时误伤另一个。</p>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-04</span><span class="ftitle">enroll 端点没有任何业务校验，且没有退课接口</span><span class="fmeta">已复现 · 业务逻辑</span></div><dl><dt>位置</dt><dd><code>courses/api/views.py</code> · <code>enroll</code></dd><dt>触发</dt><dd>任意已登录用户对任意课程 POST 一次</dd><dt>影响</dt><dd>无需付费/审批即可获得课程全部内容的读取权；报名后无法通过 API 退出</dd></dl></div>
+<div class="term"><div class="thead">实测 · 一次 POST 即可拿到全部内容</div><pre>任意登录用户 POST /api/courses/2/enroll/  -> 200 {'enrolled': True}
+  -> outsider 现在在课程 2 的学员里吗: <b>True</b>
+重复 POST 一次                            -> 200 | 学员数: 2  (m2m add 幂等)
+
+报名后立刻能读该课程内容
+  outsider GET /api/courses/2/contents/   -> <b>200</b>
+
+有没有退课接口
+  POST /api/courses/2/unenroll/           -> 404
+  DELETE /api/courses/2/                  -> 403</pre></div>
+<p>作为教材这是合理的简化——书里要演示的是 <code>@action</code> 和对象级权限，不是电商结算。但如果照搬进真实产品，这就是一个「点一下就免费拿到付费内容」的洞。真实实现至少需要：校验课程是否开放报名、是否需要付费且已支付、是否已达人数上限，并把这些判断放在<strong>权限类或服务层</strong>而不是视图里。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 补一个退课端点，并让报名走业务校验
+@action(detail=True, methods=[&#x27;post&#x27;], permission_classes=[IsAuthenticated])
+def enroll(self, request, *args, **kwargs):
+    course = self.get_object()
+    if not course.is_open_for_enrollment:
+        return Response({&#x27;detail&#x27;: &#x27;该课程当前不开放报名&#x27;},
+                        status=status.HTTP_409_CONFLICT)
+    if course.requires_payment and not course.has_paid(request.user):
+        return Response({&#x27;detail&#x27;: &#x27;请先完成支付&#x27;},
+                        status=status.HTTP_402_PAYMENT_REQUIRED)
+    course.students.add(request.user)
+    return Response({&#x27;enrolled&#x27;: True})
+
+
+@action(detail=True, methods=[&#x27;post&#x27;], permission_classes=[IsAuthenticated])
+def unenroll(self, request, *args, **kwargs):
+    self.get_object().students.remove(request.user)
+    return Response({&#x27;enrolled&#x27;: False})</code></pre></div>
+
+<div class="finding lo"><div class="fhead"><span class="fid">F-05</span><span class="ftitle">API 返回渲染好的 HTML 字符串，而非结构化数据</span><span class="fmeta">设计取舍</span></div><dl><dt>位置</dt><dd><code>courses/api/serializers.py</code> · <code>ItemRelatedField</code></dd><dt>影响</dt><dd>非 Web 客户端难以消费；API 契约与服务端模板耦合；XSS 风险经由 JSON 扩散</dd></dl></div>
+<p>已在 <a href="#audit">3.1 手法三</a>详述。结构化的替代写法：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class ItemRelatedField(serializers.RelatedField):
+    def to_representation(self, value):
+        base = {
+            &#x27;type&#x27;: value._meta.model_name,     # &#x27;text&#x27; / &#x27;video&#x27; / &#x27;image&#x27; / &#x27;file&#x27;
+            &#x27;id&#x27;: value.id,
+            &#x27;title&#x27;: value.title,
+        }
+        if isinstance(value, Text):
+            base[&#x27;content&#x27;] = value.content
+        elif isinstance(value, Video):
+            base[&#x27;url&#x27;] = value.url
+        elif isinstance(value, (Image, File)):
+            base[&#x27;file&#x27;] = value.file.url if value.file else None
+        return base</code></pre></div>
+<p>客户端拿到 <code>type</code> 字段后自行决定渲染方式，Web、iOS、Android 都能用同一份响应。</p>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-06</span><span class="ftitle">生产必需的四项能力全部缺失</span><span class="fmeta">已确认 · 生产就绪度</span></div><dl><dt>缺失项</dt><dd>限流、API 版本化、过滤/搜索/排序、OpenAPI 文档</dd><dt>影响</dt><dd>接口可被无限制抓取；任何字段改动都是破坏性变更；客户端只能全量拉取后自己筛</dd></dl></div>
+<div class="term"><div class="thead">实测 · 三项缺口</div><pre>连打 30 次 /api/courses/  -> 状态码集合: {200}  <b>(没有 429)</b>
+
+带过滤参数 vs 不带，返回条数: 4 vs 4  <b>(?subject=1&search=...&ordering=... 全部被忽略)</b>
+
+DEFAULT_VERSIONING_CLASS  = None
+DEFAULT_FILTER_BACKENDS   = []</pre></div>
+<p>限流与过滤的配置见 <a href="#config">1.2 节</a>。版本化与文档补充如下：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 版本化：URL 路径方案最直观，也最容易被 CDN/网关识别
+REST_FRAMEWORK = {
+    &#x27;DEFAULT_VERSIONING_CLASS&#x27;: &#x27;rest_framework.versioning.NamespaceVersioning&#x27;,
+    &#x27;DEFAULT_VERSION&#x27;: &#x27;v1&#x27;,
+    &#x27;ALLOWED_VERSIONS&#x27;: [&#x27;v1&#x27;, &#x27;v2&#x27;],
+}
+
+# urls.py
+path(&#x27;api/v1/&#x27;, include((&#x27;courses.api.urls&#x27;, &#x27;courses&#x27;), namespace=&#x27;v1&#x27;)),</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># OpenAPI 文档：drf-spectacular 是目前的事实标准
+INSTALLED_APPS += [&#x27;drf_spectacular&#x27;]
+REST_FRAMEWORK[&#x27;DEFAULT_SCHEMA_CLASS&#x27;] = &#x27;drf_spectacular.openapi.AutoSchema&#x27;
+
+# urls.py
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+path(&#x27;api/schema/&#x27;, SpectacularAPIView.as_view(), name=&#x27;schema&#x27;),
+path(&#x27;api/docs/&#x27;, SpectacularSwaggerView.as_view(url_name=&#x27;schema&#x27;)),</code></pre></div>
+
+</section><section class="chapter" id="security">
+<h2>五、认证、权限与限流</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 6 · 四种认证方式的取舍；本项目混用了 Session 与 Basic，且在两个端点上意外关掉了 Session"><defs>
+          <marker id="da6-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da6-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="da6-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="34" width="165" height="44" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="56.0" text-anchor="middle" font-size="13">Session</text>
+<rect class="box" x="20" y="92" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="117.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="102.5" y="133.5" text-anchor="middle" font-size="10.5">Cookie + CSRF</text>
+<rect class="box" x="20" y="168" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="193.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="102.5" y="209.5" text-anchor="middle" font-size="10.5">同源浏览器页面</text>
+<rect class="box" x="20" y="244" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="269.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="102.5" y="285.5" text-anchor="middle" font-size="10.5">跨域 / 移动端 / 第三方</text>
+<rect class="box-w" x="205" y="34" width="165" height="44" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="56.0" text-anchor="middle" font-size="13">Basic</text>
+<rect class="box" x="205" y="92" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="117.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="287.5" y="133.5" text-anchor="middle" font-size="10.5">每次带 base64</text>
+<text class="lbl" x="287.5" y="145.5" text-anchor="middle" font-size="10.5">用户名:密码</text>
+<rect class="box" x="205" y="168" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="193.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="287.5" y="209.5" text-anchor="middle" font-size="10.5">内部脚本、</text>
+<text class="lbl" x="287.5" y="221.5" text-anchor="middle" font-size="10.5">调试</text>
+<rect class="box" x="205" y="244" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="269.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="287.5" y="285.5" text-anchor="middle" font-size="10.5">公开 API、</text>
+<text class="lbl" x="287.5" y="297.5" text-anchor="middle" font-size="10.5">生产前端</text>
+<rect class="box-a" x="390" y="34" width="165" height="44" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="56.0" text-anchor="middle" font-size="13">Token</text>
+<rect class="box" x="390" y="92" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="117.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="472.5" y="133.5" text-anchor="middle" font-size="10.5">DRF 内置</text>
+<text class="lbl" x="472.5" y="145.5" text-anchor="middle" font-size="10.5">rest_framework.authtoken</text>
+<rect class="box" x="390" y="168" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="193.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="472.5" y="209.5" text-anchor="middle" font-size="10.5">服务间调用、</text>
+<text class="lbl" x="472.5" y="221.5" text-anchor="middle" font-size="10.5">简单移动端</text>
+<rect class="box" x="390" y="244" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="269.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="472.5" y="285.5" text-anchor="middle" font-size="10.5">需要过期 /</text>
+<text class="lbl" x="472.5" y="297.5" text-anchor="middle" font-size="10.5">刷新的场景</text>
+<rect class="box-a" x="575" y="34" width="165" height="44" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="56.0" text-anchor="middle" font-size="13">JWT</text>
+<rect class="box" x="575" y="92" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="117.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="657.5" y="133.5" text-anchor="middle" font-size="10.5">simplejwt</text>
+<text class="lbl" x="657.5" y="145.5" text-anchor="middle" font-size="10.5">无状态 + 可过期</text>
+<rect class="box" x="575" y="168" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="193.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="657.5" y="209.5" text-anchor="middle" font-size="10.5">SPA、移动端、</text>
+<text class="lbl" x="657.5" y="221.5" text-anchor="middle" font-size="10.5">微服务</text>
+<rect class="box" x="575" y="244" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="269.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="657.5" y="285.5" text-anchor="middle" font-size="10.5">需要即时吊销</text>
+<text class="lbl" x="657.5" y="297.5" text-anchor="middle" font-size="10.5">的场景</text>
+<line x1="20" y1="330" x2="740" y2="330" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl-warn" x="20" y="352.0" text-anchor="start" font-size="10.5">本项目：全局用 DRF 默认的 Session + Basic；两个 @action 覆盖成「只有 Basic」，于是 session 登录的浏览器</text>
+<text class="lbl-warn" x="20" y="367.5" text-anchor="start" font-size="10.5">在这两个端点上直接 401。生产 API 应当统一到 Token 或 JWT，并把认证方式配在 DEFAULT_AUTHENTICATION_CLASSES。</text></svg><figcaption class="cap">图 6 · 四种认证方式的取舍；本项目混用了 Session 与 Basic，且在两个端点上意外关掉了 Session</figcaption></figure>
+
+<h3>5.1 本项目的认证现状</h3>
+<p>全局是 DRF 默认的 <code>[SessionAuthentication, BasicAuthentication]</code>，两个 <code>@action</code> 覆盖成只有 <code>BasicAuthentication</code>。<strong>Basic 认证意味着客户端每一次请求都要把用户名和密码原样发过来</strong>（仅做 base64 编码，不是加密）。这在 Ch17 的生产配置里勉强可接受，因为 <code>prod.py</code> 设了 <code>SECURE_SSL_REDIRECT = True</code> 强制 HTTPS，传输层是加密的。但它仍有两个固有问题：客户端必须<strong>长期持有明文密码</strong>，且服务端无法在不改密码的情况下吊销单个客户端的访问权。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 生产 API 的推荐起点：JWT
+# pip install djangorestframework-simplejwt
+REST_FRAMEWORK = {
+    &#x27;DEFAULT_AUTHENTICATION_CLASSES&#x27;: [
+        &#x27;rest_framework_simplejwt.authentication.JWTAuthentication&#x27;,
+    ],
+}
+
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+urlpatterns += [
+    path(&#x27;api/token/&#x27;, TokenObtainPairView.as_view()),
+    path(&#x27;api/token/refresh/&#x27;, TokenRefreshView.as_view()),
+]
+
+SIMPLE_JWT = {
+    &#x27;ACCESS_TOKEN_LIFETIME&#x27;: timedelta(minutes=15),
+    &#x27;REFRESH_TOKEN_LIFETIME&#x27;: timedelta(days=7),
+    &#x27;ROTATE_REFRESH_TOKENS&#x27;: True,
+    &#x27;BLACKLIST_AFTER_ROTATION&#x27;: True,     # 支持吊销，需装 token_blacklist app
+}</code></pre></div>
+<blockquote class="callout-warn"><p><strong>JWT 不是银弹。</strong>它的核心特性是「无状态」——服务端不查库就能验证，代价是<strong>签发后无法直接吊销</strong>。用户改密码、账号被封禁，已签发的 access token 在过期前依然有效。所以 access token 的有效期要短（15 分钟量级），并配合 refresh token 轮换 + 黑名单。如果你的业务要求「封禁立即生效」，那么带状态的 Token 认证反而更合适。</p></blockquote>
+
+<h3>5.2 权限的两个层级</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class BasePermission:
+    def has_permission(self, request, view):
+        # 类级：视图执行之前就检查，拿不到具体对象
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        # 对象级：get_object() 取到对象之后才检查
+        return True</code></pre></div>
+<blockquote class="callout-warn"><p><strong>对象级权限有一个必须知道的限制：它只在 <code>get_object()</code> 被调用时触发。</strong>也就是说 <code>list</code> 这类返回集合的动作<strong>完全不会</strong>调用 <code>has_object_permission</code>——DRF 不会替你逐条过滤列表。列表的可见性必须靠 <code>get_queryset()</code> 过滤来实现。这是 DRF 权限系统最常被误解的一点：写了 <code>has_object_permission</code> 不等于列表也安全了。</p></blockquote>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 列表可见性靠 queryset 过滤，不靠权限类
+def get_queryset(self):
+    qs = super().get_queryset()
+    if self.action == &#x27;list&#x27; and self.request.user.is_authenticated:
+        return qs.filter(students=self.request.user)
+    return qs</code></pre></div>
+
+<h3>5.3 限流</h3>
+<p>本项目完全没有限流。DRF 内置的三种节流类覆盖大部分需求：</p>
+<div class="matrix">
+<table>
+<thead><tr><th>类</th><th>按什么计数</th><th>典型用途</th></tr></thead>
+<tbody>
+<tr><td><code>AnonRateThrottle</code></td><td>匿名请求的 IP</td><td>防止未登录用户批量抓取公开数据</td></tr>
+<tr><td><code>UserRateThrottle</code></td><td>已认证用户的 id</td><td>给每个账号一个总体配额</td></tr>
+<tr><td><code>ScopedRateThrottle</code></td><td>视图上声明的 <code>throttle_scope</code></td><td>给昂贵端点单独设更严的限额</td></tr>
+</tbody>
+</table>
+</div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 给最贵的那个端点单独限流
+class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    @action(detail=True, methods=[&#x27;get&#x27;],
+            throttle_classes=[ScopedRateThrottle],
+            permission_classes=[IsAuthenticated, IsEnrolled])
+    def contents(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+    contents.throttle_scope = &#x27;course_contents&#x27;
+
+# settings
+REST_FRAMEWORK[&#x27;DEFAULT_THROTTLE_RATES&#x27;] = {
+    &#x27;anon&#x27;: &#x27;60/hour&#x27;,
+    &#x27;user&#x27;: &#x27;1000/hour&#x27;,
+    &#x27;course_contents&#x27;: &#x27;30/min&#x27;,
+}</code></pre></div>
+<blockquote><p>DRF 的限流实现是<strong>基于缓存</strong>的（默认用 <code>default</code> 缓存），所以它天然需要一个共享缓存后端才能在多进程/多机部署下正确工作——本仓库已经配了 Redis 缓存，正好可以直接用。这也是<a href="guide-redis-caching.html">缓存指南</a>里提到的「Redis 承载多类负载」的又一例。注意限流计数器丢失只会导致配额被重置，属于可容忍的缓存语义。</p></blockquote>
+
+</section><section class="chapter" id="checklist">
+<h2>六、上线前检查清单</h2>
+
+<ul class="check">
+<li><span class="mk">01</span><span><b>配 <code>DEFAULT_PAGINATION_CLASS</code> 和 <code>PAGE_SIZE</code></b>。逐视图配置意味着新加的视图忘了就会返回全表。</span></li>
+<li><span class="mk">02</span><span><b>分页的 queryset 必须有确定排序</b>，且最好带上主键做决胜：<code>.order_by('title', 'id')</code>。见 F-02。</span></li>
+<li><span class="mk">03</span><span><b>给 <code>page_size_query_param</code> 设 <code>max_page_size</code></b>。本项目做对了这一点。</span></li>
+<li><span class="mk">04</span><span><b>用 <code>assertNumQueries</code> 给关键端点上查询数断言</b>。这是防止 N+1 回归最有效的手段，比事后用 APM 发现要早得多。见 F-01。</span></li>
+<li><span class="mk">05</span><span><b>嵌套序列化器有几层，<code>prefetch_related</code> 就要覆盖几层</b>；<code>GenericForeignKey</code> 用 <code>GenericPrefetch</code>（Django 5.0+）。</span></li>
+<li><span class="mk">06</span><span><b>不要在 <code>SerializerMethodField</code> 里查数据库</b>。要么在 queryset 上预取，要么接受 N+1 —— 没有第三条路。</span></li>
+<li><span class="mk">07</span><span><b>认证配全局，权限配单点</b>。在 <code>@action</code> 上覆盖 <code>authentication_classes</code> 是替换而非追加。见 F-03。</span></li>
+<li><span class="mk">08</span><span><b>记住 <code>has_object_permission</code> 对 <code>list</code> 无效</b>。列表可见性必须靠 <code>get_queryset()</code> 过滤。</span></li>
+<li><span class="mk">09</span><span><b>默认权限设成拒绝</b>（<code>IsAuthenticated</code>），再逐视图放开，而不是默认放开再逐个收紧。</span></li>
+<li><span class="mk">10</span><span><b>开启限流</b>，并给昂贵端点单独设 <code>ScopedRateThrottle</code>。</span></li>
+<li><span class="mk">11</span><span><b>生产关掉 <code>BrowsableAPIRenderer</code></b>。它不看 <code>DEBUG</code>，默认一直开着。</span></li>
+<li><span class="mk">12</span><span><b>API 返回结构化数据，不返回 HTML</b>。让客户端决定怎么渲染。见 F-05。</span></li>
+<li><span class="mk">13</span><span><b>上线即带版本号</b>。<code>/api/v1/</code> 的成本是零，事后补版本的成本极高。</span></li>
+<li><span class="mk">14</span><span><b>用 <code>drf-spectacular</code> 生成 OpenAPI 文档</b>，并在 CI 里检查 schema 变更，把破坏性改动挡在合并之前。</span></li>
+<li><span class="mk">15</span><span><b>序列化器用 <code>fields</code> 白名单，不用 <code>exclude</code></b>。用 <code>exclude</code> 时，将来给模型加的任何字段都会自动泄露到 API 里。</span></li>
+</ul>
+<blockquote><p>最后一条值得展开：本项目所有序列化器都用了显式 <code>fields</code> 列表，这是对的。<code>exclude = ['password']</code> 这种写法看起来更省事，但它是<strong>黑名单</strong>——半年后有人给模型加了 <code>internal_note</code> 字段，它会毫无声息地出现在 API 响应里。白名单则相反：忘了加字段最多是功能缺失，不会变成数据泄露。</p></blockquote>
+
+</section><section class="chapter" id="compare">
+<h2>九、同样的 API：Spring 与 Hono.js 怎么写</h2>
+<p>仍用本仓库的真实场景横向对比：<strong>「课程资源的只读 REST 接口，带分页」</strong>，以及<strong>「只有已报名学员才能读到课程完整内容」</strong>这个对象级权限需求。</p><h3>9.1 资源序列化与路由</h3><div class="cmp three"><div class="fw"><h4>Django REST Framework</h4><div class="fwbody"><p>序列化器同时承担「字段声明」「校验」「模型映射」三件事；Router 由 ViewSet 反推出整组 URL。</p><pre>class CourseSerializer(serializers.ModelSerializer):
+    modules = ModuleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = [&#x27;id&#x27;, &#x27;title&#x27;, &#x27;overview&#x27;, &#x27;modules&#x27;]
+
+
+class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Course.objects.prefetch_related(&#x27;modules&#x27;)
+    serializer_class = CourseSerializer
+
+router.register(&#x27;courses&#x27;, CourseViewSet)</pre><ul><li><code>ModelSerializer</code> 从模型自动推字段类型与校验规则</li><li>输出结构与模型结构默认耦合，解耦要靠手写字段</li><li>路由是<strong>约定生成</strong>的，读代码看不到完整 URL 列表</li></ul></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><p>DTO、Controller、Mapper 三者分离，路由用注解显式声明在方法上。</p><pre>public record CourseDto(
+    Long id, String title, String overview,
+    List&lt;ModuleDto&gt; modules) {}
+
+@RestController
+@RequestMapping(&quot;/api/courses&quot;)
+class CourseController {
+
+  @GetMapping
+  Page&lt;CourseDto&gt; list(Pageable pageable) {
+      return service.findAll(pageable).map(mapper::toDto);
+  }
+
+  @GetMapping(&quot;/{id}&quot;)
+  CourseDto one(@PathVariable Long id) {
+      return mapper.toDto(service.find(id));
+  }
+}</pre><ul><li>DTO 与实体天然分离，<strong>输出契约不受模型改动影响</strong></li><li>样板代码多，通常靠 MapStruct 生成 mapper</li><li><code>Page&lt;T&gt;</code> 是框架一等公民，分页无需额外配置</li></ul></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><p>没有序列化器概念，用 Zod 这类 schema 库同时做校验和类型推导。</p><pre>import { zValidator } from &#x27;@hono/zod-validator&#x27;
+import { z } from &#x27;zod&#x27;
+
+const CourseDto = z.object({
+  id: z.number(),
+  title: z.string(),
+  modules: z.array(ModuleDto),
+})
+
+app.get(&#x27;/api/courses/:id&#x27;, async (c) =&gt; {
+  const course = await db.course(c.req.param(&#x27;id&#x27;))
+  return c.json(CourseDto.parse(course))
+})</pre><ul><li>schema 即类型：<code>z.infer</code> 直接得到 TypeScript 类型</li><li><strong>端到端类型安全</strong>，配合 <code>hc</code> 客户端连前端调用都有类型</li><li>全部手写，没有任何「从模型自动生成」的便利</li></ul></div></div></div><h3>9.2 对象级权限</h3><div class="cmp three"><div class="fw"><h4>Django REST Framework</h4><div class="fwbody"><pre>class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+
+    @action(detail=True, methods=[&#x27;get&#x27;],
+            permission_classes=[IsAuthenticated, IsEnrolled])
+    def contents(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+
+class IsEnrolled(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.students.filter(
+            id=request.user.id).exists()</pre><p>对象级权限要<strong>等 <code>get_object()</code> 取到对象之后</strong>才触发，和类级权限是两个时机。</p><p><code>@action</code> 上的 <code>permission_classes</code> 是<strong>整体替换</strong>而非追加——本项目 F-03 正是因为把 <code>authentication_classes</code> 一并替换掉了。</p></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><pre>@GetMapping(&quot;/{id}/contents&quot;)
+@PreAuthorize(&quot;@enrollment.isEnrolled(#id, authentication)&quot;)
+CourseWithContentsDto contents(@PathVariable Long id) {
+    return mapper.toFullDto(service.find(id));
+}
+
+@Component(&quot;enrollment&quot;)
+class EnrollmentChecker {
+  boolean isEnrolled(Long courseId, Authentication auth) {
+      return repo.existsByCourseIdAndStudentUsername(
+          courseId, auth.getName());
+  }
+}</pre><p><code>@PreAuthorize</code> 里的 SpEL 可以直接调用 Spring Bean，把业务判断写成可复用组件。</p><p>方法级安全是<strong>叠加</strong>在类级配置之上的，不会意外覆盖掉全局认证方式。</p></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><pre>const isEnrolled = createMiddleware(async (c, next) =&gt; {
+  const user = c.get(&#x27;user&#x27;)
+  const ok = await db.isEnrolled(
+    c.req.param(&#x27;id&#x27;), user.id)
+  if (!ok) return c.json({ error: &#x27;Not enrolled&#x27; }, 403)
+  await next()
+})
+
+app.get(&#x27;/api/courses/:id/contents&#x27;,
+  jwtAuth, isEnrolled, handler)</pre><p>权限就是普通中间件，<strong>执行顺序即代码顺序</strong>，一眼能看出先认证后鉴权。</p><p>没有「对象级权限」这种抽象，要在中间件里自己查库——啰嗦，但没有隐式行为。</p></div></div></div><h3>9.3 逐项对照</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>维度</th><th>Django REST Framework 3.15</th><th>Spring Boot 3.x</th><th>Hono.js</th></tr></thead>
+<tbody>
+<tr><td>序列化 / 契约</td><td><code>ModelSerializer</code> 从模型推导</td><td>DTO + Mapper 显式定义</td><td>Zod schema，类型自动推导</td></tr>
+<tr><td>输出与模型解耦</td><td>默认<strong>耦合</strong>，要手写字段才解开</td><td>默认<strong>解耦</strong></td><td>默认解耦</td></tr>
+<tr><td>路由声明</td><td>Router 约定生成，URL 不在代码里</td><td>注解显式写在方法上</td><td>显式链式注册</td></tr>
+<tr><td>分页</td><td><code>PageNumberPagination</code> 等三种，需按视图配置</td><td><code>Pageable</code> / <code>Page&lt;T&gt;</code> 框架内建</td><td>无，自己实现</td></tr>
+<tr><td>过滤 / 搜索 / 排序</td><td><code>django-filter</code> + <code>SearchFilter</code>（本项目未装）</td><td>Spring Data Specification / QueryDSL</td><td>自己解析查询参数</td></tr>
+<tr><td>认证</td><td>类属性配置，<strong>覆盖即替换</strong></td><td>Spring Security 过滤器链，配置集中</td><td>中间件，顺序即语义</td></tr>
+<tr><td>对象级权限</td><td><code>has_object_permission</code> 专门钩子</td><td><code>@PreAuthorize</code> + SpEL 调 Bean</td><td>手写中间件</td></tr>
+<tr><td>限流</td><td>内置 <code>throttling</code>，需显式开启（本项目未开）</td><td>需 Bucket4j / Resilience4j 等</td><td>Cloudflare 平台层，或 <code>hono-rate-limiter</code></td></tr>
+<tr><td>N+1 防护</td><td><strong>无</strong>，靠人工 <code>select/prefetch_related</code></td><td><strong>无</strong>，靠 <code>@EntityGraph</code> / fetch join</td><td>取决于所用 ORM（Drizzle / Prisma）</td></tr>
+<tr><td>OpenAPI 文档</td><td><code>drf-spectacular</code>（本项目未装）</td><td><code>springdoc-openapi</code>，注解即文档</td><td><code>@hono/zod-openapi</code>，schema 即文档</td></tr>
+<tr><td>可浏览调试界面</td><td><strong>内置</strong> BrowsableAPIRenderer</td><td>Swagger UI（需引入）</td><td>无</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>三句话概括</h4>
+<ul>
+<li><strong>DRF 的强项是「从模型到 API 的距离最短」。</strong>一个 <code>ModelSerializer</code> 加一个 <code>ModelViewSet</code>，四个端点就出来了，还自带一个可浏览的调试界面——本仓库整个 API 只有 5 个文件、不到 200 行。代价是这种便利建立在「输出结构 ≈ 模型结构」的假设上，一旦要偏离，或者要给单个端点定制认证/权限/序列化器，就得靠类属性覆盖去打补丁，而覆盖的语义是<strong>替换而非追加</strong>，F-03 就是这么产生的。</li>
+<li><strong>Spring 的强项是显式与解耦。</strong>DTO 和实体天然分开，URL 写在方法上，<code>@PreAuthorize</code> 叠加而不覆盖全局安全配置，<code>Page&lt;T&gt;</code> 让分页不必每个视图重配。代价是样板代码显著更多，简单 CRUD 要写的量大概是 DRF 的三到五倍。</li>
+<li><strong>Hono 的强项是类型贯通与零隐式行为。</strong>Zod schema 既是运行时校验又是编译期类型，配合 <code>hc</code> 客户端可以做到从数据库到前端调用点的端到端类型安全，这是前两者都做不到的。代价是什么都没有——分页、过滤、限流、文档全部自己搭，适合团队清楚自己要什么、且愿意为类型安全付出手工成本的场景。</li>
+</ul>
+
+</section>
+    <div class="footdoc">
+      由 Claude 对照本仓库源码与 Django 5.2 / DRF 3.15.1 源码整理生成 · 实测结论基于本机复现 · 图示为教学示意
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>
