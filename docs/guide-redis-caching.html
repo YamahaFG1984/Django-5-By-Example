@@ -1,0 +1,1271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redis 缓存实战指南</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext x=%2250%22 y=%2262%22 font-size=%2262%22 text-anchor=%22middle%22%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif CJK SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram svg .box{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.25; }
+.diagram svg .box-a{ fill:var(--accent2-soft); stroke:var(--accent2); stroke-width:1.25; }
+.diagram svg .box-w{ fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.25; }
+.diagram svg text{ font-family:var(--font-mono); dominant-baseline:middle; }
+.diagram svg .lbl{ fill:var(--ink-soft); }
+.diagram svg .lbl-strong{ fill:var(--ink); font-weight:700; }
+.diagram svg .lbl-accent{ fill:var(--accent2-strong); font-weight:700; }
+.diagram svg .lbl-warn{ fill:var(--danger); font-weight:700; }
+.diagram svg .edge{ stroke:var(--ink-faint); stroke-width:1.4; fill:none; }
+.diagram svg .edge-a{ stroke:var(--accent2); stroke-width:1.6; fill:none; }
+.diagram svg .edge-w{ stroke:var(--danger); stroke-width:1.6; fill:none; }
+.diagram svg .edge-dashed{ stroke-dasharray:4 3; }
+.diagram svg marker path{ fill:var(--ink-faint); }
+.diagram svg marker.m-a path{ fill:var(--accent2); }
+.diagram svg marker.m-w path{ fill:var(--danger); }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+
+
+:root{
+  --ok:#2f6d3f; --ok-soft:#e4f0e5; --ok-line:#8fbf9b;
+  --sev-hi:#9c3b2c; --sev-mid:#a86a0b; --sev-lo:#5b6357;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+    --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+  }
+}
+:root[data-theme="dark"]{
+  --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+  --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+}
+
+/* ---- lede / summary panel ---- */
+.lede{
+  border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:22px 24px; margin:0 0 30px; box-shadow:var(--shadow);
+}
+.lede h3{ margin:0 0 12px; font-size:.83rem; font-family:var(--font-mono);
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent2); font-weight:700; }
+.lede ol{ margin:0; padding-left:1.3em; }
+.lede li{ margin:0 0 .55em; }
+.lede li:last-child{ margin-bottom:0; }
+
+/* ---- finding cards ---- */
+.finding{
+  border:1px solid var(--line-strong); border-left:4px solid var(--sev-hi);
+  border-radius:5px; background:var(--surface); padding:18px 20px; margin:0 0 20px;
+  box-shadow:var(--shadow);
+}
+.finding.mid{ border-left-color:var(--sev-mid); }
+.finding.lo{ border-left-color:var(--sev-lo); }
+.finding .fhead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.finding .fid{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.09em; font-weight:700;
+  color:var(--paper); background:var(--sev-hi); padding:2px 7px; border-radius:3px;
+}
+.finding.mid .fid{ background:var(--sev-mid); }
+.finding.lo .fid{ background:var(--sev-lo); }
+.finding .ftitle{ font-weight:700; font-size:1.02rem; color:var(--ink); flex:1 1 auto; min-width:12ch; }
+.finding .fmeta{ font-family:var(--font-mono); font-size:.72rem; color:var(--ink-faint); }
+.finding p{ margin:0 0 .85em; }
+.finding p:last-child{ margin-bottom:0; }
+.finding dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:baseline; }
+.finding dt{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); white-space:nowrap; padding-top:.15em;
+}
+.finding dd{ margin:0; }
+
+/* ---- verified evidence terminal ---- */
+.term{
+  border:1px solid var(--code-border); border-radius:6px; overflow:hidden;
+  margin:0 0 1.3em; box-shadow:var(--shadow);
+}
+.term .thead{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ok); background:var(--ok-soft); padding:6px 14px; border-bottom:1px solid var(--ok-line);
+  display:flex; align-items:center; gap:8px;
+}
+.term pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink); padding:14px 16px;
+  overflow-x:auto; font-family:var(--font-mono); font-size:.8rem; line-height:1.6;
+}
+.term pre b{ color:var(--danger); font-weight:700; }
+.term pre i{ color:var(--ok); font-style:normal; font-weight:700; }
+
+/* ---- good / bad code pairing ---- */
+.pair{ display:grid; gap:14px; margin:0 0 1.4em; }
+@media (min-width:820px){ .pair.two{ grid-template-columns:1fr 1fr; } }
+.pane{ border:1px solid var(--code-border); border-radius:6px; overflow:hidden; min-width:0; }
+.pane > .ph{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  padding:6px 13px; border-bottom:1px solid var(--code-border); font-weight:700;
+}
+.pane.bad > .ph{ color:var(--danger); background:var(--danger-soft); }
+.pane.good > .ph{ color:var(--ok); background:var(--ok-soft); }
+.pane pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink);
+  padding:14px 16px; overflow-x:auto; font-family:var(--font-mono);
+  font-size:.79rem; line-height:1.62;
+}
+
+/* ---- three-way framework comparison ---- */
+.cmp{ display:grid; gap:14px; margin:0 0 1.6em; }
+@media (min-width:900px){ .cmp.three{ grid-template-columns:repeat(3,1fr); } }
+.fw{ border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:0 0 16px; min-width:0; box-shadow:var(--shadow); overflow:hidden; }
+.fw > h4{
+  margin:0 0 12px; padding:10px 16px; font-size:.86rem; font-family:var(--font-mono);
+  letter-spacing:.06em; font-weight:700; border-bottom:1px solid var(--line);
+  background:var(--surface-2); color:var(--accent2-strong);
+}
+.fw .fwbody{ padding:0 16px; }
+.fw p{ margin:0 0 .8em; font-size:.9rem; }
+.fw pre{
+  margin:0 0 .9em; background:var(--code-bg); border:1px solid var(--code-border);
+  border-radius:5px; padding:11px 12px; overflow-x:auto;
+  font-family:var(--font-mono); font-size:.74rem; line-height:1.55; color:var(--code-ink);
+}
+.fw ul{ margin:0; padding-left:1.15em; font-size:.86rem; }
+.fw li{ margin:0 0 .42em; }
+
+/* ---- decision matrix ---- */
+.matrix{ overflow-x:auto; margin:0 0 1.5em; border:1px solid var(--line); border-radius:6px; }
+.matrix table{ width:100%; border-collapse:collapse; font-size:.86rem; min-width:640px; margin:0; }
+.matrix th{
+  text-align:left; padding:10px 13px; background:var(--accent2-soft); color:var(--accent2-strong);
+  font-weight:700; border-bottom:1px solid var(--line-strong); vertical-align:bottom;
+}
+.matrix td{ padding:10px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.matrix tr:last-child td{ border-bottom:none; }
+.matrix tr:nth-child(even) td{ background:var(--surface-2); }
+.matrix td.lv{ font-family:var(--font-mono); font-weight:700; color:var(--accent-strong); white-space:nowrap; }
+
+/* ---- checklist ---- */
+.check{ list-style:none; padding:0; margin:0 0 1.5em; display:flex; flex-direction:column; gap:10px; }
+.check li{
+  display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:baseline;
+  border:1px solid var(--line); border-radius:5px; padding:12px 15px; background:var(--surface);
+  margin:0; font-size:.93rem;
+}
+.check li > .mk{ font-family:var(--font-mono); font-weight:700; color:var(--accent2); font-size:.8rem; }
+.check li b{ color:var(--accent-strong); }
+
+/* the guide uses one <h2> per section like the chapter pages, so inherit that rule */
+.chapter h4{ font-size:.97rem; margin:1.7em 0 .6em; font-weight:700; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5.2 · 专题指南</span>
+      <h1>&#x26A1;&nbsp; Redis 缓存实战指南</h1>
+      <p>配置、分层选型、失效策略，对照本仓库四个项目的真实缓存代码逐处分析，并与 Spring、Hono.js 的同场景做法对比。</p>
+    </div>
+    <nav>
+      <a href="#tldr"><span class="n">速览</span>本文结论速览</a><a href="#config"><span class="n">配置</span>Django 5.2 + Redis：配置与连接</a><a href="#levels"><span class="n">分层</span>四个缓存层级与选型决策</a><a href="#audit"><span class="n">现状</span>本仓库缓存代码逐处分析</a><a href="#findings"><span class="n">缺陷</span>三个已验证的缺陷与修复</a><a href="#invalidation"><span class="n">失效</span>失效策略：本项目最薄弱的一环</a><a href="#separation"><span class="n">隔离</span>把缓存和业务数据分开</a><a href="#checklist"><span class="n">清单</span>上线前检查清单</a><a href="#compare"><span class="n">对比</span>同样的场景：Spring 与 Hono.js 怎么做</a>
+    </nav>
+    <div class="series">
+      <div class="label">相关阅读</div>
+      <a href="notes-04-educa.html">&#x1F393; educa 项目深读笔记</a>
+      <a href="notes-03-myshop.html">&#x1F6D2; myshop 项目深读笔记</a>
+      <a href="notes-02-bookmarks.html">&#x1F516; Bookmarks 项目深读笔记</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">专题指南 · 配置 / 策略 / 缺陷分析 / 横向对比</span>
+      <h1>以 Redis 为后端的 Django 缓存实战指南</h1>
+      <p class="sub">面向 Django 5.2。所有关于框架内部行为的论断均在本机实测验证，所有项目分析均来自本仓库 <code>Chapter07</code>、<code>Chapter10~11</code>、<code>Chapter14~17</code> 的真实代码。</p>
+      <div class="meta">
+        <span>Django 5.2 · redis-py 5.x</span>
+        <span>含 6 张架构示意图</span>
+        <span>3 个已复现的缺陷</span>
+      </div>
+    </div>
+    <section class="chapter" id="tldr">
+<h2>本文结论速览</h2>
+
+<div class="lede">
+<h3>三条最重要的结论</h3>
+<ol>
+<li><strong>本仓库的 <code>cache_page</code> 用法存在越权数据泄露</strong>，不是理论风险——我用仓库里的真实视图结构复现出：匿名访客可以完整读到已报名学员的付费课程页。根因是中间件顺序导致 <code>Vary: Cookie</code> 写得太晚，缓存 key 退化为「只按 URL 分片」。详见 <a href="#findings">缺陷 F-01</a>。</li>
+<li><strong>Redis 里装的东西，只有一小部分是「缓存」。</strong> 本仓库把 Django 缓存、Channels 通道层、推荐引擎、浏览计数四类负载塞进同一个 Redis 实例，但后三类丢失即数据丢失。给缓存配的 <code>allkeys-lru</code> 淘汰策略会静默吃掉它们。详见 <a href="#separation">第六节</a>。</li>
+<li><strong>本项目的失效手段只有「等 TTL 到期」一种。</strong> 讲师改完课件，学生最长 15 分钟看不到更新，且三层缓存的 TTL 互相叠加。需要即时一致时应改用版本化 key。详见 <a href="#invalidation">第五节</a>。</li>
+</ol>
+</div>
+<p>本文覆盖四部分：Django 5.2 下以 Redis 为后端的<strong>配置与选型</strong>、本仓库<strong>现有缓存代码的逐处分析</strong>、<strong>三个已验证的缺陷及修复</strong>，以及同样场景在 <strong>Spring 与 Hono.js</strong> 下的处理方式对比。所有涉及 Django 内部行为的论断都在本机 Django 5.2 上实测验证过，实测输出以绿色标题的终端块标注。</p>
+
+</section><section class="chapter" id="config">
+<h2>一、Django 5.2 + Redis：配置与连接</h2>
+
+<p>Django 从 4.0 起内置了 Redis 缓存后端（<code>django.core.cache.backends.redis.RedisCache</code>），5.2 沿用同一实现。它底层直接用 <code>redis-py</code>，<strong>不再需要 <code>django-redis</code> 第三方包</strong>——这是相比几年前教程的最大变化，本仓库 <code>requirements.txt</code> 里也只有 <code>redis==5.0.4</code>，没有 <code>django-redis</code>。</p>
+
+<h3>1.1 最小可用配置</h3>
+<p>本仓库 <code>Chapter17/educa/educa/settings/base.py</code> 里就是最小形态：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>CACHES = {
+    &#x27;default&#x27;: {
+        &#x27;BACKEND&#x27;: &#x27;django.core.cache.backends.redis.RedisCache&#x27;,
+        &#x27;LOCATION&#x27;: &#x27;redis://127.0.0.1:6379&#x27;,
+    }
+}
+
+CACHE_MIDDLEWARE_ALIAS = &#x27;default&#x27;
+CACHE_MIDDLEWARE_SECONDS = 60 * 15   # 站点级缓存的默认 TTL
+CACHE_MIDDLEWARE_KEY_PREFIX = &#x27;educa&#x27;</code></pre></div>
+<p>三个 <code>CACHE_MIDDLEWARE_*</code> 只对<strong>站点级缓存中间件</strong>生效，其中 <code>KEY_PREFIX</code> 也会被 <code>cache_page</code> 用上（它内部复用同一套 key 生成逻辑）。本项目的中间件是注释掉的，所以前两项目前只是摆设，第三项仍在 <code>cache_page</code> 的 key 里出现。</p>
+
+<h3>1.2 生产配置：把该显式声明的都写出来</h3>
+<p>最小配置能跑，但生产环境有六个字段值得显式写死，否则你依赖的都是隐式默认值：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>import os
+
+REDIS_URL = os.environ[&#x27;REDIS_URL&#x27;]          # 例如 redis://cache:6379/1
+
+CACHES = {
+    &#x27;default&#x27;: {
+        &#x27;BACKEND&#x27;: &#x27;django.core.cache.backends.redis.RedisCache&#x27;,
+        &#x27;LOCATION&#x27;: REDIS_URL,
+
+        # 默认 300 秒。不写 = 5 分钟，几乎肯定不是你想要的值，
+        # 而且会让每一处不带 timeout 的 cache.set() 行为变得不可见。
+        &#x27;TIMEOUT&#x27;: 60 * 10,
+
+        # 所有 key 自动加前缀，多个项目/环境共用一个 Redis 时必须设。
+        &#x27;KEY_PREFIX&#x27;: &#x27;educa&#x27;,
+
+        # 改数据结构时把 VERSION + 1，旧 key 立刻全部失去引用，
+        # 无需 FLUSHDB，也不会误删别人的数据。
+        &#x27;VERSION&#x27;: 1,
+
+        &#x27;OPTIONS&#x27;: {
+            # 连接池上限。uWSGI/Gunicorn 每个 worker 进程一个池，
+            # 总连接数 = worker 数 × max_connections，别超过 Redis 的 maxclients。
+            &#x27;pool_class&#x27;: &#x27;redis.BlockingConnectionPool&#x27;,
+            &#x27;max_connections&#x27;: 50,
+            &#x27;timeout&#x27;: 20,                    # 池满时的等待秒数
+
+            # 网络层超时：不设的话 Redis 卡住会把 web worker 一起拖死。
+            &#x27;socket_connect_timeout&#x27;: 2,
+            &#x27;socket_timeout&#x27;: 2,
+            &#x27;retry_on_timeout&#x27;: True,
+            &#x27;health_check_interval&#x27;: 30,
+        },
+    }
+}</code></pre></div>
+<blockquote><p><strong>关于 <code>LOCATION</code> 的两个细节</strong>：其一，URL 末尾的 <code>/1</code> 是 <strong>Redis 数据库编号</strong>，用它把缓存和其他负载分开（见第六节）。其二，<code>LOCATION</code> 可以传<strong>列表</strong>——Django 会把第一个当写节点，其余随机轮询作读节点：</p>
+<pre style="margin:.6em 0 0;font-family:var(--font-mono);font-size:.8rem;overflow-x:auto;">'LOCATION': ['redis://primary:6379', 'redis://replica-1:6379', 'redis://replica-2:6379']</pre>
+<p style="margin-top:.6em;">注意这只是<strong>客户端侧的读写分流</strong>，不做故障转移。真要高可用得上 Redis Sentinel 或 Cluster，而内置后端不支持——那时才需要回到 <code>django-redis</code> 或自己包一层。</p></blockquote>
+
+<h3>1.3 序列化：默认是 pickle，这有代价</h3>
+<p>内置后端默认用 <code>pickle</code> 序列化，只有整数例外（保持原样存，这样 <code>incr()</code>/<code>decr()</code> 才能走 Redis 原生的原子命令）。这带来两个必须知道的后果：</p>
+<ul>
+<li><strong>缓存里的数据不能被非 Python 程序读取</strong>。如果你的 Redis 还要给 Node 服务、监控脚本读，就得换 JSON 序列化器。</li>
+<li><strong>反序列化 pickle 等于执行任意代码</strong>。这意味着 Redis 实例必须被当成可信内网组件对待——绝不能暴露公网、必须设 <code>requirepass</code>。任何能往你 Redis 写数据的人，都等于能在你的 web 进程里执行代码。</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 换成 JSON：跨语言可读，且反序列化不会执行代码
+&#x27;OPTIONS&#x27;: {
+    &#x27;serializer&#x27;: &#x27;django.core.cache.backends.redis.RedisSerializer&#x27;,  # 默认，pickle
+    # 自定义 JSON 序列化器需自己实现 dumps/loads，
+    # 代价是只能缓存 JSON 可表达的类型（QuerySet、model 实例就不行了）。
+}</code></pre></div>
+
+<h3>1.4 docker-compose 与环境变量</h3>
+<p>本仓库 <code>Chapter17/docker-compose.yml</code> 的服务名就是 <code>cache</code>，容器内用服务名而非 <code>localhost</code> 寻址：</p>
+<div class="codewrap"><div class="langtag">yaml</div><pre><code>services:
+  cache:
+    image: redis:7.2.4
+    restart: always
+    volumes:
+      - ./data/cache:/data</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># settings/prod.py —— 本仓库的真实写法
+REDIS_URL = &#x27;redis://cache:6379&#x27;
+CACHES[&#x27;default&#x27;][&#x27;LOCATION&#x27;] = REDIS_URL
+CHANNEL_LAYERS[&#x27;default&#x27;][&#x27;CONFIG&#x27;][&#x27;hosts&#x27;] = [REDIS_URL]</code></pre></div>
+<blockquote class="callout-warn"><p><strong>本仓库存在的配置断层</strong>：<code>Chapter10</code> 引入了依赖 Redis 的推荐引擎（<code>shop/recommender.py</code>），<code>settings.py</code> 里写死 <code>REDIS_HOST = 'localhost'</code>，但该章的 <code>docker-compose.yml</code> <strong>没有 redis 服务</strong>，也没有对应的环境变量注入——在 Docker 里跑 Chapter10 的推荐功能会直接连接失败。Redis 服务要到 <code>Chapter11</code> 的 compose 文件才补上。这是逐章递进式教材常见的接线滞后，自己搭项目时容易照抄漏掉。</p></blockquote>
+
+<h3>1.5 验证连接是否真的通了</h3>
+<div class="codewrap"><div class="langtag">bash</div><pre><code>python manage.py shell -c &quot;
+from django.core.cache import cache
+cache.set(&#x27;probe&#x27;, &#x27;ok&#x27;, 30)
+print(&#x27;read back:&#x27;, cache.get(&#x27;probe&#x27;))
+print(&#x27;backend  :&#x27;, cache.__class__)
+&quot;</code></pre></div>
+<p>更进一步，用 <code>redis-cli --scan</code> 看真实 key 长什么样，能立刻验证 <code>KEY_PREFIX</code>/<code>VERSION</code> 是否生效——Django 存进去的完整 key 形如 <code>&lt;KEY_PREFIX&gt;:&lt;VERSION&gt;:&lt;你的 key&gt;</code>：</p>
+<div class="codewrap"><div class="langtag">bash</div><pre><code>redis-cli --scan --pattern &#x27;educa:1:*&#x27; | head -20</code></pre></div>
+<p>本仓库还装了 <code>django-redisboard</code>，在 Django admin 里能直接看 Redis 实例状态、内存占用与 key 分布，开发期排查缓存问题比命令行方便。</p>
+
+</section><section class="chapter" id="levels">
+<h2>二、四个缓存层级与选型决策</h2>
+
+<p>Django 提供四个层级的缓存，区别在于<strong>请求生命周期里的拦截时机</strong>。越早拦截省得越多，但粒度越粗、越容易出错。</p>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 470" role="img" aria-label="图 1 · Django 的四个缓存层级按「拦截时机」从早到晚排列，共用同一个 Redis 后端"><defs>
+          <marker id="cc1-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc1-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc1-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="30" y="46" width="100" height="42" rx="4"></rect>
+<text class="lbl-strong" x="80.0" y="67.0" text-anchor="middle" font-size="12.5">浏览器</text>
+<rect class="box-a" x="175" y="34" width="235" height="62" rx="4"></rect>
+<text class="lbl-strong" x="292.5" y="59.0" text-anchor="middle" font-size="12.5">① 站点级缓存</text>
+<text class="lbl" x="292.5" y="77.5" text-anchor="middle" font-size="10.5">Update/FetchFromCacheMiddleware</text>
+<text class="lbl" x="292.5" y="89.5" text-anchor="middle" font-size="10.5">整站响应 · 本项目已注释停用</text>
+<line class="edge" x1="130" y1="67" x2="175" y2="67" marker-end="url(#cc1-m)"></line>
+<rect class="box-a" x="175" y="130" width="235" height="62" rx="4"></rect>
+<text class="lbl-strong" x="292.5" y="155.0" text-anchor="middle" font-size="12.5">② 视图级缓存</text>
+<text class="lbl" x="292.5" y="173.5" text-anchor="middle" font-size="10.5">@cache_page(60*15)</text>
+<text class="lbl" x="292.5" y="185.5" text-anchor="middle" font-size="10.5">整个响应 · key = URL + Vary 头</text>
+<line class="edge" x1="292" y1="96" x2="292" y2="130" marker-end="url(#cc1-m)"></line>
+<rect class="box-a" x="175" y="226" width="235" height="62" rx="4"></rect>
+<text class="lbl-strong" x="292.5" y="251.0" text-anchor="middle" font-size="12.5">③ 模板片段缓存</text>
+<text class="lbl" x="292.5" y="269.5" text-anchor="middle" font-size="10.5">{% cache 600 name vary %}</text>
+<text class="lbl" x="292.5" y="281.5" text-anchor="middle" font-size="10.5">一段 HTML · key = 名字 + vary 值</text>
+<line class="edge" x1="292" y1="192" x2="292" y2="226" marker-end="url(#cc1-m)"></line>
+<rect class="box-a" x="175" y="322" width="235" height="62" rx="4"></rect>
+<text class="lbl-strong" x="292.5" y="347.0" text-anchor="middle" font-size="12.5">④ 低级缓存 API</text>
+<text class="lbl" x="292.5" y="365.5" text-anchor="middle" font-size="10.5">cache.get / set / get_or_set</text>
+<text class="lbl" x="292.5" y="377.5" text-anchor="middle" font-size="10.5">任意 Python 对象 · key 自己定</text>
+<line class="edge" x1="292" y1="288" x2="292" y2="322" marker-end="url(#cc1-m)"></line>
+<rect class="box" x="175" y="414" width="235" height="42" rx="4"></rect>
+<text class="lbl-strong" x="292.5" y="435.0" text-anchor="middle" font-size="12.5">Django ORM → PostgreSQL</text>
+<line class="edge" x1="292" y1="384" x2="292" y2="414" marker-end="url(#cc1-m)"></line>
+<text class="lbl" x="292.0" y="394.0" text-anchor="middle" font-size="10">全部未命中</text>
+<rect class="box-a" x="510" y="130" width="210" height="254" rx="4"></rect>
+<text class="lbl-strong" x="615.0" y="251.0" text-anchor="middle" font-size="12.5">Redis</text>
+<text class="lbl" x="615.0" y="269.5" text-anchor="middle" font-size="10.5">四个层级共用的</text>
+<text class="lbl" x="615.0" y="281.5" text-anchor="middle" font-size="10.5">同一个存储后端</text>
+<line class="edge edge-dashed" x1="410" y1="65" x2="510" y2="150" marker-end="url(#cc1-m)"></line>
+<line class="edge edge-dashed" x1="410" y1="161" x2="510" y2="161" marker-end="url(#cc1-m)"></line>
+<line class="edge edge-dashed" x1="410" y1="257" x2="510" y2="257" marker-end="url(#cc1-m)"></line>
+<line class="edge edge-dashed" x1="410" y1="353" x2="510" y2="353" marker-end="url(#cc1-m)"></line>
+<text class="lbl" x="30" y="150.0" text-anchor="start" font-size="10.5">越靠上：</text>
+<text class="lbl" x="30" y="165.5" text-anchor="start" font-size="10.5">拦截越早、</text>
+<text class="lbl" x="30" y="181.0" text-anchor="start" font-size="10.5">省得越多，</text>
+<text class="lbl" x="30" y="196.5" text-anchor="start" font-size="10.5">但粒度越粗、</text>
+<text class="lbl" x="30" y="212.0" text-anchor="start" font-size="10.5">越容易串数据。</text>
+<text class="lbl" x="30" y="330.0" text-anchor="start" font-size="10.5">越靠下：</text>
+<text class="lbl" x="30" y="345.5" text-anchor="start" font-size="10.5">越安全、越精细，</text>
+<text class="lbl" x="30" y="361.0" text-anchor="start" font-size="10.5">但视图与模板</text>
+<text class="lbl" x="30" y="376.5" text-anchor="start" font-size="10.5">每次仍要执行。</text></svg><figcaption class="cap">图 1 · Django 的四个缓存层级按「拦截时机」从早到晚排列，共用同一个 Redis 后端</figcaption></figure>
+
+<div class="matrix">
+<table>
+<thead><tr><th>层级</th><th>写法</th><th>缓存的东西</th><th>适合</th><th>绝不要用在</th></tr></thead>
+<tbody>
+<tr><td class="lv">① 站点级</td><td><code>UpdateCacheMiddleware</code> + <code>FetchFromCacheMiddleware</code></td><td>整个响应</td><td>纯匿名的内容站、营销页</td><td>任何有登录态的站点。本项目已注释停用，是对的</td></tr>
+<tr><td class="lv">② 视图级</td><td><code>@cache_page(ttl)</code></td><td>整个响应</td><td>对所有匿名访客一致的页面、公开 API</td><td>响应内容随用户变化的视图——除非显式加 <code>vary_on_cookie</code>，见 F-01</td></tr>
+<tr><td class="lv">③ 模板片段</td><td><code>{% cache ttl name vary %}</code></td><td>一段 HTML</td><td>页面里「重且公共」的局部，如渲染开销大的内容块</td><td>片段内含用户私有信息，且 vary 参数没带上用户标识</td></tr>
+<tr><td class="lv">④ 低级 API</td><td><code>cache.get/set/get_or_set</code></td><td>任意 Python 对象</td><td>昂贵查询结果、外部 API 响应、计算结果</td><td>——最安全，key 完全自己掌控；代价是视图和模板仍要执行</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>选型的一条实用原则</h3>
+<p><em>Two Scoops of Django</em> 反复强调的一点在这里特别适用：<strong>缓存粒度应当与「这份数据对谁一致」精确对齐</strong>。问一个问题——「这份缓存内容，能不能原样给任何一个访客看？」</p>
+<ul>
+<li>能 → 上层级 ①②，省得最多。</li>
+<li>不能，但能给「同一类人」看 → 用层级 ③④，把区分维度显式写进 key（用户 id、课程 id、语言）。</li>
+<li>不能，且每个用户都不同 → 通常<strong>不该缓存整页</strong>，而是缓存那些跨用户共享的中间结果（层级 ④）。</li>
+</ul>
+<blockquote><p>本项目的 <code>StudentCourseDetailView</code> 属于第三类却用了第二类的手段，这正是 F-01 的来源。而 <code>CourseListView</code> 里的 <code>cache.get/set</code> 属于第一类用第四类手段，偏保守但安全——这个对比本身就是很好的教材。</p></blockquote>
+
+</section><section class="chapter" id="audit">
+<h2>三、本仓库缓存代码逐处分析</h2>
+
+<p>先明确一个分类，它决定了后面所有的运维决策：<strong>仓库里用到 Redis 的地方，只有一部分是「缓存」。</strong></p>
+
+<div class="matrix">
+<table>
+<thead><tr><th>位置</th><th>用途</th><th>经由</th><th>性质</th></tr></thead>
+<tbody>
+<tr><td><code>educa/students/urls.py</code></td><td>整页缓存学生课程详情</td><td>Django 缓存框架</td><td><strong>缓存</strong>，可重建</td></tr>
+<tr><td><code>educa/students/.../detail.html</code></td><td>缓存模块内容 HTML 片段</td><td>Django 缓存框架</td><td><strong>缓存</strong>，可重建</td></tr>
+<tr><td><code>educa/courses/views.py</code></td><td>缓存 Subject / Course 查询集</td><td>Django 缓存框架</td><td><strong>缓存</strong>，可重建</td></tr>
+<tr><td><code>educa/educa/settings/base.py</code></td><td>Channels 通道层</td><td><code>channels_redis</code> 直连</td><td>运行时状态，<strong>丢失即断线</strong></td></tr>
+<tr><td><code>bookmarks/images/views.py</code></td><td>浏览计数 + 排行榜</td><td><code>redis-py</code> 直连</td><td>业务数据，<strong>丢失不可重建</strong></td></tr>
+<tr><td><code>myshop/shop/recommender.py</code></td><td>「买了又买」推荐</td><td><code>redis-py</code> 直连</td><td>业务数据，<strong>丢失不可重建</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>3.1 educa：三层缓存叠在同一个页面上</h3>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 420" role="img" aria-label="图 4 · educa 学生课程详情页上三层缓存的叠加关系，以及各自对应的已验证缺陷"><defs>
+          <marker id="cc4-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc4-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc4-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-w" x="20" y="26" width="230" height="68" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="54.0" text-anchor="middle" font-size="12.5">students/urls.py</text>
+<text class="lbl" x="135.0" y="72.5" text-anchor="middle" font-size="10.5">cache_page(60*15) 包住</text>
+<text class="lbl" x="135.0" y="84.5" text-anchor="middle" font-size="10.5">StudentCourseDetailView</text>
+<rect class="box-w" x="300" y="26" width="210" height="68" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="54.0" text-anchor="middle" font-size="12.5">整页 HTML</text>
+<text class="lbl" x="405.0" y="72.5" text-anchor="middle" font-size="10.5">TTL 15 分钟</text>
+<text class="lbl" x="405.0" y="84.5" text-anchor="middle" font-size="10.5">无主动失效</text>
+<line class="edge" x1="250" y1="60" x2="300" y2="60" marker-end="url(#cc4-m)"></line>
+<text class="lbl-warn" x="530" y="46.0" text-anchor="start" font-size="10.5">缺陷 F-01</text>
+<text class="lbl-warn" x="530" y="61.5" text-anchor="start" font-size="10.5">跨用户串号</text>
+<rect class="box-w" x="20" y="126" width="230" height="68" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="154.0" text-anchor="middle" font-size="12.5">detail.html</text>
+<text class="lbl" x="135.0" y="172.5" text-anchor="middle" font-size="10.5">{% cache 600 module_contents</text>
+<text class="lbl" x="135.0" y="184.5" text-anchor="middle" font-size="10.5">  module %}</text>
+<rect class="box-w" x="300" y="126" width="210" height="68" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="154.0" text-anchor="middle" font-size="12.5">模块内容片段</text>
+<text class="lbl" x="405.0" y="172.5" text-anchor="middle" font-size="10.5">TTL 10 分钟</text>
+<text class="lbl" x="405.0" y="184.5" text-anchor="middle" font-size="10.5">key 取 str(module)</text>
+<line class="edge" x1="250" y1="160" x2="300" y2="160" marker-end="url(#cc4-m)"></line>
+<text class="lbl-warn" x="530" y="146.0" text-anchor="start" font-size="10.5">缺陷 F-02</text>
+<text class="lbl-warn" x="530" y="161.5" text-anchor="start" font-size="10.5">跨课程碰撞</text>
+<rect class="box-a" x="20" y="226" width="230" height="68" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="254.0" text-anchor="middle" font-size="12.5">courses/views.py</text>
+<text class="lbl" x="135.0" y="272.5" text-anchor="middle" font-size="10.5">cache.get / cache.set</text>
+<text class="lbl" x="135.0" y="284.5" text-anchor="middle" font-size="10.5">CourseListView</text>
+<rect class="box-a" x="300" y="226" width="210" height="68" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="254.0" text-anchor="middle" font-size="12.5">Subject / Course 查询集</text>
+<text class="lbl" x="405.0" y="272.5" text-anchor="middle" font-size="10.5">默认 TTL 300 秒</text>
+<line class="edge" x1="250" y1="260" x2="300" y2="260" marker-end="url(#cc4-m)"></line>
+<text class="lbl-warn" x="530" y="246.0" text-anchor="start" font-size="10.5">缺陷 F-03</text>
+<text class="lbl-warn" x="530" y="261.5" text-anchor="start" font-size="10.5">空结果不缓存</text>
+<line x1="20" y1="320" x2="740" y2="320" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="344.0" text-anchor="start" font-size="10.5">三层叠加意味着同一份内容最长可陈旧 15 分钟：讲师改完课件后，学生页面顶层整页缓存仍在，</text>
+<text class="lbl" x="20" y="359.5" text-anchor="start" font-size="10.5">即便底下两层已过期也看不到——这是本项目唯一的失效手段（纯 TTL 到期），没有任何主动清除。</text></svg><figcaption class="cap">图 4 · educa 学生课程详情页上三层缓存的叠加关系，以及各自对应的已验证缺陷</figcaption></figure>
+<p><strong>第一层，整页缓存</strong>（<code>students/urls.py</code>）——注意 <code>cache_page</code> 是包在 <code>as_view()</code> 外面的，这是 CBV 的标准写法：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>path(
+    &#x27;course/&lt;pk&gt;/&#x27;,
+    cache_page(60 * 15)(views.StudentCourseDetailView.as_view()),
+    name=&#x27;student_course_detail&#x27;,
+),
+path(
+    &#x27;course/&lt;pk&gt;/&lt;module_id&gt;/&#x27;,
+    cache_page(60 * 15)(views.StudentCourseDetailView.as_view()),
+    name=&#x27;student_course_detail_module&#x27;,
+),</code></pre></div>
+<p>两条 URL 指向同一个视图，但 URL 不同 → 缓存 key 不同，这部分是对的。问题出在这个视图本身是 <code>LoginRequiredMixin</code> 且按用户过滤 queryset——见 <a href="#findings">F-01</a>。</p>
+
+<p><strong>第二层，模板片段缓存</strong>（<code>students/templates/students/course/detail.html</code>）：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code>{% load cache %}
+...
+&lt;div class=&quot;module&quot;&gt;
+  {% cache 600 module_contents module %}
+    {% for content in module.contents.all %}
+      {% with item=content.item %}
+        &lt;h2&gt;{{ item.title }}&lt;/h2&gt;
+        {{ item.render }}
+      {% endwith %}
+    {% endfor %}
+  {% endcache %}
+&lt;/div&gt;</code></pre></div>
+<p>缓存这一段是有道理的：<code>item.render</code> 会对每个内容项做一次 <code>GenericForeignKey</code> 解引用并渲染子模板，是这个页面上最贵的部分。但 vary 参数用了 <code>module</code> 对象本身——见 <a href="#findings">F-02</a>。</p>
+
+<p><strong>第三层，低级 API</strong>（<code>courses/views.py</code> 的 <code>CourseListView</code>）：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>def get(self, request, subject=None):
+    subjects = cache.get(&#x27;all_subjects&#x27;)
+    if not subjects:
+        subjects = Subject.objects.annotate(total_courses=Count(&#x27;courses&#x27;))
+        cache.set(&#x27;all_subjects&#x27;, subjects)
+    all_courses = Course.objects.annotate(total_modules=Count(&#x27;modules&#x27;))
+    if subject:
+        subject = get_object_or_404(Subject, slug=subject)
+        key = f&#x27;subject_{subject.id}_courses&#x27;
+        courses = cache.get(key)
+        if not courses:
+            courses = all_courses.filter(subject=subject)
+            cache.set(key, courses)
+    else:
+        courses = cache.get(&#x27;all_courses&#x27;)
+        if not courses:
+            courses = all_courses
+            cache.set(&#x27;all_courses&#x27;, courses)
+    return self.render_to_response({&#x27;subjects&#x27;: subjects, &#x27;subject&#x27;: subject, &#x27;courses&#x27;: courses})</code></pre></div>
+<p>这一段有三点值得说：</p>
+<ul>
+<li><strong>缓存 QuerySet 是可行的，但要理解发生了什么。</strong> <code>cache.set</code> 会 pickle 这个 QuerySet，而 pickle 一个 QuerySet 会<strong>强制求值</strong>并把整个结果集连同 <code>_result_cache</code> 一起序列化。所以存进 Redis 的是全部行数据，不是那条 SQL。数据集大时这会是个不小的 value。</li>
+<li><strong><code>cache.set()</code> 没传 timeout</strong>，走的是 <code>CACHES['default']['TIMEOUT']</code>；本项目没配 <code>TIMEOUT</code>，因此是 Django 的默认值 <strong>300 秒</strong>。这个「5 分钟」完全是隐式的，代码里一个字都看不到——正是 1.2 节建议显式写死 <code>TIMEOUT</code> 的原因。</li>
+<li><strong><code>if not subjects:</code> 是个真实的坑</strong>——见 <a href="#findings">F-03</a>。</li>
+</ul>
+
+<h3>3.2 bookmarks Ch07 与 myshop Ch10/11：这些不是缓存</h3>
+<p>这两处绕过 Django 缓存框架，直接用 <code>redis-py</code>，因为它们要的是 Redis 的<strong>数据结构</strong>（原子计数器、有序集合），而缓存框架只提供 key-value 存取：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># Chapter07/bookmarks/images/views.py
+r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB)
+
+def image_detail(request, id, slug):
+    image = get_object_or_404(Image, id=id, slug=slug)
+    total_views = r.incr(f&#x27;image:{image.id}:views&#x27;)      # 原子自增
+    r.zincrby(&#x27;image_ranking&#x27;, 1, image.id)              # 有序集合累加分值
+    ...
+
+def image_ranking(request):
+    image_ranking = r.zrange(&#x27;image_ranking&#x27;, 0, -1, desc=True)[:10]
+    image_ranking_ids = [int(id) for id in image_ranking]
+    most_viewed = list(Image.objects.filter(id__in=image_ranking_ids))
+    most_viewed.sort(key=lambda x: image_ranking_ids.index(x.id))   # 按 Redis 的顺序重排</code></pre></div>
+<p>最后那行 <code>sort</code> 是个值得记住的模式：<code>filter(id__in=[...])</code> 返回的顺序由数据库决定，与 Redis 给出的排名顺序无关，所以必须在 Python 侧按原始 id 列表重新排一次。<code>myshop</code> 的 <code>Recommender.suggest_products_for()</code> 用了完全相同的手法。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># Chapter11/myshop/shop/recommender.py —— 用有序集合做「买了又买」
+def products_bought(self, products):
+    product_ids = [p.id for p in products]
+    for product_id in product_ids:
+        for with_id in product_ids:
+            if product_id != with_id:
+                r.zincrby(self.get_product_key(product_id), 1, with_id)</code></pre></div>
+<blockquote class="callout-warn"><p><strong>这些 key 里装的是业务数据，不是缓存。</strong> <code>image:*:views</code> 是站点的浏览统计，<code>product:*:purchased_with</code> 是靠历史订单一单一单累积出来的推荐权重——两者都<strong>无法从数据库重建</strong>（订单表虽然还在，但需要重跑全量历史才能还原）。把它们和缓存放同一个 Redis 实例、又给这个实例配上 <code>allkeys-lru</code>，内存一紧张就会被静默淘汰，而且不会有任何报错。第六节给出隔离方案。</p></blockquote>
+
+</section><section class="chapter" id="findings">
+<h2>四、三个已验证的缺陷与修复</h2>
+
+<p>以下三条都在本机 Django 5.2 上用仓库的真实代码结构复现过，不是纸面推演。</p>
+
+<div class="finding">
+  <div class="fhead">
+    <span class="fid">F-01</span>
+    <span class="ftitle">cache_page 让匿名访客读到已报名学员的付费页</span>
+    <span class="fmeta">已复现 · 越权访问</span>
+  </div>
+  <dl>
+    <dt>位置</dt><dd><code>Chapter14~17/educa/students/urls.py</code></dd>
+    <dt>触发</dt><dd>任一已报名学员访问过课程页后的 15 分钟内，任何人访问同一 URL</dd>
+    <dt>影响</dt><dd>付费内容泄露；<code>LoginRequiredMixin</code> 与按学员过滤的 queryset 全部被绕过</dd>
+  </dl>
+</div>
+
+<p><strong>根因。</strong> <code>cache_page</code> 的 key 并不是只按 URL 算的，它还会把 <code>Vary</code> 响应头点名的那些请求头的值一起哈希进去。流程分两步：</p>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 2 · cache_page 的 key 分两步生成：先「学习」Vary 头登记表，再据此哈希请求头的值"><defs>
+          <marker id="cc2-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc2-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc2-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">第一次请求（MISS）：先渲染，再「学习」要按哪些请求头分片</text>
+<rect class="box" x="20" y="36" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="55.0" text-anchor="middle" font-size="12.5">请求 URL</text>
+<text class="lbl" x="95.0" y="73.5" text-anchor="middle" font-size="10.5">/course/1/</text>
+<rect class="box" x="210" y="36" width="210" height="50" rx="4"></rect>
+<text class="lbl-strong" x="315.0" y="55.0" text-anchor="middle" font-size="12.5">执行视图 → 响应</text>
+<text class="lbl" x="315.0" y="73.5" text-anchor="middle" font-size="10.5">response.status_code == 200</text>
+<line class="edge" x1="170" y1="61" x2="210" y2="61" marker-end="url(#cc2-m)"></line>
+<rect class="box-a" x="470" y="30" width="270" height="62" rx="4"></rect>
+<text class="lbl-strong" x="605.0" y="55.0" text-anchor="middle" font-size="12.5">learn_cache_key()</text>
+<text class="lbl" x="605.0" y="73.5" text-anchor="middle" font-size="10.5">读 response['Vary'] → 存下</text>
+<text class="lbl" x="605.0" y="85.5" text-anchor="middle" font-size="10.5">「这个 URL 要按哪些头分片」</text>
+<line class="edge" x1="420" y1="61" x2="470" y2="61" marker-end="url(#cc2-m)"></line>
+<rect class="box-a" x="470" y="120" width="270" height="46" rx="4"></rect>
+<text class="lbl-strong" x="605.0" y="137.0" text-anchor="middle" font-size="11">cache_header.educa.&lt;url_md5&gt;</text>
+<text class="lbl" x="605.0" y="154.0" text-anchor="middle" font-size="10.5">值 = ['HTTP_COOKIE'] 或 []</text>
+<line class="edge" x1="605" y1="92" x2="605" y2="120" marker-end="url(#cc2-m)"></line>
+<line x1="20" y1="190" x2="740" y2="190" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="212" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">后续请求（可能 HIT）：先查登记表，再算真正的 key</text>
+<rect class="box" x="20" y="228" width="190" height="54" rx="4"></rect>
+<text class="lbl-strong" x="115.0" y="249.0" text-anchor="middle" font-size="12.5">get_cache_key()</text>
+<text class="lbl" x="115.0" y="267.5" text-anchor="middle" font-size="10.5">查 cache_header 拿到</text>
+<text class="lbl" x="115.0" y="279.5" text-anchor="middle" font-size="10.5">headerlist</text>
+<rect class="box-a" x="260" y="228" width="230" height="74" rx="4"></rect>
+<text class="lbl-strong" x="375.0" y="259.0" text-anchor="middle" font-size="12.5">_generate_cache_key()</text>
+<text class="lbl" x="375.0" y="277.5" text-anchor="middle" font-size="10.5">md5(URL) + md5(拼接</text>
+<text class="lbl" x="375.0" y="289.5" text-anchor="middle" font-size="10.5">headerlist 里各请求头的值)</text>
+<line class="edge" x1="210" y1="255" x2="260" y2="255" marker-end="url(#cc2-m)"></line>
+<rect class="box" x="540" y="228" width="200" height="54" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="242.25" text-anchor="middle" font-size="10.5">cache_page.educa.GET.</text>
+<text class="lbl-strong" x="640.0" y="255.75" text-anchor="middle" font-size="10.5">&lt;url_md5&gt;.&lt;hdr_md5&gt;</text>
+<text class="lbl" x="640.0" y="272.25" text-anchor="middle" font-size="10.5">最终 key</text>
+<line class="edge" x1="490" y1="255" x2="540" y2="255" marker-end="url(#cc2-m)"></line>
+<rect class="box-w" x="120" y="320" width="620" height="56" rx="4"></rect>
+<text class="lbl-strong" x="430.0" y="348.0" text-anchor="middle" font-size="12">headerlist 为 [] ⇒ 哈希的是空串 ⇒ 所有访客共用同一个 key</text>
+<line class="edge-w" x1="375" y1="302" x2="400" y2="320" marker-end="url(#cc2-mw)"></line></svg><figcaption class="cap">图 2 · cache_page 的 key 分两步生成：先「学习」Vary 头登记表，再据此哈希请求头的值</figcaption></figure>
+<p>关键在于 <code>Vary: Cookie</code> 这个头<strong>是谁、什么时候加上的</strong>。加它的是 <code>SessionMiddleware.process_response()</code>（只要 session 被读过就会加）。但响应阶段是<strong>由内向外</strong>回流的：<code>cache_page</code> 包在视图上，属于最内层，它执行 <code>learn_cache_key()</code> 的时刻，外层的 <code>SessionMiddleware</code> 还没来得及加 <code>Vary</code>。于是 Django 记下的 headerlist 是空的 <code>[]</code>，最终 key 里那段本该区分用户的哈希，哈希的是一个空字符串。</p>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 470" role="img" aria-label="图 3 · cache_page 在权限检查之前拦截请求，未报名者与匿名访客都能读到已报名用户的缓存页"><defs>
+          <marker id="cc3-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc3-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc3-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">中间件顺序决定了 Vary: Cookie 来得太晚</text>
+<rect class="box" x="20" y="36" width="700" height="44" rx="4"></rect>
+<text class="lbl-strong" x="370.0" y="58.0" text-anchor="middle" font-size="10.5">SessionMiddleware → CommonMiddleware → CsrfViewMiddleware → AuthenticationMiddleware → [ cache_page 包裹的视图 ]</text>
+<text class="lbl" x="20" y="96.0" text-anchor="start" font-size="10.5">响应阶段自内向外回流：cache_page 先记 key，SessionMiddleware 后加 Vary: Cookie —— 顺序反了。</text>
+<line x1="20" y1="116" x2="740" y2="116" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="138" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">T1 · Alice（已报名）首次访问</text>
+<rect class="box" x="20" y="152" width="160" height="50" rx="4"></rect>
+<text class="lbl-strong" x="100.0" y="171.0" text-anchor="middle" font-size="12.5">Alice 请求</text>
+<text class="lbl" x="100.0" y="189.5" text-anchor="middle" font-size="10.5">带 sessionid</text>
+<rect class="box" x="220" y="152" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="320.0" y="171.0" text-anchor="middle" font-size="12.5">LoginRequiredMixin ✓</text>
+<text class="lbl" x="320.0" y="189.5" text-anchor="middle" font-size="10.5">queryset 过滤 students=alice</text>
+<rect class="box-w" x="460" y="152" width="260" height="50" rx="4"></rect>
+<text class="lbl-strong" x="590.0" y="171.0" text-anchor="middle" font-size="12.5">渲染 200 付费内容</text>
+<text class="lbl" x="590.0" y="189.5" text-anchor="middle" font-size="10.5">存入 Redis，key 不含 Cookie</text>
+<line class="edge" x1="180" y1="177" x2="220" y2="177" marker-end="url(#cc3-m)"></line>
+<line class="edge" x1="420" y1="177" x2="460" y2="177" marker-end="url(#cc3-m)"></line>
+<line x1="20" y1="222" x2="740" y2="222" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="244" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">T2 · Mallory（已登录但未报名）/ 匿名访客</text>
+<rect class="box" x="20" y="258" width="160" height="56" rx="4"></rect>
+<text class="lbl-strong" x="100.0" y="280.0" text-anchor="middle" font-size="12.5">匿名请求</text>
+<text class="lbl" x="100.0" y="298.5" text-anchor="middle" font-size="10.5">无任何 Cookie</text>
+<rect class="box-w" x="220" y="258" width="200" height="56" rx="4"></rect>
+<text class="lbl-strong" x="320.0" y="280.0" text-anchor="middle" font-size="12.5">FetchFromCache 命中</text>
+<text class="lbl" x="320.0" y="298.5" text-anchor="middle" font-size="10.5">key 相同 → 直接返回</text>
+<line class="edge" x1="180" y1="286" x2="220" y2="286" marker-end="url(#cc3-m)"></line>
+<rect class="box-w" x="460" y="254" width="260" height="66" rx="4"></rect>
+<text class="lbl-strong" x="590.0" y="281.0" text-anchor="middle" font-size="12.5">拿到 Alice 的付费页</text>
+<text class="lbl" x="590.0" y="299.5" text-anchor="middle" font-size="10.5">视图从未执行</text>
+<text class="lbl" x="590.0" y="311.5" text-anchor="middle" font-size="10.5">权限检查从未运行</text>
+<line class="edge-w" x1="420" y1="287" x2="460" y2="287" marker-end="url(#cc3-mw)"></line>
+<rect class="box" x="220" y="340" width="200" height="46" rx="4"></rect>
+<text class="lbl-strong" x="320.0" y="357.0" text-anchor="middle" font-size="12.5">LoginRequiredMixin</text>
+<text class="lbl" x="320.0" y="375.5" text-anchor="middle" font-size="10.5">被整个跳过</text>
+<line class="edge-w edge-dashed" x1="320" y1="320" x2="320" y2="340" marker-end="url(#cc3-mw)"></line>
+<line x1="20" y1="404" x2="740" y2="404" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl-warn" x="20" y="426.0" text-anchor="start" font-size="10.5">实测结果：匿名访客收到 200 与完整付费内容；视图仅执行 1 次，3 个不同身份的请求全部命中同一条缓存。</text></svg><figcaption class="cap">图 3 · cache_page 在权限检查之前拦截请求，未报名者与匿名访客都能读到已报名用户的缓存页</figcaption></figure>
+
+<div class="term"><div class="thead">实测 · Django 5.2 · 复刻 students 应用的视图结构</div><pre>$ python3 t2.py
+1. alice (enrolled)       -> 200 | [PAID CONTENT] Django Mastery ($99) / viewer=alice
+2. mallory (NOT enrolled) -> 200 | <b>[PAID CONTENT] Django Mastery ($99) / viewer=alice</b>
+3. anonymous (logged out) -> 200 | <b>[PAID CONTENT] Django Mastery ($99) / viewer=alice</b>
+
+view actually rendered: <b>1</b> time(s) for 3 requests</pre></div>
+<p>三个不同身份，三次请求，视图只执行了一次——后两次直接从缓存返回了 Alice 的页面。未报名的 Mallory 本应得到 404，匿名访客本应被重定向到登录页。</p>
+
+<p><strong>修复。</strong> 让 <code>Vary: Cookie</code> 在 <code>cache_page</code> 记 key <em>之前</em> 就存在，也就是把 <code>vary_on_cookie</code> 放在<strong>内层</strong>。装饰器的嵌套顺序在这里是决定性的，写反了完全无效：</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 无效：vary_on_cookie 在外层</div><pre># 响应回流顺序：view -&gt; cache_page 记 key -&gt; vary_on_cookie 加头
+# 加头时 key 已经记完了，等于没加
+path(
+    &#x27;course/&lt;pk&gt;/&#x27;,
+    vary_on_cookie(
+        cache_page(60 * 15)(View.as_view())
+    ),
+),</pre></div>
+<div class="pane good"><div class="ph">✓ 有效：vary_on_cookie 在内层</div><pre>from django.views.decorators.vary import vary_on_cookie
+
+# 响应回流顺序：view -&gt; vary_on_cookie 加头 -&gt; cache_page 记 key
+path(
+    &#x27;course/&lt;pk&gt;/&#x27;,
+    cache_page(60 * 15)(
+        vary_on_cookie(View.as_view())
+    ),
+),</pre></div>
+</div>
+<div class="term"><div class="thead">实测 · 同一份代码，仅调整装饰器嵌套顺序</div><pre>$ python3 t4.py      # cache_page(vary_on_cookie(view))
+1. alice (enrolled)       -> 200 | [PAID CONTENT] Django Mastery ($99) / viewer=alice
+2. mallory (NOT enrolled) -> <i>404</i>
+3. anonymous (logged out) -> <i>302</i> | redirect->/accounts/login/?next=/course/1/
+
+$ python3 t5.py      # 确认缓存本身仍然生效
+alice 1st render count: 1 -> alice 2nd render count: 1 => <i>CACHE HIT</i>
+bob (also enrolled) render count -> 2 => <i>got his OWN entry</i>
+bob content: [PAID CONTENT] Django Mastery ($99) / viewer=bob</pre></div>
+<p>修好之后权限恢复正常，缓存也仍然有效——Alice 的第二次请求命中缓存，Bob 拿到属于自己的那一份。</p>
+
+<blockquote class="callout-warn"><p><strong>但「修好了」不代表「应该这么用」。</strong> 按 Cookie 分片意味着缓存 key 哈希的是<strong>整个 Cookie 请求头</strong>。这有两个后果：每个登录用户各存一份整页副本，缓存体积随用户数线性膨胀；而且只要任何一个 Cookie 变了（CSRF token 轮换、新增一个统计 Cookie），key 就变了，旧副本立刻变成永远不会再被命中的垃圾，白占内存直到过期。</p>
+<p>所以对这类「每个用户都不同」的页面，<em>Two Scoops of Django</em> 的建议是<strong>根本不要缓存整页</strong>，而是往下走一层：把页面里真正跨用户共享、且渲染昂贵的部分（这里就是模块内容 HTML）用片段缓存或低级 API 缓起来，用户相关的外壳每次照常渲染。本项目其实已经有这个片段缓存了（第二层），所以最干净的修法是<strong>直接删掉 <code>cache_page</code></strong>，只保留下面两层。</p></blockquote>
+
+<div class="finding mid">
+  <div class="fhead">
+    <span class="fid">F-02</span>
+    <span class="ftitle">模板片段缓存的 key 会跨课程碰撞</span>
+    <span class="fmeta">已复现 · 内容串号</span>
+  </div>
+  <dl>
+    <dt>位置</dt><dd><code>Chapter14~17/educa/students/templates/students/course/detail.html</code></dd>
+    <dt>触发</dt><dd>两门不同课程里，存在 <code>order</code> 与 <code>title</code> 都相同的模块（如两门课都有「0. Introduction」）</dd>
+    <dt>影响</dt><dd>A 课程的学员看到 B 课程的模块内容</dd>
+  </dl>
+</div>
+
+<p><strong>根因。</strong> <code>{% cache 600 module_contents module %}</code> 的 key 由 <code>make_template_fragment_key()</code> 生成，它对每个 vary 参数取的是 <code>str(arg)</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># django/core/cache/utils.py（5.2 源码）
+def make_template_fragment_key(fragment_name, vary_on=None):
+    hasher = md5(usedforsecurity=False)
+    if vary_on is not None:
+        for arg in vary_on:
+            hasher.update(str(arg).encode())     # ← 取的是 str()，不是主键
+            hasher.update(b&quot;:&quot;)
+    return TEMPLATE_FRAGMENT_KEY_TEMPLATE % (fragment_name, hasher.hexdigest())</code></pre></div>
+<p>而本项目的 <code>Module.__str__</code> 返回的是 <code>f'{self.order}. {self.title}'</code>——<strong>课程之间完全可能重复</strong>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class Module(models.Model):
+    course = models.ForeignKey(Course, related_name=&#x27;modules&#x27;, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    order = OrderField(blank=True, for_fields=[&#x27;course&#x27;])
+
+    def __str__(self):
+        return f&#x27;{self.order}. {self.title}&#x27;     # 「0. Introduction」在每门课里都会出现</code></pre></div>
+<div class="term"><div class="thead">实测 · 两个不同课程下的不同 Module 对象</div><pre>course A module (pk=7)  key: template.cache.module_contents.923e25c043d0b302cd58f06bfc20902d
+course B module (pk=42) key: template.cache.module_contents.923e25c043d0b302cd58f06bfc20902d
+COLLISION: <b>True</b>
+
+varying on module.id instead -> collision: <i>False</i></pre></div>
+<p><strong>修复。</strong> vary 参数改用主键，并把「内容何时变过」也编进去，顺带解决失效问题：</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：按 str(module) 分片</div><pre>{% cache 600 module_contents module %}
+  ...
+{% endcache %}</pre></div>
+<div class="pane good"><div class="ph">✓ 按主键分片</div><pre>{% cache 600 module_contents module.id %}
+  ...
+{% endcache %}</pre></div>
+</div>
+<blockquote><p>更普适的一条规则：<strong>永远不要把模型实例直接当作 <code>{% cache %}</code> 的 vary 参数</strong>，因为它取的是 <code>__str__</code>，而 <code>__str__</code> 是给人看的、随时可能被改、且几乎从不保证唯一。传 <code>obj.pk</code>，或者传一个你能控制的显式元组。</p></blockquote>
+
+<div class="finding lo">
+  <div class="fhead">
+    <span class="fid">F-03</span>
+    <span class="ftitle">空结果永远不会被缓存，每次请求都打数据库</span>
+    <span class="fmeta">已确认 · 性能</span>
+  </div>
+  <dl>
+    <dt>位置</dt><dd><code>Chapter14~17/educa/courses/views.py</code> · <code>CourseListView.get()</code></dd>
+    <dt>触发</dt><dd>某个 subject 下暂时没有课程，或系统刚上线还没有任何 subject</dd>
+    <dt>影响</dt><dd>该 URL 的缓存完全失效，每次请求都执行一次 <code>annotate</code> 聚合查询</dd>
+  </dl>
+</div>
+
+<p><strong>根因。</strong> <code>cache.get()</code> 未命中时返回 <code>None</code>，但代码判断的是 <code>if not subjects:</code>。一个<strong>空的 QuerySet 是 falsy 的</strong>，于是「缓存里存着一个空结果」和「缓存未命中」这两种情况被混为一谈——空结果每次都被判定成未命中，重新查库、重新写入、下次再判定成未命中，无限循环。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：falsy 值与未命中不可区分</div><pre>subjects = cache.get(&#x27;all_subjects&#x27;)
+if not subjects:            # 空 QuerySet 也是 falsy
+    subjects = Subject.objects.annotate(
+        total_courses=Count(&#x27;courses&#x27;))
+    cache.set(&#x27;all_subjects&#x27;, subjects)</pre></div>
+<div class="pane good"><div class="ph">✓ 用 is None 精确判断未命中</div><pre>subjects = cache.get(&#x27;all_subjects&#x27;)
+if subjects is None:
+    subjects = Subject.objects.annotate(
+        total_courses=Count(&#x27;courses&#x27;))
+    cache.set(&#x27;all_subjects&#x27;, subjects, 60 * 10)</pre></div>
+</div>
+<p>更简洁的写法是用 <code>get_or_set()</code>，它内部就是按「未命中」而非「falsy」判断的，还少一次往返：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>subjects = cache.get_or_set(
+    &#x27;all_subjects&#x27;,
+    lambda: Subject.objects.annotate(total_courses=Count(&#x27;courses&#x27;)),
+    60 * 10,
+)</code></pre></div>
+<blockquote><p>这个坑在缓存代码里极其常见，因为 <code>0</code>、<code>''</code>、<code>[]</code>、<code>False</code>、空 QuerySet 全都是 falsy。<strong>凡是用 <code>cache.get()</code>，判断未命中一律写 <code>is None</code></strong>——除非你能确定被缓存的值永远不可能是 falsy。</p></blockquote>
+
+</section><section class="chapter" id="invalidation">
+<h2>五、失效策略：本项目最薄弱的一环</h2>
+
+<p>Phil Karlton 那句老话——「计算机科学只有两个难题：缓存失效和命名」——在本项目里体现得很直接：<strong>整个 educa 没有任何一处主动清除缓存</strong>。唯一的失效手段是等 TTL 到期。</p>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 340" role="img" aria-label="图 5 · 三种失效策略：本项目只用了最弱的 A，B 与 C 才是需要即时一致时的做法"><defs>
+          <marker id="cc5-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc5-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc5-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">策略 A · 纯 TTL 到期（本项目现状）</text>
+<rect class="box" x="20" y="36" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="55.0" text-anchor="middle" font-size="12.5">写入时不管缓存</text>
+<text class="lbl" x="120.0" y="73.5" text-anchor="middle" font-size="10.5">改课件 → 缓存照旧</text>
+<rect class="box-w" x="270" y="36" width="190" height="50" rx="4"></rect>
+<text class="lbl-strong" x="365.0" y="55.0" text-anchor="middle" font-size="12.5">等待 TTL 自然过期</text>
+<text class="lbl" x="365.0" y="73.5" text-anchor="middle" font-size="10.5">最长陈旧 15 分钟</text>
+<line class="edge" x1="220" y1="61" x2="270" y2="61" marker-end="url(#cc5-m)"></line>
+<text class="lbl" x="480" y="52" text-anchor="start" font-size="10">实现最简单；容忍陈旧时才可用</text>
+<text class="lbl" x="20" y="130" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">策略 B · 写时主动失效（signals / save 钩子）</text>
+<rect class="box" x="20" y="144" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="163.0" text-anchor="middle" font-size="12.5">post_save / m2m_changed</text>
+<text class="lbl" x="120.0" y="181.5" text-anchor="middle" font-size="10.5">监听 Module、Content</text>
+<rect class="box-a" x="270" y="144" width="190" height="50" rx="4"></rect>
+<text class="lbl-strong" x="365.0" y="163.0" text-anchor="middle" font-size="12.5">cache.delete(key)</text>
+<text class="lbl" x="365.0" y="181.5" text-anchor="middle" font-size="10.5">精确清除对应条目</text>
+<line class="edge" x1="220" y1="169" x2="270" y2="169" marker-end="url(#cc5-m)"></line>
+<text class="lbl" x="480" y="160" text-anchor="start" font-size="10">即时一致；要求 key 可推导、</text>
+<text class="lbl" x="480" y="175" text-anchor="start" font-size="10">且每条写路径都被覆盖到</text>
+<text class="lbl" x="20" y="238" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">策略 C · 版本化 key（推荐做法）</text>
+<rect class="box" x="20" y="252" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="271.0" text-anchor="middle" font-size="12.5">key 里嵌入 updated 时间戳</text>
+<text class="lbl" x="120.0" y="289.5" text-anchor="middle" font-size="10.5">course_1_v&lt;updated_ts&gt;</text>
+<rect class="box-a" x="270" y="252" width="190" height="50" rx="4"></rect>
+<text class="lbl-strong" x="365.0" y="271.0" text-anchor="middle" font-size="12.5">旧 key 自然失去引用</text>
+<text class="lbl" x="365.0" y="289.5" text-anchor="middle" font-size="10.5">无需 delete，靠 LRU 回收</text>
+<line class="edge" x1="220" y1="277" x2="270" y2="277" marker-end="url(#cc5-m)"></line>
+<text class="lbl" x="480" y="268" text-anchor="start" font-size="10">无失效竞态；代价是短期内</text>
+<text class="lbl" x="480" y="283" text-anchor="start" font-size="10">新旧两份并存占用内存</text></svg><figcaption class="cap">图 5 · 三种失效策略：本项目只用了最弱的 A，B 与 C 才是需要即时一致时的做法</figcaption></figure>
+
+<h3>5.1 这在本项目意味着什么</h3>
+<p>讲师在管理后台改完一节课的内容后：模板片段缓存要 10 分钟才过期，外层整页缓存要 15 分钟才过期，而且<strong>外层没过期时，里层过没过期根本不重要</strong>——整页缓存直接返回旧 HTML，模板压根不会重新渲染。所以真实的陈旧窗口是最外层的 15 分钟。</p>
+<p>对课件这种更新频率低、且晚几分钟看到也无所谓的内容，这个取舍是可以接受的，教材也明确是这么设计的。但如果换成「讲师发布了一条课程公告」，15 分钟的延迟就不可接受了。</p>
+
+<h3>5.2 三种做法的取舍</h3>
+<h4>A · 纯 TTL（现状）</h4>
+<p>最简单，零额外代码。适用前提是<strong>业务能容忍最长一个 TTL 的陈旧</strong>。选 TTL 时别只想「多久算新鲜」，也要想「击穿时数据库扛不扛得住」——TTL 越短，缓存重建越频繁。</p>
+
+<h4>B · 写时主动失效</h4>
+<p>用信号在数据变更时精确删除对应的 key：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># courses/signals.py
+from django.core.cache import cache
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+from .models import Content, Module, Subject
+
+
+@receiver([post_save, post_delete], sender=Content)
+def invalidate_module_fragment(sender, instance, **kwargs):
+    # 与模板里 {% cache 600 module_contents module.id %} 的 key 保持一致
+    from django.core.cache.utils import make_template_fragment_key
+    cache.delete(make_template_fragment_key(&#x27;module_contents&#x27;, [instance.module_id]))
+
+
+@receiver([post_save, post_delete], sender=Subject)
+def invalidate_subject_list(sender, **kwargs):
+    cache.delete(&#x27;all_subjects&#x27;)</code></pre></div>
+<blockquote class="callout-warn"><p><strong>主动失效的三个陷阱</strong>。其一，<code>QuerySet.update()</code> 和 <code>bulk_create()</code> <strong>不触发 <code>post_save</code></strong>——本项目的 <code>ModuleOrderView</code> 用的正是 <code>.update()</code>，信号方案会漏掉它。其二，key 必须能从被改的对象反推出来，这就要求 key 的构造规则在模板和信号两处保持同步，改一处忘一处就会静默失效。其三，删除和写入之间存在竞态：删除后、新值写入前，可能有请求把旧值又读回来重新缓存。</p></blockquote>
+
+<h4>C · 版本化 key（推荐）</h4>
+<p>不删任何东西，而是让 key 本身随数据变化。旧 key 立刻失去引用，由 Redis 的淘汰机制自然回收：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 模型上加一个 updated 时间戳
+class Module(models.Model):
+    ...
+    updated = models.DateTimeField(auto_now=True)
+
+    @property
+    def cache_version(self):
+        return int(self.updated.timestamp())</code></pre></div>
+<div class="codewrap"><div class="langtag">html</div><pre><code>{% cache 600 module_contents module.id module.cache_version %}
+  ...
+{% endcache %}</code></pre></div>
+<p>这个方案的好处是<strong>没有失效竞态，也不需要枚举所有写路径</strong>——只要数据变了，<code>updated</code> 就变，key 就变。代价是新旧两份内容会在 Redis 里短暂并存，多占一点内存，直到旧的被 TTL 或 LRU 清掉。</p>
+<p>Django 的 <code>CACHES['VERSION']</code> 提供了同样思路的全局版本：改数据结构时把它加一，所有旧 key 一次性失去引用，不需要 <code>FLUSHDB</code>，也不会误伤同一实例上的其他数据。</p>
+
+<h3>5.3 三个经典失效故障</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>现象</th><th>成因</th><th>应对</th></tr></thead>
+<tbody>
+<tr><td><strong>缓存穿透</strong><br>查一个不存在的 key</td><td>查询结果为空，从不写入缓存，每次都打到数据库</td><td>把「空结果」也缓存起来（用短 TTL），并用 <code>is None</code> 区分未命中——正是 <a href="#findings">F-03</a></td></tr>
+<tr><td><strong>缓存击穿</strong><br>热点 key 到期瞬间</td><td>大量并发同时未命中，一起去重建同一份数据</td><td>加分布式锁（<code>cache.add()</code> 天然是原子的，可当锁用），或让重建单例化</td></tr>
+<tr><td><strong>缓存雪崩</strong><br>大批 key 同时到期</td><td>同一时刻批量写入的缓存，TTL 也在同一时刻集体过期</td><td>TTL 加随机抖动，如 <code>600 + random.randint(0, 120)</code></td></tr>
+</tbody>
+</table>
+</div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 用 cache.add() 做重建锁：只有第一个请求能拿到锁去查库
+def get_expensive_data(key):
+    data = cache.get(key)
+    if data is not None:
+        return data
+    lock_key = f&#x27;{key}:lock&#x27;
+    if cache.add(lock_key, &#x27;1&#x27;, 30):        # add 只在 key 不存在时成功，是原子的
+        try:
+            data = expensive_query()
+            cache.set(key, data, 600 + random.randint(0, 120))   # 顺带抖动 TTL
+        finally:
+            cache.delete(lock_key)
+        return data
+    time.sleep(0.05)                        # 没抢到锁，短暂等待后重读
+    return cache.get(key) or expensive_query()</code></pre></div>
+
+</section><section class="chapter" id="separation">
+<h2>六、把缓存和业务数据分开</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 6 · 本仓库把四类负载塞进同一个 Redis：只有一类是真缓存，混用淘汰策略会静默吃掉业务数据"><defs>
+          <marker id="cc6-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc6-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="cc6-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="270" y="30" width="220" height="50" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="49.0" text-anchor="middle" font-size="12.5">单个 Redis 实例</text>
+<text class="lbl" x="380.0" y="67.5" text-anchor="middle" font-size="10.5">prod.py 里 redis://cache:6379</text>
+<rect class="box-a" x="20" y="150" width="165" height="66" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="177.0" text-anchor="middle" font-size="12.5">Django 缓存</text>
+<text class="lbl" x="102.5" y="195.5" text-anchor="middle" font-size="10.5">CACHES default</text>
+<text class="lbl" x="102.5" y="207.5" text-anchor="middle" font-size="10.5">可丢失 · 应设 maxmemory</text>
+<rect class="box-w" x="205" y="150" width="165" height="66" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="177.0" text-anchor="middle" font-size="12.5">Channels 层</text>
+<text class="lbl" x="287.5" y="195.5" text-anchor="middle" font-size="10.5">CHANNEL_LAYERS</text>
+<text class="lbl" x="287.5" y="207.5" text-anchor="middle" font-size="10.5">丢了就断聊天室</text>
+<rect class="box-w" x="390" y="150" width="165" height="66" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="177.0" text-anchor="middle" font-size="12.5">推荐引擎</text>
+<text class="lbl" x="472.5" y="195.5" text-anchor="middle" font-size="10.5">product:*:purchased_with</text>
+<text class="lbl" x="472.5" y="207.5" text-anchor="middle" font-size="10.5">丢了 = 业务数据永久丢失</text>
+<rect class="box-w" x="575" y="150" width="165" height="66" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="177.0" text-anchor="middle" font-size="12.5">浏览计数 / 排行</text>
+<text class="lbl" x="657.5" y="195.5" text-anchor="middle" font-size="10.5">image:*:views</text>
+<text class="lbl" x="657.5" y="207.5" text-anchor="middle" font-size="10.5">丢了 = 统计归零</text>
+<path class="edge" d="M340,80 Q200,110 100,150" marker-end="url(#cc6-m)"></path>
+<line class="edge" x1="360" y1="80" x2="285" y2="150" marker-end="url(#cc6-m)"></line>
+<line class="edge" x1="400" y1="80" x2="470" y2="150" marker-end="url(#cc6-m)"></line>
+<path class="edge" d="M420,80 Q560,110 655,150" marker-end="url(#cc6-m)"></path>
+<line x1="20" y1="250" x2="740" y2="250" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<rect class="box-a" x="20" y="268" width="350" height="110" rx="4"></rect>
+<text class="lbl-strong" x="195.0" y="317.0" text-anchor="middle" font-size="12.5">只有最左边这一列是「缓存」</text>
+<text class="lbl" x="195.0" y="335.5" text-anchor="middle" font-size="10.5">语义：丢失只损失性能，可以随时重建。</text>
+<text class="lbl" x="195.0" y="347.5" text-anchor="middle" font-size="10.5">可以安全地配 maxmemory-policy</text>
+<text class="lbl" x="195.0" y="359.5" text-anchor="middle" font-size="10.5">allkeys-lru 让 Redis 自动淘汰。</text>
+<rect class="box-w" x="390" y="268" width="350" height="110" rx="4"></rect>
+<text class="lbl-strong" x="565.0" y="317.0" text-anchor="middle" font-size="12.5">右边三列是「用 Redis 存的业务状态」</text>
+<text class="lbl" x="565.0" y="335.5" text-anchor="middle" font-size="10.5">语义：丢失即数据丢失，不可重建。</text>
+<text class="lbl" x="565.0" y="347.5" text-anchor="middle" font-size="10.5">若与缓存共用实例并开启 allkeys-lru，</text>
+<text class="lbl" x="565.0" y="359.5" text-anchor="middle" font-size="10.5">内存压力下会被静默淘汰。</text></svg><figcaption class="cap">图 6 · 本仓库把四类负载塞进同一个 Redis：只有一类是真缓存，混用淘汰策略会静默吃掉业务数据</figcaption></figure>
+<p>本仓库 <code>prod.py</code> 把 <code>CACHES</code> 和 <code>CHANNEL_LAYERS</code> 指向了同一个 <code>redis://cache:6379</code>（都是默认的 db 0），而 <code>myshop</code> 的推荐引擎用 <code>REDIS_DB = 1</code>。这意味着一旦给这个实例配上适合缓存的淘汰策略，通道层数据会和缓存一起被淘汰。</p>
+
+<h3>6.1 为什么这件事容易被忽略</h3>
+<p>因为<strong>不会报错</strong>。Redis 在内存达到 <code>maxmemory</code> 时按策略淘汰 key，被淘汰的推荐权重、浏览计数只是「读出来是 0」，业务逻辑照常运行，只是数据悄悄归零了。等发现推荐结果变差时，历史数据已经找不回来了。</p>
+
+<h3>6.2 三种隔离方式，按推荐程度排序</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>方式</th><th>做法</th><th>评价</th></tr></thead>
+<tbody>
+<tr><td><strong>独立实例</strong></td><td>缓存一个 Redis，业务数据另一个</td><td>最干净。淘汰策略、持久化配置、内存上限、监控指标全部可以独立设定，也便于缓存实例随时清空重建</td></tr>
+<tr><td><strong>同实例不同 db</strong></td><td><code>redis://cache:6379/0</code> 与 <code>/1</code></td><td>能防误删（<code>FLUSHDB</code> 只影响当前 db），<strong>但防不住淘汰</strong>——<code>maxmemory-policy</code> 是实例级的，<code>allkeys-*</code> 会跨所有 db 淘汰</td></tr>
+<tr><td><strong>同 db 靠前缀</strong></td><td><code>KEY_PREFIX</code> 区分</td><td>只解决命名冲突，不解决任何运维问题。当前项目基本处于这个状态</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>6.3 淘汰策略怎么选</h3>
+<div class="codewrap"><div class="langtag">bash</div><pre><code># 纯缓存实例：内存满了就按 LRU 淘汰，这正是我们想要的
+maxmemory 2gb
+maxmemory-policy allkeys-lru
+
+# 存业务数据的实例：只淘汰显式设了过期时间的 key，
+# 没设 TTL 的（推荐权重、浏览计数）永远不动；
+# 内存真的满了宁可写入报错，也不要静默丢数据
+maxmemory 1gb
+maxmemory-policy volatile-lru      # 或 noeviction</code></pre></div>
+<blockquote><p><code>noeviction</code> 在内存满时会让写命令直接返回错误。听起来很糟，但对业务数据来说，<strong>一个响亮的错误远好过静默的数据丢失</strong>——前者会立刻触发告警，后者可能几个月都没人发现。</p></blockquote>
+
+<h3>6.4 顺带一提：session 后端</h3>
+<p>把 session 也放 Redis 是常见做法，但要注意 <code>django.contrib.sessions.backends.cache</code>（纯缓存）和 <code>cached_db</code>（缓存 + 数据库兜底）的区别：前者在 Redis 被清空或 key 被淘汰时会让<strong>所有用户瞬间登出</strong>。如果用纯 cache 后端，就更不能和会被 <code>FLUSHDB</code> 的缓存共用实例。</p>
+
+</section><section class="chapter" id="checklist">
+<h2>七、上线前检查清单</h2>
+
+<ul class="check">
+<li><span class="mk">01</span><span><b>显式写 <code>TIMEOUT</code></b>。不写就是 300 秒，而这个数字在代码里完全不可见，读代码的人无从得知。</span></li>
+<li><span class="mk">02</span><span><b>设 <code>KEY_PREFIX</code> 和 <code>VERSION</code></b>。前者隔离环境（dev/staging/prod 共用一个 Redis 是很常见的），后者让你能在改缓存结构时一键作废旧数据。</span></li>
+<li><span class="mk">03</span><span><b>设 socket 超时</b>。不设的话 Redis 一卡，web worker 会跟着一起挂住，缓存反而成了可用性的单点。</span></li>
+<li><span class="mk">04</span><span><b>缓存不可用时应用要能降级</b>。Redis 挂掉应该是「变慢」，不是「500」。内置后端在连接失败时会抛异常，关键路径需要自己包 try/except 兜底。</span></li>
+<li><span class="mk">05</span><span><b>用 <code>is None</code> 判断未命中</b>，不要用 <code>if not value</code>。见 F-03。</span></li>
+<li><span class="mk">06</span><span><b>任何 <code>cache_page</code> 都要先回答「这个响应能给任何人看吗」</b>。答案是否定的就别用，或至少加内层 <code>vary_on_cookie</code>。见 F-01。</span></li>
+<li><span class="mk">07</span><span><b><code>{% cache %}</code> 的 vary 参数传 <code>pk</code>，不传模型实例</b>。见 F-02。</span></li>
+<li><span class="mk">08</span><span><b>缓存和业务数据分实例</b>，至少要保证淘汰策略不会误伤业务数据。见第六节。</span></li>
+<li><span class="mk">09</span><span><b>TTL 加随机抖动</b>，避免批量写入的缓存集体到期造成雪崩。</span></li>
+<li><span class="mk">10</span><span><b>Redis 必须设密码且不暴露公网</b>。默认 pickle 序列化意味着能写你 Redis 的人 = 能在你的 web 进程里执行代码。</span></li>
+<li><span class="mk">11</span><span><b>监控命中率</b>。<code>redis-cli INFO stats</code> 里的 <code>keyspace_hits</code> / <code>keyspace_misses</code>。命中率长期偏低说明 key 设计有问题（比如 F-01 修复后按 Cookie 分片就会导致这种情况）。</span></li>
+<li><span class="mk">12</span><span><b>别缓存已经很快的东西</b>。<em>Two Scoops</em> 的原话是先测量再缓存——缓存本身有序列化、网络往返和一致性成本，给一个 2ms 的查询加缓存往往是净亏。</span></li>
+</ul>
+
+</section><section class="chapter" id="compare">
+<h2>八、同样的场景：Spring 与 Hono.js 怎么做</h2>
+<p>用同一个具体场景横向对比：<strong>「课程详情页，内容对所有人一致，渲染昂贵，希望缓存 10 分钟」</strong>，以及它的变体<strong>「同一个页面，但要按登录用户区分」</strong>。</p><h3>8.1 基础缓存：把一次昂贵查询的结果缓起来</h3><div class="cmp three"><div class="fw"><h4>Django 5.2</h4><div class="fwbody"><p>装饰器（视图级）或命令式 API（低级）。缓存后端由 <code>CACHES</code> 全局配置决定，业务代码里看不到 Redis。</p><pre>from django.core.cache import cache
+
+def get_course(pk):
+    key = f&#x27;course:{pk}&#x27;
+    course = cache.get(key)
+    if course is None:
+        course = Course.objects.get(pk=pk)
+        cache.set(key, course, 600)
+    return course
+
+# 或一行搞定
+course = cache.get_or_set(
+    f&#x27;course:{pk}&#x27;,
+    lambda: Course.objects.get(pk=pk),
+    600)</pre><ul><li>序列化默认 pickle，可以直接缓存模型实例乃至 QuerySet</li><li>失效要自己写，框架不提供任何声明式支持</li></ul></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><p>声明式注解，靠 AOP 代理拦截方法调用，缓存逻辑完全不进业务代码。</p><pre>@Service
+public class CourseService {
+
+  @Cacheable(value = &quot;courses&quot;, key = &quot;#id&quot;)
+  public Course getCourse(Long id) {
+      return repo.findById(id).orElseThrow();
+  }
+
+  @CacheEvict(value = &quot;courses&quot;, key = &quot;#c.id&quot;)
+  public Course update(Course c) {
+      return repo.save(c);
+  }
+}</pre><ul><li><code>@Cacheable</code> / <code>@CachePut</code> / <code>@CacheEvict</code> 覆盖读、写、失效</li><li>失效是<strong>声明式</strong>的，这是相对 Django 最大的优势</li><li>依赖 AOP 代理：<strong>同类内部自调用不走缓存</strong>，经典陷阱</li></ul></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><p>没有内置的数据缓存抽象，一切手写。边缘环境通常配 Upstash 这类走 HTTP 协议的 Redis。</p><pre>import { Redis } from &#x27;@upstash/redis/cloudflare&#x27;
+
+app.get(&#x27;/course/:id&#x27;, async (c) =&gt; {
+  const redis = Redis.fromEnv(c.env)
+  const id = c.req.param(&#x27;id&#x27;)
+  const key = `course:${id}`
+
+  const hit = await redis.get(key)
+  if (hit) return c.json(hit)
+
+  const course = await db.course(id)
+  await redis.set(key, course, { ex: 600 })
+  return c.json(course)
+})</pre><ul><li>值必须是 JSON，没有 pickle 那种「什么都能存」</li><li>Serverless 无常驻连接池，所以走 HTTP 而非 TCP 长连接</li></ul></div></div></div><h3>8.2 整页 / 响应级缓存与「按用户区分」</h3><div class="cmp three"><div class="fw"><h4>Django 5.2</h4><div class="fwbody"><pre>path(&#x27;course/&lt;pk&gt;/&#x27;,
+  cache_page(600)(
+    vary_on_cookie(View.as_view())
+  ))</pre><p>用 <code>Vary</code> 响应头驱动分片，<strong>装饰器嵌套顺序决定成败</strong>——正是 F-01 的坑。</p><p>框架不会警告你把 <code>cache_page</code> 加到了一个 <code>LoginRequiredMixin</code> 视图上。</p></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><pre>@Cacheable(
+  value = &quot;coursePages&quot;,
+  key = &quot;{#id, authentication.name}&quot;)
+public String renderPage(Long id) { ... }</pre><p>用户维度是<strong>显式写进 SpEL key</strong> 的，读代码时一眼能看出这份缓存按什么分片——比 Django 依赖隐式 <code>Vary</code> 头透明得多，也更难写错。</p><p>HTTP 层缓存另有 <code>CacheControl</code> 与 <code>ShallowEtagHeaderFilter</code>，与数据缓存是两套独立机制。</p></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><pre>import { cache } from &#x27;hono/cache&#x27;
+
+app.get(&#x27;/course/*&#x27;, cache({
+  cacheName: &#x27;courses&#x27;,
+  cacheControl: &#x27;max-age=600&#x27;,
+}))</pre><p>内置 <code>cache()</code> 中间件走的是 <strong>Web Cache API</strong>（Cloudflare Workers / Deno），不是 Redis；Node 上没有 <code>caches</code> 全局对象，用不了。</p><p>它按 URL 缓存，<strong>没有 <code>Vary</code> 那套自动机制</strong>——要按用户区分只能自己拼 key，或干脆别用这个中间件。</p></div></div></div><h3>8.3 三者的取舍总结</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>维度</th><th>Django 5.2</th><th>Spring Boot 3.x</th><th>Hono.js</th></tr></thead>
+<tbody>
+<tr><td>缓存抽象</td><td>四层级（站点 / 视图 / 片段 / 低级 API）</td><td>方法级注解，统一抽象</td><td>基本没有，HTTP 响应级中间件 + 手写</td></tr>
+<tr><td>Redis 接入</td><td>内置后端，<code>CACHES</code> 一处配置</td><td><code>spring-boot-starter-data-redis</code> + <code>RedisCacheManager</code></td><td>第三方客户端（<code>ioredis</code> / <code>@upstash/redis</code>）</td></tr>
+<tr><td>声明式失效</td><td><strong>无</strong>，全手写</td><td><strong>有</strong>，<code>@CacheEvict</code></td><td>无，全手写</td></tr>
+<tr><td>默认序列化</td><td>pickle（能存模型实例，但有代码执行风险）</td><td>JDK 序列化，通常换成 Jackson JSON</td><td>JSON（唯一选择）</td></tr>
+<tr><td>按用户分片</td><td>隐式，靠 <code>Vary</code> 头，<strong>易错</strong></td><td>显式，写进 SpEL key</td><td>显式，自己拼 key</td></tr>
+<tr><td>击穿保护</td><td>无内置，需自己用 <code>cache.add()</code> 加锁</td><td><code>@Cacheable(sync=true)</code>，但只是<strong>单 JVM 内</strong>的锁</td><td>无，需自己实现</td></tr>
+<tr><td>模板片段缓存</td><td><strong>有</strong>，<code>{% cache %}</code> 标签</td><td>无对应机制（Thymeleaf 需第三方扩展）</td><td>不适用（通常返回 JSON）</td></tr>
+<tr><td>典型部署形态</td><td>常驻进程，TCP 连接池</td><td>常驻 JVM，Lettuce 连接池</td><td>Serverless / 边缘，倾向 HTTP 协议客户端</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>三句话概括</h4>
+<ul>
+<li><strong>Spring 的强项是声明式失效和显式 key。</strong><code>@CacheEvict</code> 让「什么时候该清缓存」和业务方法写在一起，SpEL key 则强迫你把分片维度写明白——本文的 F-01 与 F-02 在 Spring 的写法下都不容易发生。代价是 AOP 代理的自调用陷阱，以及注解背后到底发生了什么不够直观。</li>
+<li><strong>Django 的强项是分层完整、开箱即用</strong>，尤其模板片段缓存这一层，Spring 和 Hono 都没有对应物，而它恰恰是「页面大部分公共、小部分私有」这类场景最合适的工具。弱点是失效全靠手写，且 <code>Vary</code> 驱动的隐式分片容易踩坑。</li>
+<li><strong>Hono 的定位根本不同。</strong>它假设你在边缘运行，首选是 CDN / Web Cache API 这类<strong>离用户更近</strong>的缓存，而不是回源到 Redis；确实需要共享状态时，因为 Serverless 没有常驻连接池，走 HTTP 协议的 Redis（Upstash）才是常态。它什么抽象都不给你，好处是没有隐式行为可踩，坏处是每个缓存点都得自己想清楚 key、TTL 和失效。</li>
+</ul>
+
+</section>
+    <div class="footdoc">
+      由 Claude 对照本仓库源码与 Django 5.2 源码整理生成 · 实测结论基于本机 Django 5.2 复现 · 图示为教学示意
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>
