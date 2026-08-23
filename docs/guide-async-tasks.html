@@ -1,0 +1,1369 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>异步任务实战指南</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext x=%2250%22 y=%2262%22 font-size=%2262%22 text-anchor=%22middle%22%3E%E2%9A%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif CJK SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram svg .box{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.25; }
+.diagram svg .box-a{ fill:var(--accent2-soft); stroke:var(--accent2); stroke-width:1.25; }
+.diagram svg .box-w{ fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.25; }
+.diagram svg text{ font-family:var(--font-mono); dominant-baseline:middle; }
+.diagram svg .lbl{ fill:var(--ink-soft); }
+.diagram svg .lbl-strong{ fill:var(--ink); font-weight:700; }
+.diagram svg .lbl-accent{ fill:var(--accent2-strong); font-weight:700; }
+.diagram svg .lbl-warn{ fill:var(--danger); font-weight:700; }
+.diagram svg .edge{ stroke:var(--ink-faint); stroke-width:1.4; fill:none; }
+.diagram svg .edge-a{ stroke:var(--accent2); stroke-width:1.6; fill:none; }
+.diagram svg .edge-w{ stroke:var(--danger); stroke-width:1.6; fill:none; }
+.diagram svg .edge-dashed{ stroke-dasharray:4 3; }
+.diagram svg marker path{ fill:var(--ink-faint); }
+.diagram svg marker.m-a path{ fill:var(--accent2); }
+.diagram svg marker.m-w path{ fill:var(--danger); }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+
+
+:root{
+  --ok:#2f6d3f; --ok-soft:#e4f0e5; --ok-line:#8fbf9b;
+  --sev-hi:#9c3b2c; --sev-mid:#a86a0b; --sev-lo:#5b6357;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+    --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+  }
+}
+:root[data-theme="dark"]{
+  --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+  --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+}
+
+/* ---- lede / summary panel ---- */
+.lede{
+  border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:22px 24px; margin:0 0 30px; box-shadow:var(--shadow);
+}
+.lede h3{ margin:0 0 12px; font-size:.83rem; font-family:var(--font-mono);
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent2); font-weight:700; }
+.lede ol{ margin:0; padding-left:1.3em; }
+.lede li{ margin:0 0 .55em; }
+.lede li:last-child{ margin-bottom:0; }
+
+/* ---- finding cards ---- */
+.finding{
+  border:1px solid var(--line-strong); border-left:4px solid var(--sev-hi);
+  border-radius:5px; background:var(--surface); padding:18px 20px; margin:0 0 20px;
+  box-shadow:var(--shadow);
+}
+.finding.mid{ border-left-color:var(--sev-mid); }
+.finding.lo{ border-left-color:var(--sev-lo); }
+.finding .fhead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.finding .fid{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.09em; font-weight:700;
+  color:var(--paper); background:var(--sev-hi); padding:2px 7px; border-radius:3px;
+}
+.finding.mid .fid{ background:var(--sev-mid); }
+.finding.lo .fid{ background:var(--sev-lo); }
+.finding .ftitle{ font-weight:700; font-size:1.02rem; color:var(--ink); flex:1 1 auto; min-width:12ch; }
+.finding .fmeta{ font-family:var(--font-mono); font-size:.72rem; color:var(--ink-faint); }
+.finding p{ margin:0 0 .85em; }
+.finding p:last-child{ margin-bottom:0; }
+.finding dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:baseline; }
+.finding dt{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); white-space:nowrap; padding-top:.15em;
+}
+.finding dd{ margin:0; }
+
+/* ---- verified evidence terminal ---- */
+.term{
+  border:1px solid var(--code-border); border-radius:6px; overflow:hidden;
+  margin:0 0 1.3em; box-shadow:var(--shadow);
+}
+.term .thead{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ok); background:var(--ok-soft); padding:6px 14px; border-bottom:1px solid var(--ok-line);
+  display:flex; align-items:center; gap:8px;
+}
+.term pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink); padding:14px 16px;
+  overflow-x:auto; font-family:var(--font-mono); font-size:.8rem; line-height:1.6;
+}
+.term pre b{ color:var(--danger); font-weight:700; }
+.term pre i{ color:var(--ok); font-style:normal; font-weight:700; }
+
+/* ---- good / bad code pairing ---- */
+.pair{ display:grid; gap:14px; margin:0 0 1.4em; }
+@media (min-width:820px){ .pair.two{ grid-template-columns:1fr 1fr; } }
+.pane{ border:1px solid var(--code-border); border-radius:6px; overflow:hidden; min-width:0; }
+.pane > .ph{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  padding:6px 13px; border-bottom:1px solid var(--code-border); font-weight:700;
+}
+.pane.bad > .ph{ color:var(--danger); background:var(--danger-soft); }
+.pane.good > .ph{ color:var(--ok); background:var(--ok-soft); }
+.pane pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink);
+  padding:14px 16px; overflow-x:auto; font-family:var(--font-mono);
+  font-size:.79rem; line-height:1.62;
+}
+
+/* ---- three-way framework comparison ---- */
+.cmp{ display:grid; gap:14px; margin:0 0 1.6em; }
+@media (min-width:900px){ .cmp.three{ grid-template-columns:repeat(3,1fr); } }
+.fw{ border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:0 0 16px; min-width:0; box-shadow:var(--shadow); overflow:hidden; }
+.fw > h4{
+  margin:0 0 12px; padding:10px 16px; font-size:.86rem; font-family:var(--font-mono);
+  letter-spacing:.06em; font-weight:700; border-bottom:1px solid var(--line);
+  background:var(--surface-2); color:var(--accent2-strong);
+}
+.fw .fwbody{ padding:0 16px; }
+.fw p{ margin:0 0 .8em; font-size:.9rem; }
+.fw pre{
+  margin:0 0 .9em; background:var(--code-bg); border:1px solid var(--code-border);
+  border-radius:5px; padding:11px 12px; overflow-x:auto;
+  font-family:var(--font-mono); font-size:.74rem; line-height:1.55; color:var(--code-ink);
+}
+.fw ul{ margin:0; padding-left:1.15em; font-size:.86rem; }
+.fw li{ margin:0 0 .42em; }
+
+/* ---- decision matrix ---- */
+.matrix{ overflow-x:auto; margin:0 0 1.5em; border:1px solid var(--line); border-radius:6px; }
+.matrix table{ width:100%; border-collapse:collapse; font-size:.86rem; min-width:640px; margin:0; }
+.matrix th{
+  text-align:left; padding:10px 13px; background:var(--accent2-soft); color:var(--accent2-strong);
+  font-weight:700; border-bottom:1px solid var(--line-strong); vertical-align:bottom;
+}
+.matrix td{ padding:10px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.matrix tr:last-child td{ border-bottom:none; }
+.matrix tr:nth-child(even) td{ background:var(--surface-2); }
+.matrix td.lv{ font-family:var(--font-mono); font-weight:700; color:var(--accent-strong); white-space:nowrap; }
+
+/* ---- checklist ---- */
+.check{ list-style:none; padding:0; margin:0 0 1.5em; display:flex; flex-direction:column; gap:10px; }
+.check li{
+  display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:baseline;
+  border:1px solid var(--line); border-radius:5px; padding:12px 15px; background:var(--surface);
+  margin:0; font-size:.93rem;
+}
+.check li > .mk{ font-family:var(--font-mono); font-weight:700; color:var(--accent2); font-size:.8rem; }
+.check li b{ color:var(--accent-strong); }
+
+/* the guide uses one <h2> per section like the chapter pages, so inherit that rule */
+.chapter h4{ font-size:.97rem; margin:1.7em 0 .6em; font-weight:700; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5.2 · 专题指南</span>
+      <h1>&#x2699;&#xFE0F;&nbsp; 异步任务实战指南</h1>
+      <p>Celery 的接线、投递语义与幂等设计，对照本仓库 myshop 与 educa 的真实异步代码逐处分析，并与 Spring、Hono.js 的同场景做法对比。</p>
+    </div>
+    <nav>
+      <a href="#tldr"><span class="n">速览</span>本文结论速览</a><a href="#wiring"><span class="n">接线</span>Celery 的四个部分与本仓库的接线现状</a><a href="#audit"><span class="n">现状</span>本仓库异步代码逐处分析</a><a href="#findings"><span class="n">缺陷</span>九个已验证的问题与修复</a><a href="#reliability"><span class="n">可靠</span>可靠性：投递语义与幂等</a><a href="#checklist"><span class="n">清单</span>上线前检查清单</a><a href="#compare"><span class="n">对比</span>同样的异步任务：Spring 与 Hono.js 怎么做</a>
+    </nav>
+    <div class="series">
+      <div class="label">相关阅读</div>
+      <a href="guide-pagination.html">&#x1F4D1; 分页实战指南</a>
+      <a href="guide-rest-api.html">&#x1F50C; DRF 接口实战指南</a>
+      <a href="guide-redis-caching.html">&#x26A1; Redis 缓存实战指南</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">专题指南 · 接线 / 可靠性 / 缺陷分析 / 横向对比</span>
+      <h1>Django 异步任务实战指南</h1>
+      <p class="sub">面向 Django 5.2 + Celery 5.4。所有关于框架行为的论断均在本机实测验证，代码分析来自本仓库 <code>Chapter08~11</code> 的 myshop 与 <code>Chapter16~17</code> 的 educa。</p>
+      <div class="meta">
+        <span>Django 5.2 · Celery 5.4.0</span>
+        <span>含 6 张架构示意图</span>
+        <span>9 个已验证的问题</span>
+      </div>
+    </div>
+    <section class="chapter" id="tldr">
+<h2>本文结论速览</h2>
+
+<div class="lede">
+<h3>三条最重要的结论</h3>
+<ol>
+<li><strong>本仓库的 Celery 从来没有真正跑起来过。</strong> 四章 <code>settings.py</code> 里<strong>一个 <code>CELERY_*</code> 配置都没有</strong>，<code>broker_url</code> 解析为 <code>None</code>，实际落到默认的 <code>amqp://guest:**@localhost:5672//</code>；而 <code>requirements.txt</code> 装的是 redis，四章 <code>docker-compose.yml</code> 里<strong>既没有 broker 服务也没有 worker 服务</strong>。详见 <a href="#findings">F-01</a>。</li>
+<li><strong><code>.delay()</code> 是同步的网络调用，它失败会让整个结算流程 500。</strong> 实测 broker 不可达时 <code>.delay()</code> 阻塞 610 ms 后抛 <code>OperationalError</code>——而此时订单已写库、购物车已清空、支付页面拿不到。详见 <a href="#findings">F-02</a>。</li>
+<li><strong>Stripe webhook 没有幂等守卫，重投一次就把副作用翻倍。</strong> 实测同一 event 重投 3 次：推荐分数变成 3（应为 1），发票邮件任务派发 3 次（应为 1）。而 <code>.delay()</code> 失败本身就会导致 500 → 触发 Stripe 重投，两个缺陷会互相放大。详见 <a href="#findings">F-03</a>。</li>
+</ol>
+</div>
+<p>本文结构与前三篇指南一致：先讲 <strong>Celery 的构成与本仓库的接线现状</strong>，再<strong>逐处分析仓库里的异步代码</strong>，然后是<strong>九个已验证的问题及修复</strong>、<strong>可靠性专题</strong>，最后是<strong>上线清单</strong>与 <strong>Spring / Hono.js 对比</strong>。所有关于 Celery 行为的论断都在本机 Celery 5.4.0 + Django 5.2 上实测验证，实测输出以绿色标题的终端块标注。</p>
+<blockquote><p><strong>一个测量环境的说明</strong>：本机恰好有进程监听 5672 端口，直接调 <code>.delay()</code> 反而会「成功」——这是环境巧合，不是仓库配置正确。下文所有关于「broker 不可达」的实测，都是把 broker 显式指向一个确定无人监听的端口来模拟仓库 docker-compose 的真实情形（compose 里根本没有 broker 服务）。这一点我在测试里做了区分，不想把环境噪音当成结论。</p></blockquote>
+
+</section><section class="chapter" id="wiring">
+<h2>一、Celery 的四个部分与本仓库的接线现状</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 420" role="img" aria-label="图 1 · Celery 的四个组成部分：本仓库把生产者写对了，Broker、Worker、Result Backend 三样都没有"><defs>
+          <marker id="dk1-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk1-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk1-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="40" width="170" height="68" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="68.0" text-anchor="middle" font-size="12.5">① 生产者</text>
+<text class="lbl" x="105.0" y="86.5" text-anchor="middle" font-size="10.5">Django 视图</text>
+<text class="lbl" x="105.0" y="98.5" text-anchor="middle" font-size="10.5">order_created.delay()</text>
+<rect class="box-w" x="250" y="40" width="180" height="68" rx="4"></rect>
+<text class="lbl-strong" x="340.0" y="68.0" text-anchor="middle" font-size="12.5">② Broker（消息队列）</text>
+<text class="lbl" x="340.0" y="86.5" text-anchor="middle" font-size="10.5">本仓库未配置</text>
+<text class="lbl" x="340.0" y="98.5" text-anchor="middle" font-size="10.5">默认落到 RabbitMQ</text>
+<rect class="box-w" x="490" y="40" width="170" height="68" rx="4"></rect>
+<text class="lbl-strong" x="575.0" y="68.0" text-anchor="middle" font-size="12.5">③ Worker</text>
+<text class="lbl" x="575.0" y="86.5" text-anchor="middle" font-size="10.5">本仓库没有</text>
+<text class="lbl" x="575.0" y="98.5" text-anchor="middle" font-size="10.5">celery worker 服务</text>
+<line class="edge" x1="190" y1="74" x2="250" y2="74" marker-end="url(#dk1-m)"></line>
+<text class="lbl" x="220.0" y="69.0" text-anchor="middle" font-size="10">发布任务</text>
+<line class="edge" x1="430" y1="74" x2="490" y2="74" marker-end="url(#dk1-m)"></line>
+<text class="lbl" x="460.0" y="69.0" text-anchor="middle" font-size="10">消费任务</text>
+<rect class="box-w" x="490" y="158" width="170" height="62" rx="4"></rect>
+<text class="lbl-strong" x="575.0" y="183.0" text-anchor="middle" font-size="12.5">④ Result Backend</text>
+<text class="lbl" x="575.0" y="201.5" text-anchor="middle" font-size="10.5">未配置</text>
+<text class="lbl" x="575.0" y="213.5" text-anchor="middle" font-size="10.5">任务结果无处可查</text>
+<line class="edge-w edge-dashed" x1="575" y1="108" x2="575" y2="158" marker-end="url(#dk1-mw)"></line>
+<line x1="20" y1="250" x2="740" y2="250" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="272" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">本仓库的实际配置状况</text>
+<rect class="box-w" x="20" y="286" width="230" height="76" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="318.0" text-anchor="middle" font-size="12.5">settings.py</text>
+<text class="lbl" x="135.0" y="336.5" text-anchor="middle" font-size="10.5">四章都没有任何 CELERY_* 配置</text>
+<text class="lbl" x="135.0" y="348.5" text-anchor="middle" font-size="10.5">=&gt; broker_url = None</text>
+<rect class="box-w" x="280" y="286" width="210" height="76" rx="4"></rect>
+<text class="lbl-strong" x="385.0" y="318.0" text-anchor="middle" font-size="12.5">requirements.txt</text>
+<text class="lbl" x="385.0" y="336.5" text-anchor="middle" font-size="10.5">装了 redis 与 flower</text>
+<text class="lbl" x="385.0" y="348.5" text-anchor="middle" font-size="10.5">但 broker 默认指向 RabbitMQ</text>
+<rect class="box-w" x="520" y="286" width="220" height="76" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="318.0" text-anchor="middle" font-size="12.5">docker-compose.yml</text>
+<text class="lbl" x="630.0" y="336.5" text-anchor="middle" font-size="10.5">四章都没有 broker 服务</text>
+<text class="lbl" x="630.0" y="348.5" text-anchor="middle" font-size="10.5">也没有 worker 服务</text>
+<text class="lbl-warn" x="20" y="390" text-anchor="start" font-size="11">结论：代码层面 Celery 接线完整（app、autodiscover、shared_task 都对），但运行时四件套缺了三件。</text></svg><figcaption class="cap">图 1 · Celery 的四个组成部分：本仓库把生产者写对了，Broker、Worker、Result Backend 三样都没有</figcaption></figure>
+
+<h3>1.1 代码层面：写得是对的</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># myshop/celery.py
+import os
+from celery import Celery
+
+os.environ.setdefault(&#x27;DJANGO_SETTINGS_MODULE&#x27;, &#x27;myshop.settings&#x27;)
+
+app = Celery(&#x27;myshop&#x27;)
+app.config_from_object(&#x27;django.conf:settings&#x27;, namespace=&#x27;CELERY&#x27;)
+app.autodiscover_tasks()</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># myshop/__init__.py —— 让 Django 启动时就加载 Celery app
+from .celery import app as celery_app
+
+__all__ = [&#x27;celery_app&#x27;]</code></pre></div>
+<p>这两段是 Celery 官方推荐的标准接线，仓库写得完全正确。<code>namespace='CELERY'</code> 的意思是：到 Django settings 里去找所有 <code>CELERY_</code> 开头的配置项，去掉前缀后作为 Celery 配置。<code>autodiscover_tasks()</code> 会自动扫描每个 app 下的 <code>tasks.py</code>。</p>
+
+<h3>1.2 配置层面：什么都没有</h3>
+<div class="term"><div class="thead">实测 · 照抄仓库配置后解析出的实际值</div><pre>settings 里的 CELERY_BROKER_URL : (不存在)
+app.conf.broker_url            : <b>None</b>
+实际连接地址                    : <b>amqp://guest:**@localhost:5672//</b>
+result_backend                 : None
+task_acks_late                 : False
+task_time_limit                : None</pre></div>
+<p>因为一个 <code>CELERY_*</code> 都没有，Celery 全部用默认值。默认 broker 是 RabbitMQ 的 <code>amqp://localhost:5672</code>——而仓库既没装 RabbitMQ，<code>requirements.txt</code> 里装的是 <code>redis==5.0.4</code>。</p>
+<blockquote class="callout-warn"><p><strong>这不是「配置错了」，而是「配置根本不存在」。</strong> Chapter08 引入 Celery，Chapter09~11 一直在用（新增了 <code>payment_completed</code> 任务），但四章的 <code>settings.py</code> 里始终没有 <code>CELERY_BROKER_URL</code>，四章的 <code>docker-compose.yml</code> 里始终没有 broker 服务、没有 worker 服务。<code>flower==2.0.1</code> 也躺在 <code>requirements.txt</code> 里从未被接线——没有对应的 compose 服务，也没有任何文档提到它。</p>
+<p>书里是让读者<strong>在本机手动装 RabbitMQ 并手动起 worker</strong> 的，这在教学上说得通；但如果照着 <code>docker-compose up</code> 跑，异步任务这条链路是断的。</p></blockquote>
+
+<h3>1.3 补全配置该写什么</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># settings.py —— 复用已有的 Redis（Chapter11 的 compose 里已有 cache 服务）
+import os
+
+REDIS_URL = os.environ.get(&#x27;REDIS_URL&#x27;, &#x27;redis://cache:6379&#x27;)
+
+CELERY_BROKER_URL = f&#x27;{REDIS_URL}/0&#x27;
+CELERY_RESULT_BACKEND = f&#x27;{REDIS_URL}/1&#x27;      # 与 broker 分开用不同的 db
+
+# 序列化：只允许 json，别用 pickle（pickle 反序列化等于执行任意代码）
+CELERY_TASK_SERIALIZER = &#x27;json&#x27;
+CELERY_RESULT_SERIALIZER = &#x27;json&#x27;
+CELERY_ACCEPT_CONTENT = [&#x27;json&#x27;]
+
+# 时区跟 Django 保持一致，否则 beat 的定时会对不上
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# 可靠性（详见第四节）
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_TIME_LIMIT = 300
+CELERY_TASK_SOFT_TIME_LIMIT = 240
+
+# 结果别留太久，否则 Redis 会被慢慢撑满
+CELERY_RESULT_EXPIRES = 3600</code></pre></div>
+<div class="codewrap"><div class="langtag">yaml</div><pre><code># docker-compose.yml —— 补上缺失的两个服务
+services:
+  cache:
+    image: redis:7.2.4
+    restart: always
+    volumes:
+      - ./data/cache:/data
+
+  worker:
+    build: .
+    command: celery -A myshop worker -l info --concurrency=4
+    volumes:
+      - .:/code
+    environment:
+      - DJANGO_SETTINGS_MODULE=myshop.settings
+      - REDIS_URL=redis://cache:6379
+    depends_on:
+      - cache
+      - db
+
+  beat:                     # 需要定时任务时才加；注意 beat 必须单实例
+    build: .
+    command: celery -A myshop beat -l info
+    volumes:
+      - .:/code
+    environment:
+      - DJANGO_SETTINGS_MODULE=myshop.settings
+      - REDIS_URL=redis://cache:6379
+    depends_on:
+      - cache</code></pre></div>
+<blockquote><p><strong>用 Redis 还是 RabbitMQ 做 broker？</strong> Redis 部署简单、延迟低，缺点是它<strong>不是</strong>为消息队列设计的——没有原生的消息确认与持久化保证，worker 崩溃时靠 <code>visibility_timeout</code> 兜底，配置不当会导致任务重复执行。RabbitMQ 有完整的 ack / 死信 / 优先级机制，代价是多一个中间件要运维。教学项目和中小流量用 Redis 完全够；订单、支付这类<strong>丢一条就是事故</strong>的任务，RabbitMQ 更稳妥。而本仓库把 Redis 同时当缓存、通道层、推荐引擎存储用（见<a href="guide-redis-caching.html">缓存指南</a>第六节），再叠一个 broker 上去，就更该考虑拆实例了。</p></blockquote>
+
+</section><section class="chapter" id="audit">
+<h2>二、本仓库异步代码逐处分析</h2>
+
+<h3>2.1 两个 Celery 任务</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># orders/tasks.py
+@shared_task
+def order_created(order_id):
+    order = Order.objects.get(id=order_id)
+    subject = f&#x27;Order nr. {order.id}&#x27;
+    message = (f&#x27;Dear {order.first_name},\n\n&#x27;
+               f&#x27;You have successfully placed an order.&#x27;
+               f&#x27;Your order ID is {order.id}.&#x27;)
+    mail_sent = send_mail(subject, message, &#x27;admin@myshop.com&#x27;, [order.email])
+    return mail_sent</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># payment/tasks.py
+@shared_task
+def payment_completed(order_id):
+    order = Order.objects.get(id=order_id)
+    email = EmailMessage(f&#x27;My Shop - Invoice no. {order.id}&#x27;, ..., [order.email])
+    html = render_to_string(&#x27;orders/order/pdf.html&#x27;, {&#x27;order&#x27;: order})
+    out = BytesIO()
+    stylesheets = [weasyprint.CSS(finders.find(&#x27;css/pdf.css&#x27;))]
+    weasyprint.HTML(string=html).write_pdf(out, stylesheets=stylesheets)   # CPU 密集
+    email.attach(f&#x27;order_{order.id}.pdf&#x27;, out.getvalue(), &#x27;application/pdf&#x27;)
+    email.send()</code></pre></div>
+<p><strong>两处写得对的地方，值得先肯定：</strong></p>
+<ul>
+<li><strong>用 <code>@shared_task</code> 而不是 <code>@app.task</code></strong>。前者不绑定具体的 Celery app 实例，任务所在的 app 可以被独立复用，这是可重用 Django app 的标准写法。</li>
+<li><strong>参数传 <code>order_id</code> 而不是 <code>order</code> 对象</strong>。这是异步任务最重要的一条纪律：任务参数要经过序列化跨进程传递，传 ORM 对象既会失败（或退化成 pickle，带来安全问题），也会让 worker 拿到一份<strong>过期的快照</strong>。传 id、由 worker 自己去查最新状态，才是对的。</li>
+</ul>
+<p>问题在于任务的<strong>可靠性配置</strong>（<a href="#findings">F-05</a>）和 <code>payment_completed</code> 里 WeasyPrint 的资源开销（<a href="#findings">F-06</a>）。</p>
+
+<h3>2.2 两个派发点</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># orders/views.py · order_create
+order.save()
+for item in cart:
+    OrderItem.objects.create(order=order, product=item[&#x27;product&#x27;], ...)
+cart.clear()
+order_created.delay(order.id)              # ← 派发点 1
+request.session[&#x27;order_id&#x27;] = order.id
+return redirect(&#x27;payment:process&#x27;)</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># payment/webhooks.py · stripe_webhook
+order.paid = True
+order.stripe_id = session.payment_intent
+order.save()
+product_ids = order.items.values_list(&#x27;product_id&#x27;)
+products = Product.objects.filter(id__in=product_ids)
+r = Recommender()
+r.products_bought(products)                # Redis ZINCRBY 累加
+payment_completed.delay(order.id)          # ← 派发点 2</code></pre></div>
+<p>两个派发点各自埋着不同的问题：派发点 1 会让 broker 故障传导成结算失败（<a href="#findings">F-02</a>），且整段没有事务包裹（<a href="#findings">F-04</a>）；派发点 2 所在的 webhook 没有幂等守卫（<a href="#findings">F-03</a>）。</p>
+
+<h3>2.3 一个管理命令</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># students/management/commands/enroll_reminder.py
+def handle(self, *args, **options):
+    emails = []
+    subject = &#x27;Enroll in a course&#x27;
+    date_joined = timezone.now().today() - datetime.timedelta(days=options[&#x27;days&#x27;] or 0)
+    users = User.objects.annotate(
+        course_count=Count(&#x27;courses_joined&#x27;)
+    ).filter(course_count=0, date_joined__date__lte=date_joined)
+    for user in users:
+        message = f&quot;&quot;&quot;Dear {user.first_name}, We noticed that you didn&#x27;t enroll...&quot;&quot;&quot;
+        emails.append((subject, message, settings.DEFAULT_FROM_EMAIL, [user.email]))
+    send_mass_mail(emails)
+    self.stdout.write(f&#x27;Sent {len(emails)} reminders&#x27;)</code></pre></div>
+<p>这是仓库里唯一一处「批量后台作业」，但它<strong>不是 Celery 任务</strong>，而是一个需要外部调度器（cron / systemd timer）来触发的管理命令——而仓库里<strong>没有任何调度配置</strong>，没有 crontab、没有 Celery Beat、docker-compose 里也没有对应服务。它写好了但没有任何东西会去执行它。</p>
+<p>命令本身还有三个问题：时区处理（<a href="#findings">F-07</a>）、缺省参数的危险语义（<a href="#findings">F-08</a>）、以及无批处理无幂等（<a href="#findings">F-09</a>）。</p>
+
+<h3>2.4 另一种异步：educa 的 Channels 消费者</h3>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 6 · 三种「异步」的分野：把活儿挪走、把连接留住、把等待重叠，是三件不同的事"><defs>
+          <marker id="dk6-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk6-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk6-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="34" width="220" height="44" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="56.0" text-anchor="middle" font-size="13">Celery 任务</text>
+<rect class="box" x="20" y="92" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="117.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="130.0" y="133.5" text-anchor="middle" font-size="10.5">独立 worker 进程</text>
+<text class="lbl" x="130.0" y="145.5" text-anchor="middle" font-size="10.5">消息队列驱动</text>
+<rect class="box" x="20" y="168" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="193.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="130.0" y="209.5" text-anchor="middle" font-size="10.5">耗时、可重试、</text>
+<text class="lbl" x="130.0" y="221.5" text-anchor="middle" font-size="10.5">可延迟的副作用</text>
+<rect class="box" x="20" y="244" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="269.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="130.0" y="285.5" text-anchor="middle" font-size="10.5">需要即时反馈</text>
+<text class="lbl" x="130.0" y="297.5" text-anchor="middle" font-size="10.5">给当前请求</text>
+<rect class="box-a" x="270" y="34" width="220" height="44" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="56.0" text-anchor="middle" font-size="13">Channels 消费者</text>
+<rect class="box" x="270" y="92" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="117.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="380.0" y="133.5" text-anchor="middle" font-size="10.5">ASGI 长连接</text>
+<text class="lbl" x="380.0" y="145.5" text-anchor="middle" font-size="10.5">Redis 通道层</text>
+<rect class="box" x="270" y="168" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="193.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="380.0" y="209.5" text-anchor="middle" font-size="10.5">实时推送、聊天、</text>
+<text class="lbl" x="380.0" y="221.5" text-anchor="middle" font-size="10.5">协作</text>
+<rect class="box" x="270" y="244" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="269.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="380.0" y="285.5" text-anchor="middle" font-size="10.5">离线任务、</text>
+<text class="lbl" x="380.0" y="297.5" text-anchor="middle" font-size="10.5">定时任务</text>
+<rect class="box-a" x="520" y="34" width="220" height="44" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="56.0" text-anchor="middle" font-size="13">async def 视图</text>
+<rect class="box" x="520" y="92" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="117.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="630.0" y="133.5" text-anchor="middle" font-size="10.5">同一进程内</text>
+<text class="lbl" x="630.0" y="145.5" text-anchor="middle" font-size="10.5">事件循环</text>
+<rect class="box" x="520" y="168" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="193.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="630.0" y="209.5" text-anchor="middle" font-size="10.5">并发等待多个</text>
+<text class="lbl" x="630.0" y="221.5" text-anchor="middle" font-size="10.5">外部 IO</text>
+<rect class="box" x="520" y="244" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="269.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="630.0" y="285.5" text-anchor="middle" font-size="10.5">CPU 密集、</text>
+<text class="lbl" x="630.0" y="297.5" text-anchor="middle" font-size="10.5">后台作业</text>
+<line x1="20" y1="322" x2="740" y2="322" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="344.0" text-anchor="start" font-size="10.5">本仓库用了前两种：myshop 用 Celery 发邮件和生成发票 PDF，educa 用 Channels 做课程聊天室。</text>
+<text class="lbl" x="20" y="359.5" text-anchor="start" font-size="10.5">两者都叫「异步」但解决的问题完全不同——Celery 是把工作挪出请求周期，Channels 是让连接活得比请求久。</text></svg><figcaption class="cap">图 6 · 三种「异步」的分野：把活儿挪走、把连接留住、把等待重叠，是三件不同的事</figcaption></figure>
+<div class="codewrap"><div class="langtag">python</div><pre><code># chat/consumers.py
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def receive(self, text_data):
+        message = json.loads(text_data)[&#x27;message&#x27;]
+        now = timezone.now()
+        # 先广播给房间里所有人
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {&#x27;type&#x27;: &#x27;chat_message&#x27;, &#x27;message&#x27;: message,
+             &#x27;user&#x27;: self.user.username, &#x27;datetime&#x27;: now.isoformat()},
+        )
+        # 再落库
+        await self.persist_message(message)</code></pre></div>
+<p>这是完全不同的一种「异步」：不是把工作挪出请求周期，而是<strong>让连接活得比请求久</strong>。它用 <code>channels_redis</code> 做通道层，和缓存共用同一个 Redis 实例。</p>
+<blockquote class="callout-warn"><p><strong>这里有一个顺序问题</strong>：消息先 <code>group_send</code> 广播出去，再 <code>persist_message</code> 落库。如果 <code>acreate</code> 失败（数据库不可用、字段超长），房间里所有人<strong>已经看到了这条消息，但它并没有被保存</strong>——刷新页面后消息就消失了，而发送者完全不知情。更稳妥的顺序是先落库再广播，或者至少在落库失败时向发送者回一条错误。</p>
+<p>另外 <code>connect()</code> 里只取了 <code>self.scope['user']</code> 和课程 id，<strong>没有校验这个用户是否报名了这门课</strong>——配对的 HTTP 视图是有这个检查的，WebSocket 这一侧漏掉了。这一点在 <a href="notes-04-educa.html">educa 深读笔记</a>的 Chapter16 部分详细讨论过，属于鉴权问题而非任务问题，本文不展开。</p></blockquote>
+
+</section><section class="chapter" id="findings">
+<h2>三、九个已验证的问题与修复</h2>
+
+
+<div class="finding"><div class="fhead"><span class="fid">F-01</span><span class="ftitle">Celery 全套配置缺失：没有 broker、没有 worker、没有结果后端</span><span class="fmeta">已实测 · 配置</span></div><dl><dt>位置</dt><dd><code>Chapter08~11/myshop/myshop/settings.py</code> + 四章的 <code>docker-compose.yml</code></dd><dt>触发</dt><dd>按 docker-compose 启动后的任何一次下单</dd><dt>影响</dt><dd>异步任务链路完全不通；<code>.delay()</code> 会连接 <code>localhost:5672</code> 并失败</dd></dl></div>
+<div class="term"><div class="thead">实测 · 照抄仓库配置</div><pre>settings 里的 CELERY_BROKER_URL : (不存在)
+app.conf.broker_url            : None
+实际连接地址                    : <b>amqp://guest:**@localhost:5672//</b>
+-> 默认落到 RabbitMQ。而 requirements.txt 装的是 redis，
+   四章的 docker-compose 里都没有 rabbitmq 也没有 redis broker 服务。</pre></div>
+<p>修复见 <a href="#wiring">1.3 节</a>：补 <code>CELERY_BROKER_URL</code>、补 <code>worker</code> 服务。</p>
+
+<div class="finding"><div class="fhead"><span class="fid">F-02</span><span class="ftitle">.delay() 是同步网络调用，broker 故障会让结算流程 500</span><span class="fmeta">已实测 · 可用性</span></div><dl><dt>位置</dt><dd><code>orders/views.py</code> · <code>order_create</code></dd><dt>触发</dt><dd>broker 不可达、网络抖动、broker 过载</dd><dt>影响</dt><dd>订单已写库、购物车已清空，但用户拿到 500 且进不了支付页面</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 440" role="img" aria-label="图 2 · .delay() 是同步的网络调用：它在请求周期内执行，broker 不可达就会让整个结算流程失败"><defs>
+          <marker id="dk2-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk2-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk2-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">order_create 视图的执行顺序</text>
+<rect class="box-a" x="150" y="36" width="320" height="46" rx="4"></rect>
+<text class="lbl-strong" x="310.0" y="53.0" text-anchor="middle" font-size="11.5">order.save()</text>
+<text class="lbl" x="310.0" y="70.5" text-anchor="middle" font-size="10.5">订单写入数据库</text>
+<rect class="box-a" x="150" y="94" width="320" height="46" rx="4"></rect>
+<text class="lbl-strong" x="310.0" y="111.0" text-anchor="middle" font-size="11.5">OrderItem.objects.create() × N</text>
+<text class="lbl" x="310.0" y="128.5" text-anchor="middle" font-size="10.5">订单明细写入</text>
+<rect class="box-a" x="150" y="152" width="320" height="46" rx="4"></rect>
+<text class="lbl-strong" x="310.0" y="169.0" text-anchor="middle" font-size="11.5">cart.clear()</text>
+<text class="lbl" x="310.0" y="186.5" text-anchor="middle" font-size="10.5">购物车清空</text>
+<rect class="box-w" x="150" y="210" width="320" height="46" rx="4"></rect>
+<text class="lbl-strong" x="310.0" y="227.0" text-anchor="middle" font-size="11.5">order_created.delay(order.id)</text>
+<text class="lbl" x="310.0" y="244.5" text-anchor="middle" font-size="10.5">← broker 不可达时在这里抛异常</text>
+<rect class="box-w" x="150" y="268" width="320" height="46" rx="4"></rect>
+<text class="lbl-strong" x="310.0" y="285.0" text-anchor="middle" font-size="11.5">request.session['order_id'] = ...</text>
+<text class="lbl" x="310.0" y="302.5" text-anchor="middle" font-size="10.5">没执行</text>
+<rect class="box-w" x="150" y="326" width="320" height="46" rx="4"></rect>
+<text class="lbl-strong" x="310.0" y="343.0" text-anchor="middle" font-size="11.5">redirect('payment:process')</text>
+<text class="lbl" x="310.0" y="360.5" text-anchor="middle" font-size="10.5">没执行</text>
+<line class="edge" x1="310" y1="82" x2="310" y2="94" marker-end="url(#dk2-m)"></line>
+<line class="edge" x1="310" y1="140" x2="310" y2="152" marker-end="url(#dk2-m)"></line>
+<line class="edge" x1="310" y1="198" x2="310" y2="210" marker-end="url(#dk2-m)"></line>
+<line class="edge" x1="310" y1="256" x2="310" y2="268" marker-end="url(#dk2-m)"></line>
+<line class="edge" x1="310" y1="314" x2="310" y2="326" marker-end="url(#dk2-m)"></line>
+<rect class="box-w" x="520" y="200" width="220" height="66" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="227.0" text-anchor="middle" font-size="12.5">OperationalError</text>
+<text class="lbl" x="630.0" y="245.5" text-anchor="middle" font-size="10.5">[Errno 111] Connection refused</text>
+<text class="lbl" x="630.0" y="257.5" text-anchor="middle" font-size="10.5">实测阻塞 610 ms</text>
+<line class="edge-w" x1="470" y1="233" x2="520" y2="233" marker-end="url(#dk2-mw)"></line>
+<line x1="20" y1="388" x2="740" y2="388" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl-warn" x="20" y="410" text-anchor="start" font-size="11">用户看到 500，但订单已建好、购物车已清空、且拿不到支付页面——一次 broker 抖动就能造成这个状态。</text></svg><figcaption class="cap">图 2 · .delay() 是同步的网络调用：它在请求周期内执行，broker 不可达就会让整个结算流程失败</figcaption></figure>
+<div class="term"><div class="thead">实测 · broker 指向无人监听的端口（模拟 compose 的真实情形）</div><pre>order_created.delay(42) 抛出 <b>OperationalError</b>
+  [Errno 111] Connection refused
+耗时 <b>610 ms</b> —— 这段时间用户的结算请求一直挂着，最后收到 500</pre></div>
+<p><strong>很多人对 <code>.delay()</code> 的误解就在这里</strong>：它的名字听起来像「稍后执行」，但<strong>把消息发到 broker 这个动作本身是同步的、阻塞的、会失败的</strong>。异步的是任务的<em>执行</em>，不是任务的<em>投递</em>。</p>
+<p><strong>修复思路有三层，按投入从低到高：</strong></p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：派发失败 = 结算失败</div><pre>cart.clear()
+order_created.delay(order.id)
+request.session[&#x27;order_id&#x27;] = order.id
+return redirect(&#x27;payment:process&#x27;)</pre></div>
+<div class="pane good"><div class="ph">✓ 最低成本：派发失败不阻断主流程</div><pre>cart.clear()
+try:
+    order_created.delay(order.id)
+except OperationalError:
+    # 邮件没发出去不该让用户付不了款
+    logger.exception(&#x27;order_created dispatch failed&#x27;, extra={&#x27;order_id&#x27;: order.id})
+request.session[&#x27;order_id&#x27;] = order.id
+return redirect(&#x27;payment:process&#x27;)</pre></div>
+</div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 更稳妥：给 broker 连接设超时，别让它拖着请求
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    &#x27;socket_timeout&#x27;: 2,
+    &#x27;socket_connect_timeout&#x27;: 2,
+    &#x27;retry_on_timeout&#x27;: False,
+}
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = False
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 0</code></pre></div>
+<blockquote><p><strong>最彻底的方案是 transactional outbox</strong>：把「要发的任务」和业务数据<strong>写进同一个数据库事务</strong>（一张 outbox 表），再由一个独立的轮询进程把 outbox 里的记录投递到 broker。这样派发不再依赖 broker 当时是否可用，也天然解决了 F-04 的事务时序问题。代价是多一张表和一个投递进程，适合订单、支付这类不容许丢失的场景。</p></blockquote>
+
+<div class="finding"><div class="fhead"><span class="fid">F-03</span><span class="ftitle">Stripe webhook 没有幂等守卫，重投一次副作用就翻倍</span><span class="fmeta">已实测 · 正确性</span></div><dl><dt>位置</dt><dd><code>payment/webhooks.py</code> · <code>stripe_webhook</code></dd><dt>触发</dt><dd>Stripe 重投同一个 event（超时、5xx、网络问题都会触发）</dd><dt>影响</dt><dd>推荐分数被重复累加；发票邮件重复发送给客户</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 5 · Webhook 缺少幂等守卫：一次重投就把推荐分数和发票邮件都翻了倍"><defs>
+          <marker id="dk5-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk5-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk5-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="40" width="150" height="56" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="62.0" text-anchor="middle" font-size="12.5">Stripe</text>
+<text class="lbl" x="95.0" y="80.5" text-anchor="middle" font-size="10.5">同一个 event</text>
+<text class="lbl" x="95.0" y="92.5" text-anchor="middle" font-size="10.5">重投 3 次</text>
+<rect class="box-w" x="230" y="40" width="220" height="56" rx="4"></rect>
+<text class="lbl-strong" x="340.0" y="62.0" text-anchor="middle" font-size="12.5">stripe_webhook()</text>
+<text class="lbl" x="340.0" y="80.5" text-anchor="middle" font-size="10.5">没有任何幂等守卫</text>
+<line class="edge" x1="170" y1="68" x2="230" y2="68" marker-end="url(#dk5-m)"></line>
+<text class="lbl" x="200.0" y="63.0" text-anchor="middle" font-size="10">重投</text>
+<rect class="box" x="510" y="20" width="230" height="46" rx="4"></rect>
+<text class="lbl-strong" x="625.0" y="37.0" text-anchor="middle" font-size="11.5">order.paid = True</text>
+<text class="lbl" x="625.0" y="54.5" text-anchor="middle" font-size="10.5">重复赋值，无害</text>
+<rect class="box-w" x="510" y="78" width="230" height="46" rx="4"></rect>
+<text class="lbl-strong" x="625.0" y="95.0" text-anchor="middle" font-size="11.5">products_bought()</text>
+<text class="lbl" x="625.0" y="112.5" text-anchor="middle" font-size="10.5">ZINCRBY 累加 → 分数 ×3</text>
+<rect class="box-w" x="510" y="136" width="230" height="46" rx="4"></rect>
+<text class="lbl-strong" x="625.0" y="153.0" text-anchor="middle" font-size="11.5">payment_completed.delay()</text>
+<text class="lbl" x="625.0" y="170.5" text-anchor="middle" font-size="10.5">发票邮件发 3 封</text>
+<line class="edge" x1="450" y1="60" x2="510" y2="43" marker-end="url(#dk5-m)"></line>
+<line class="edge-w" x1="450" y1="68" x2="510" y2="101" marker-end="url(#dk5-mw)"></line>
+<line class="edge-w" x1="450" y1="78" x2="510" y2="159" marker-end="url(#dk5-mw)"></line>
+<line x1="20" y1="208" x2="740" y2="208" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="230" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">实测：同一 event 重投 3 次的结果</text>
+<rect class="box-w" x="20" y="244" width="340" height="62" rx="4"></rect>
+<text class="lbl-strong" x="190.0" y="269.0" text-anchor="middle" font-size="12.5">现状</text>
+<text class="lbl" x="190.0" y="287.5" text-anchor="middle" font-size="10.5">推荐分数 = 3（应为 1）</text>
+<text class="lbl" x="190.0" y="299.5" text-anchor="middle" font-size="10.5">发票邮件任务派发 3 次（应为 1）</text>
+<rect class="box-a" x="400" y="244" width="340" height="62" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="269.0" text-anchor="middle" font-size="12.5">加一个幂等守卫后</text>
+<text class="lbl" x="570.0" y="287.5" text-anchor="middle" font-size="10.5">推荐分数 = 1</text>
+<text class="lbl" x="570.0" y="299.5" text-anchor="middle" font-size="10.5">发票邮件任务派发 1 次</text>
+<line class="edge-a" x1="360" y1="275" x2="400" y2="275" marker-end="url(#dk5-ma)"></line>
+<text class="lbl" x="20" y="336.0" text-anchor="start" font-size="10.5">什么时候会重投：delay() 因 broker 不可达抛异常 → 视图 500 → Stripe 重投；Redis 超时 → 500 → 重投；</text>
+<text class="lbl" x="20" y="351.5" text-anchor="start" font-size="10.5">处理超时 → Stripe 认定失败 → 重投。Stripe 文档明确要求 webhook 处理必须幂等。</text></svg><figcaption class="cap">图 5 · Webhook 缺少幂等守卫：一次重投就把推荐分数和发票邮件都翻了倍</figcaption></figure>
+<div class="term"><div class="thead">实测 · 同一 event 重投 3 次</div><pre>=== A) 现状 ===
+  推荐分数 scores[(10,20)] = <b>3</b>   &lt;- 应该是 1
+  发票邮件任务派发次数      = <b>3</b>   &lt;- 应该是 1
+
+=== B) 加一个幂等守卫后 ===
+  推荐分数 scores[(10,20)] = <i>1</i>
+  发票邮件任务派发次数      = <i>1</i></pre></div>
+<p><strong>两个缺陷会互相放大</strong>：F-02 里 <code>.delay()</code> 抛异常 → webhook 视图返回 500 → Stripe 判定投递失败 → 重投 → 整个处理块重跑一遍 → 推荐分数再加一次。broker 一次抖动，可能换来推荐数据被污染。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：无条件执行全部副作用</div><pre>order.paid = True
+order.stripe_id = session.payment_intent
+order.save()
+
+products = Product.objects.filter(id__in=product_ids)
+Recommender().products_bought(products)
+payment_completed.delay(order.id)</pre></div>
+<div class="pane good"><div class="ph">✓ 用已有状态做幂等守卫</div><pre>if order.paid:
+    # 这个 event 已经处理过了
+    return HttpResponse(status=200)
+
+order.paid = True
+order.stripe_id = session.payment_intent
+order.save()
+
+products = Product.objects.filter(id__in=product_ids)
+Recommender().products_bought(products)
+transaction.on_commit(
+    lambda: payment_completed.delay(order.id))</pre></div>
+</div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 更严谨：按 Stripe 的 event.id 去重，能挡住「同一订单的不同事件被重投」
+class ProcessedWebhookEvent(models.Model):
+    event_id = models.CharField(max_length=255, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+# 处理入口
+_, created = ProcessedWebhookEvent.objects.get_or_create(event_id=event.id)
+if not created:
+    return HttpResponse(status=200)     # 已处理，直接确认</code></pre></div>
+<p><code>unique=True</code> 加 <code>get_or_create</code> 把去重下沉到数据库的唯一约束上，即使两个 webhook 请求并发到达也只有一个能建成记录。仅靠 <code>if order.paid</code> 在高并发下仍有竞态窗口。</p>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-04</span><span class="ftitle">任务派发没有与事务提交对齐</span><span class="fmeta">已实测 · 正确性</span></div><dl><dt>位置</dt><dd><code>orders/views.py</code>、<code>payment/webhooks.py</code></dd><dt>触发</dt><dd>一旦按最佳实践给下单流程加上 <code>transaction.atomic()</code> 就会立刻显现</dd><dt>影响</dt><dd>任务已入队但事务回滚 → worker 拿到不存在的 order_id</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 3 · 任务派发必须晚于事务提交：transaction.on_commit 是 Django 给出的标准答案"><defs>
+          <marker id="dk3-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk3-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk3-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">写法 A · delay 在事务内（加了 atomic 之后必然踩到）</text>
+<rect class="box" x="20" y="36" width="180" height="56" rx="4"></rect>
+<text class="lbl-strong" x="110.0" y="58.0" text-anchor="middle" font-size="12.5">atomic 开始</text>
+<text class="lbl" x="110.0" y="76.5" text-anchor="middle" font-size="10.5">BEGIN</text>
+<rect class="box-a" x="230" y="36" width="180" height="56" rx="4"></rect>
+<text class="lbl-strong" x="320.0" y="58.0" text-anchor="middle" font-size="12.5">order 写入</text>
+<text class="lbl" x="320.0" y="76.5" text-anchor="middle" font-size="10.5">尚未 COMMIT</text>
+<rect class="box-w" x="440" y="36" width="150" height="56" rx="4"></rect>
+<text class="lbl-strong" x="515.0" y="58.0" text-anchor="middle" font-size="12.5">delay(order.id)</text>
+<text class="lbl" x="515.0" y="76.5" text-anchor="middle" font-size="10.5">任务已入队</text>
+<rect class="box-w" x="620" y="36" width="120" height="56" rx="4"></rect>
+<text class="lbl-strong" x="680.0" y="58.0" text-anchor="middle" font-size="12.5">ROLLBACK</text>
+<text class="lbl" x="680.0" y="76.5" text-anchor="middle" font-size="10.5">订单没了</text>
+<line class="edge" x1="200" y1="64" x2="230" y2="64" marker-end="url(#dk3-m)"></line>
+<line class="edge" x1="410" y1="64" x2="440" y2="64" marker-end="url(#dk3-m)"></line>
+<line class="edge" x1="590" y1="64" x2="620" y2="64" marker-end="url(#dk3-m)"></line>
+<rect class="box-w" x="230" y="120" width="360" height="50" rx="4"></rect>
+<text class="lbl-strong" x="410.0" y="145.0" text-anchor="middle" font-size="11.5">worker 拿到 order_id，查库 → Order.DoesNotExist</text>
+<line class="edge-w" x1="515" y1="92" x2="460" y2="120" marker-end="url(#dk3-mw)"></line>
+<line x1="20" y1="198" x2="740" y2="198" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="220" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">写法 B · transaction.on_commit（正确）</text>
+<rect class="box" x="20" y="234" width="180" height="56" rx="4"></rect>
+<text class="lbl-strong" x="110.0" y="256.0" text-anchor="middle" font-size="12.5">atomic 开始</text>
+<text class="lbl" x="110.0" y="274.5" text-anchor="middle" font-size="10.5">BEGIN</text>
+<rect class="box-a" x="230" y="234" width="180" height="56" rx="4"></rect>
+<text class="lbl-strong" x="320.0" y="256.0" text-anchor="middle" font-size="12.5">order 写入</text>
+<text class="lbl" x="320.0" y="274.5" text-anchor="middle" font-size="10.5">登记 on_commit 回调</text>
+<rect class="box-a" x="440" y="234" width="150" height="56" rx="4"></rect>
+<text class="lbl-strong" x="515.0" y="256.0" text-anchor="middle" font-size="12.5">COMMIT</text>
+<text class="lbl" x="515.0" y="274.5" text-anchor="middle" font-size="10.5">事务提交成功</text>
+<rect class="box-a" x="620" y="234" width="120" height="56" rx="4"></rect>
+<text class="lbl-strong" x="680.0" y="256.0" text-anchor="middle" font-size="12.5">delay()</text>
+<text class="lbl" x="680.0" y="274.5" text-anchor="middle" font-size="10.5">此时才派发</text>
+<line class="edge-a" x1="200" y1="262" x2="230" y2="262" marker-end="url(#dk3-ma)"></line>
+<line class="edge-a" x1="410" y1="262" x2="440" y2="262" marker-end="url(#dk3-ma)"></line>
+<line class="edge-a" x1="590" y1="262" x2="620" y2="262" marker-end="url(#dk3-ma)"></line>
+<line x1="20" y1="318" x2="740" y2="318" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="340.0" text-anchor="start" font-size="10.5">实测（用独立数据库连接扮演 worker）：</text>
+<text class="lbl" x="20" y="355.5" text-anchor="start" font-size="10.5">  写法 A 回滚场景 —— 任务已入队，worker 无论何时执行都查不到订单；</text>
+<text class="lbl" x="20" y="371.0" text-anchor="start" font-size="10.5">  写法 B 回滚场景 —— 派发次数 0；提交成功场景 —— 派发 1 次且能查到订单。</text></svg><figcaption class="cap">图 3 · 任务派发必须晚于事务提交：transaction.on_commit 是 Django 给出的标准答案</figcaption></figure>
+<p><strong>当前代码没有用 <code>transaction.atomic()</code></strong>，所以每次 <code>save()</code> 都自动提交，这个问题暂时不显现。但这本身也是个问题——<code>order.save()</code> 和后面 N 条 <code>OrderItem.objects.create()</code> 不在同一个事务里，中途失败会留下<strong>没有明细的残缺订单</strong>。</p>
+<p>而一旦你把它们包进 <code>atomic()</code>（这是正确的做法），<code>.delay()</code> 就会在事务提交<strong>之前</strong>执行：</p>
+<div class="term"><div class="thead">实测 · 用独立数据库连接扮演 worker</div><pre>=== 仓库写法：delay 在 atomic 事务内部 ===
+  worker 在派发瞬间查到的是      : <b>Order.DoesNotExist</b>
+  事务回滚后这条订单还存在吗      : False
+  worker 稍后重试时查到的是      : <b>Order.DoesNotExist</b>
+  -> 任务已入队，订单却没了。worker 无论何时执行都拿不到这条订单。
+
+=== 正确写法：transaction.on_commit ===
+  回滚场景：派发次数 = <i>0</i>（没有派发，正确）
+  成功场景：派发次数 = <i>1</i>，worker 查到 = d@x.com</pre></div>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 事务内直接 delay</div><pre>with transaction.atomic():
+    order = form.save()
+    for item in cart:
+        OrderItem.objects.create(order=order, ...)
+    order_created.delay(order.id)   # 提交前就派发了</pre></div>
+<div class="pane good"><div class="ph">✓ transaction.on_commit</div><pre>from django.db import transaction
+
+with transaction.atomic():
+    order = form.save()
+    for item in cart:
+        OrderItem.objects.create(order=order, ...)
+    transaction.on_commit(
+        lambda: order_created.delay(order.id))</pre></div>
+</div>
+<blockquote><p><code>on_commit</code> 注册的回调只在<strong>最外层事务提交成功后</strong>执行；事务回滚则回调被丢弃。它在没有显式事务时会<strong>立即执行</strong>，所以无脑加上是安全的——这也意味着你可以现在就在仓库代码里加，不必等到引入 atomic。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-05</span><span class="ftitle">任务的可靠性配置全部是默认值：崩溃即丢、失败无声</span><span class="fmeta">已实测 · 可靠性</span></div><dl><dt>位置</dt><dd>两个 <code>@shared_task</code> + 全局 Celery 配置</dd><dt>触发</dt><dd>worker 被 OOM kill、部署时被 SIGKILL、SMTP 临时故障</dd><dt>影响</dt><dd>任务静默丢失或静默失败，系统里不留任何痕迹</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 420" role="img" aria-label="图 4 · 任务可能丢失的四个窗口，以及本仓库在每个窗口上采用的默认值"><defs>
+          <marker id="dk4-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk4-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dk4-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">一条任务从派发到完成，有四个可能丢失的窗口</text>
+<rect class="box-w" x="20" y="36" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="61.0" text-anchor="middle" font-size="12.5">① 派发时</text>
+<text class="lbl" x="102.5" y="79.5" text-anchor="middle" font-size="10.5">broker 不可达</text>
+<text class="lbl" x="102.5" y="91.5" text-anchor="middle" font-size="10.5">→ 异常冒到视图</text>
+<rect class="box-w" x="205" y="36" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="61.0" text-anchor="middle" font-size="12.5">② 取走后立即</text>
+<text class="lbl" x="287.5" y="79.5" text-anchor="middle" font-size="10.5">acks_late=False</text>
+<text class="lbl" x="287.5" y="91.5" text-anchor="middle" font-size="10.5">→ 崩溃即丢失</text>
+<rect class="box-w" x="390" y="36" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="61.0" text-anchor="middle" font-size="12.5">③ 执行中</text>
+<text class="lbl" x="472.5" y="79.5" text-anchor="middle" font-size="10.5">无 time_limit</text>
+<text class="lbl" x="472.5" y="91.5" text-anchor="middle" font-size="10.5">→ 可能永远挂住</text>
+<rect class="box-w" x="575" y="36" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="61.0" text-anchor="middle" font-size="12.5">④ 失败后</text>
+<text class="lbl" x="657.5" y="79.5" text-anchor="middle" font-size="10.5">无重试、无结果后端</text>
+<text class="lbl" x="657.5" y="91.5" text-anchor="middle" font-size="10.5">→ 失败无人知晓</text>
+<line class="edge" x1="185" y1="67" x2="205" y2="67" marker-end="url(#dk4-m)"></line>
+<line class="edge" x1="370" y1="67" x2="390" y2="67" marker-end="url(#dk4-m)"></line>
+<line class="edge" x1="555" y1="67" x2="575" y2="67" marker-end="url(#dk4-m)"></line>
+<line x1="20" y1="128" x2="740" y2="128" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="150" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">实测 · 仓库采用的全是 Celery 默认值</text>
+<text class="lbl-strong" x="30" y="164" text-anchor="start" font-size="10.5">task_acks_late</text>
+<text class="lbl-warn" x="240" y="164" text-anchor="start" font-size="10.5">= False</text>
+<text class="lbl" x="330" y="164" text-anchor="start" font-size="10.5">取走即确认；worker 中途崩溃任务直接丢失</text>
+<text class="lbl-strong" x="30" y="200" text-anchor="start" font-size="10.5">task_reject_on_worker_lost</text>
+<text class="lbl-warn" x="240" y="200" text-anchor="start" font-size="10.5">= None</text>
+<text class="lbl" x="330" y="200" text-anchor="start" font-size="10.5">worker 被 kill 时任务不重回队列</text>
+<text class="lbl-strong" x="30" y="236" text-anchor="start" font-size="10.5">task_time_limit</text>
+<text class="lbl-warn" x="240" y="236" text-anchor="start" font-size="10.5">= None</text>
+<text class="lbl" x="330" y="236" text-anchor="start" font-size="10.5">任务可以永远跑下去</text>
+<text class="lbl-strong" x="30" y="272" text-anchor="start" font-size="10.5">autoretry_for</text>
+<text class="lbl-warn" x="240" y="272" text-anchor="start" font-size="10.5">= ()</text>
+<text class="lbl" x="330" y="272" text-anchor="start" font-size="10.5">任何异常都不会自动重试</text>
+<text class="lbl-strong" x="30" y="308" text-anchor="start" font-size="10.5">result_backend</text>
+<text class="lbl-warn" x="240" y="308" text-anchor="start" font-size="10.5">= None</text>
+<text class="lbl" x="330" y="308" text-anchor="start" font-size="10.5">任务成功失败都查不到</text>
+<line x1="20" y1="336" x2="740" y2="336" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl-warn" x="20" y="358.0" text-anchor="start" font-size="10.5">对「订单确认邮件」而言，这些默认值合起来的含义是：邮件没发出去，系统里不会留下任何痕迹。</text>
+<text class="lbl-warn" x="20" y="373.5" text-anchor="start" font-size="10.5">生产环境至少要打开 acks_late + 自动重试 + 软硬超时，并接一个结果后端或错误监控。</text></svg><figcaption class="cap">图 4 · 任务可能丢失的四个窗口，以及本仓库在每个窗口上采用的默认值</figcaption></figure>
+<div class="term"><div class="thead">实测 · 仓库采用的全是 Celery 默认值</div><pre>task_acks_late               = <b>False</b>     取走即确认；worker 中途崩溃任务直接丢失
+task_reject_on_worker_lost   = <b>None</b>      worker 被 kill 时不重回队列
+task_time_limit              = <b>None</b>      任务可以永远跑下去
+task_soft_time_limit         = <b>None</b>      没有优雅超时
+worker_prefetch_multiplier   = 4         每个进程预取 4 条，长任务会排队不均
+result_backend               = <b>None</b>      任务成功失败都查不到
+
+order_created.max_retries      = 3       （但代码里从未调用 self.retry()）
+order_created.autoretry_for    = <b>()</b>      任何异常都不会自动重试</pre></div>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：一个参数都不传</div><pre>@shared_task
+def order_created(order_id):
+    order = Order.objects.get(id=order_id)
+    send_mail(...)</pre></div>
+<div class="pane good"><div class="ph">✓ 声明重试、超时与确认时机</div><pre>@shared_task(
+    bind=True,
+    autoretry_for=(SMTPException, OSError),
+    retry_backoff=True,        # 指数退避
+    retry_backoff_max=600,
+    retry_jitter=True,         # 抖动，避免重试风暴
+    max_retries=5,
+    acks_late=True,            # 执行完才确认
+    soft_time_limit=30,
+    time_limit=60,
+)
+def order_created(self, order_id):
+    try:
+        order = Order.objects.get(id=order_id)
+    except Order.DoesNotExist:
+        return                 # 订单没了，不必重试
+    send_mail(...)</pre></div>
+</div>
+<blockquote class="callout-warn"><p><strong><code>acks_late=True</code> 有一个前提：任务必须幂等。</strong> 打开它之后，worker 崩溃时任务会重回队列被再执行一次——如果任务已经把邮件发出去了才崩溃，用户会收到两封。所以 <code>acks_late</code> 和幂等设计是<strong>配套</strong>的，不能只开一个。对「发邮件」这类任务，通常的做法是在数据库里记一个 <code>notification_sent_at</code>，任务开头先检查。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-06</span><span class="ftitle">payment_completed 在 worker 里跑 WeasyPrint，无任何资源限制</span><span class="fmeta">代码阅读 · 稳定性</span></div><dl><dt>位置</dt><dd><code>payment/tasks.py</code> · <code>payment_completed</code></dd><dt>触发</dt><dd>订单明细异常多、模板渲染出病态结构、字体加载卡住</dd><dt>影响</dt><dd>worker 进程被长时间占用甚至 OOM，拖垮同队列的其他任务</dd></dl></div>
+<p>WeasyPrint 是纯 Python 的 HTML→PDF 渲染器，CPU 和内存开销都不小，而且渲染时间与文档复杂度非线性相关。当前既没有 <code>time_limit</code>，也没有把它和轻量任务分开：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 给重任务单独一个队列和一组 worker，别和发邮件抢资源
+@shared_task(
+    queue=&#x27;pdf&#x27;,
+    soft_time_limit=60,
+    time_limit=90,
+    acks_late=True,
+    max_retries=3,
+)
+def payment_completed(order_id):
+    ...</code></pre></div>
+<div class="codewrap"><div class="langtag">yaml</div><pre><code># docker-compose：轻重任务分开部署，各自调并发度
+  worker-default:
+    command: celery -A myshop worker -Q celery -l info --concurrency=8
+  worker-pdf:
+    command: celery -A myshop worker -Q pdf -l info --concurrency=2 --max-tasks-per-child=50</code></pre></div>
+<p><code>--max-tasks-per-child</code> 让 worker 子进程每处理 N 个任务就重启一次，是应对<strong>内存缓慢泄漏</strong>的常用手段——对 WeasyPrint 这类第三方渲染库尤其实用。</p>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-07</span><span class="ftitle">enroll_reminder 的时区处理有误，丢掉了时区信息</span><span class="fmeta">已实测 · 正确性</span></div><dl><dt>位置</dt><dd><code>students/management/commands/enroll_reminder.py</code></dd><dt>触发</dt><dd>每次执行</dd><dt>影响</dt><dd>筛选基准时间偏移到本地时区的当前时刻，与预期的 UTC 基准差若干小时</dd></dl></div>
+<div class="term"><div class="thead">实测 · TIME_ZONE='UTC'、USE_TZ=True 的环境下</div><pre>timezone.now()          -> 2026-08-23 15:28:26+00:00   tzinfo=UTC
+timezone.now().today()  -> <b>2026-08-23 23:28:26</b>         tzinfo=<b>None</b>
+两者相等吗              -> <b>False</b>
+是否 aware（带时区）    -> <b>False</b></pre></div>
+<p><strong>根因。</strong> <code>datetime.today()</code> 是 <code>datetime</code> 的<strong>类方法</strong>，返回「本地当前时间」。在实例上调用它（<code>timezone.now().today()</code>）依然走类方法，<strong>完全丢弃</strong>了 <code>timezone.now()</code> 算出来的那个带时区的值，结果变成一个 naive 的本地时间。实测差了 8 小时。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状</div><pre>date_joined = timezone.now().today() - datetime.timedelta(
+    days=options[&#x27;days&#x27;] or 0
+)</pre></div>
+<div class="pane good"><div class="ph">✓ 直接用 aware 的当前时间</div><pre>date_joined = timezone.now() - datetime.timedelta(
+    days=options[&#x27;days&#x27;]
+)</pre></div>
+</div>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-08</span><span class="ftitle">不传 --days 会给全站用户群发邮件</span><span class="fmeta">已实测 · 安全性</span></div><dl><dt>位置</dt><dd><code>enroll_reminder.py</code> · <code>options['days'] or 0</code></dd><dt>触发</dt><dd>运维手滑漏掉 <code>--days</code> 参数</dd><dt>影响</dt><dd>筛选条件退化为「注册日期 ≤ 今天」，命中几乎全部用户</dd></dl></div>
+<div class="term"><div class="thead">实测 · 4 个用户，注册于 0 / 1 / 30 / 365 天前</div><pre>总用户数              : 4
+--days 30  匹配用户数 : 2
+--days 未传 (None)    : <b>4</b>   &lt;- days or 0 => 0 天，命中全部</pre></div>
+<p><code>argparse</code> 在参数缺失时给的是 <code>None</code>，<code>None or 0</code> 得到 <code>0</code>，于是「N 天前」变成「今天」。<strong>把「没提供参数」静默解释成一个具体值，是危险的默认</strong>——尤其当这个操作会向真实用户发邮件时。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：缺省即 0 天</div><pre>parser.add_argument(&#x27;--days&#x27;, dest=&#x27;days&#x27;, type=int)
+...
+days=options[&#x27;days&#x27;] or 0</pre></div>
+<div class="pane good"><div class="ph">✓ 要么必填，要么给一个安全的默认</div><pre>parser.add_argument(
+    &#x27;--days&#x27;, dest=&#x27;days&#x27;, type=int, required=True,
+    help=&#x27;只提醒注册满 N 天且未报名任何课程的用户&#x27;,
+)
+# 或者：default=30 —— 但必须是一个「保守」的值
+...
+days=options[&#x27;days&#x27;]</pre></div>
+</div>
+<blockquote><p>对会产生外部副作用的管理命令，再加一道 <code>--dry-run</code> 是很划算的：先打印会影响多少人、前几个是谁，确认无误再真跑。</p></blockquote>
+
+<div class="finding lo"><div class="fhead"><span class="fid">F-09</span><span class="ftitle">enroll_reminder 无批处理、无幂等、无调度</span><span class="fmeta">代码阅读 · 健壮性</span></div><dl><dt>位置</dt><dd><code>enroll_reminder.py</code></dd><dt>影响</dt><dd>用户量大时内存与 SMTP 压力集中；重复运行会重复发送；且没有任何东西会触发它</dd></dl></div>
+<ul>
+<li><strong>无批处理</strong>：<code>for user in users</code> 把全部命中用户装进一个列表，再 <code>send_mass_mail(emails)</code> 一次性发出。10 万用户就是 10 万个元组待在内存里，且一次 SMTP 会话要投递 10 万封——多数邮件服务商会直接限流或封禁。</li>
+<li><strong>无幂等</strong>：没有记录「谁已经收到过提醒」，跑两次就发两次。</li>
+<li><strong>无调度</strong>：仓库里没有 crontab、没有 Celery Beat、compose 里也没有对应服务——这个命令写好了，但没有任何东西会执行它。</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 改成 Celery 任务 + 分批 + 幂等
+from django.core.mail import get_connection, send_mass_mail
+
+@shared_task(acks_late=True, soft_time_limit=600)
+def enroll_reminder(days=30, batch_size=500):
+    cutoff = timezone.now() - datetime.timedelta(days=days)
+    qs = (User.objects
+          .annotate(course_count=Count(&#x27;courses_joined&#x27;))
+          .filter(course_count=0,
+                  date_joined__lte=cutoff,
+                  profile__enroll_reminder_sent_at__isnull=True)   # 幂等：只发没发过的
+          .order_by(&#x27;id&#x27;))
+
+    sent = 0
+    while True:
+        batch = list(qs[:batch_size])          # 每轮重新取，已标记的自动排除
+        if not batch:
+            break
+        messages = [(SUBJECT, render_message(u), settings.DEFAULT_FROM_EMAIL, [u.email])
+                    for u in batch]
+        connection = get_connection()          # 一批共用一条 SMTP 连接
+        send_mass_mail(messages, connection=connection)
+        Profile.objects.filter(user__in=batch).update(
+            enroll_reminder_sent_at=timezone.now())
+        sent += len(batch)
+    return sent</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 调度：Celery Beat
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    &#x27;enroll-reminder-daily&#x27;: {
+        &#x27;task&#x27;: &#x27;students.tasks.enroll_reminder&#x27;,
+        &#x27;schedule&#x27;: crontab(hour=9, minute=0),
+        &#x27;kwargs&#x27;: {&#x27;days&#x27;: 30},
+    },
+}</code></pre></div>
+<blockquote class="callout-warn"><p><strong>Beat 必须只跑一个实例。</strong> 它不做分布式协调——起两个 beat 进程，每个定时任务就会被派发两次。生产环境要么用容器编排保证副本数为 1，要么换成 <code>django-celery-beat</code>（把调度表存进数据库）配合外部锁。这一点和 Spring 的 <code>@Scheduled</code> 需要 ShedLock 是同类问题。</p></blockquote>
+
+</section><section class="chapter" id="reliability">
+<h2>四、可靠性：投递语义与幂等</h2>
+
+<h3>4.1 没有「恰好一次」</h3>
+<p>分布式消息系统只有两种现实可选的投递语义：</p>
+<div class="matrix">
+<table>
+<thead><tr><th>语义</th><th>怎么来的</th><th>后果</th><th>Celery 里的开关</th></tr></thead>
+<tbody>
+<tr><td><strong>至多一次</strong><br>at-most-once</td><td>取走消息就确认，然后再执行</td><td>worker 崩溃 → <strong>任务丢失</strong></td><td><code>acks_late=False</code>（默认，本仓库现状）</td></tr>
+<tr><td><strong>至少一次</strong><br>at-least-once</td><td>执行完成才确认</td><td>worker 崩溃 → <strong>任务重复执行</strong></td><td><code>acks_late=True</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>「恰好一次」在跨进程、跨网络的场景下无法真正实现——你能做到的是<strong>「至少一次投递 + 幂等执行」</strong>，两者合起来在效果上等价于恰好一次。所以打开 <code>acks_late</code> 的同时，必须让任务本身幂等。</p>
+
+<h3>4.2 怎么让任务幂等</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 方案一：用业务状态做守卫（最简单，够用于大多数场景）
+@shared_task(acks_late=True)
+def order_created(order_id):
+    order = Order.objects.filter(id=order_id).first()
+    if order is None or order.confirmation_sent_at:
+        return &#x27;skipped&#x27;
+    send_mail(...)
+    Order.objects.filter(id=order_id).update(confirmation_sent_at=timezone.now())</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 方案二：用数据库唯一约束兜住并发（防得住同时到达的两个副本）
+class SentNotification(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    kind = models.CharField(max_length=32)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=[&#x27;order&#x27;, &#x27;kind&#x27;], name=&#x27;uniq_order_kind&#x27;)
+        ]
+
+@shared_task(acks_late=True)
+def order_created(order_id):
+    try:
+        with transaction.atomic():
+            SentNotification.objects.create(order_id=order_id, kind=&#x27;created&#x27;)
+    except IntegrityError:
+        return &#x27;already sent&#x27;        # 另一个副本抢先了
+    send_mail(...)</code></pre></div>
+<blockquote><p>方案二有一个细节值得注意：先<strong>占坑</strong>再发邮件。如果反过来（先发邮件再记录），在两者之间崩溃就会重复发送。先占坑的代价是——万一发送失败，坑已经占了，需要在异常处理里把记录删掉，或者接受「宁可漏发不可重发」。选哪种取决于业务：营销邮件宁可漏发，支付凭证宁可重发。</p></blockquote>
+
+<h3>4.3 失败之后去哪里</h3>
+<p>重试耗尽的任务不该无声消失。Celery 没有内建死信队列，常见做法是挂 <code>on_failure</code> 钩子：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class TrackedTask(Task):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        FailedTask.objects.create(
+            task_name=self.name, task_id=task_id,
+            args=repr(args), kwargs=repr(kwargs),
+            traceback=str(einfo), failed_at=timezone.now(),
+        )
+        # 同时推给错误监控（Sentry 等）
+        logger.error(&#x27;task failed permanently: %s&#x27;, self.name,
+                     extra={&#x27;task_id&#x27;: task_id}, exc_info=exc)
+
+
+@shared_task(base=TrackedTask, bind=True, autoretry_for=(Exception,),
+             retry_backoff=True, max_retries=5, acks_late=True)
+def order_created(self, order_id):
+    ...</code></pre></div>
+<p>有了这张表，你既能查「今天有多少任务彻底失败了」，也能做人工重放。<strong>没有结果后端 + 没有失败记录 = 任务失败在系统里不留任何痕迹</strong>，这正是本仓库当前的状态。</p>
+
+<h3>4.4 一条实用的自查清单</h3>
+<p>给每个准备写成异步任务的操作，问四个问题：</p>
+<ul>
+<li><strong>它执行两次会怎样？</strong> 不能接受就要做幂等。</li>
+<li><strong>它一次都没执行会怎样？</strong> 不能接受就要 <code>acks_late</code> + 重试 + 失败记录。</li>
+<li><strong>它依赖的数据在执行时还在吗？</strong> 传 id 不传对象，并在任务里处理「对象已删除」。</li>
+<li><strong>它最坏要跑多久？</strong> 据此设 <code>soft_time_limit</code>，并决定要不要单独一个队列。</li>
+</ul>
+
+</section><section class="chapter" id="checklist">
+<h2>五、上线前检查清单</h2>
+
+<ul class="check">
+<li><span class="mk">01</span><span><b>显式配置 <code>CELERY_BROKER_URL</code></b>。不配就是 <code>amqp://localhost</code>，而你多半没有跑 RabbitMQ。见 F-01。</span></li>
+<li><span class="mk">02</span><span><b>docker-compose 里要有 worker 服务</b>。任务代码写完不等于有人执行它。</span></li>
+<li><span class="mk">03</span><span><b>只用 json 序列化</b>：<code>CELERY_ACCEPT_CONTENT = ['json']</code>。pickle 反序列化等于执行任意代码，能往 broker 写数据的人就能拿到你的 worker。</span></li>
+<li><span class="mk">04</span><span><b>任务参数传 id，不传 ORM 对象</b>。本仓库这一点做对了。</span></li>
+<li><span class="mk">05</span><span><b>派发用 <code>transaction.on_commit</code> 包一层</b>。没有事务时它会立即执行，所以无脑加是安全的。见 F-04。</span></li>
+<li><span class="mk">06</span><span><b><code>.delay()</code> 失败不该阻断主流程</b>。它是同步网络调用，会失败；用 try/except 兜住并记录。见 F-02。</span></li>
+<li><span class="mk">07</span><span><b>给 broker 连接设短超时</b>，别让一次 broker 抖动把 web 进程拖住几秒。</span></li>
+<li><span class="mk">08</span><span><b>开 <code>acks_late</code>，同时把任务写成幂等的</b>。两者是配套的，只开一个更糟。见第四节。</span></li>
+<li><span class="mk">09</span><span><b>声明 <code>autoretry_for</code> + <code>retry_backoff</code> + <code>retry_jitter</code></b>。没有 jitter 的重试会在故障恢复瞬间形成风暴。</span></li>
+<li><span class="mk">10</span><span><b>设 <code>soft_time_limit</code> 和 <code>time_limit</code></b>。不设的话一个卡住的任务能永久占用一个 worker 槽位。</span></li>
+<li><span class="mk">11</span><span><b>重任务单独队列、单独 worker</b>，并配 <code>--max-tasks-per-child</code> 缓解内存泄漏。见 F-06。</span></li>
+<li><span class="mk">12</span><span><b>失败要留痕</b>：<code>on_failure</code> 写库 + 推错误监控。失败无声比失败本身更可怕。</span></li>
+<li><span class="mk">13</span><span><b>Webhook 处理函数必须幂等</b>，最好按外部 event id 去重并落到数据库唯一约束上。见 F-03。</span></li>
+<li><span class="mk">14</span><span><b>Beat 只能跑一个实例</b>，多副本会让每个定时任务被派发多次。</span></li>
+<li><span class="mk">15</span><span><b>批量作业要分批</b>，别把整张表读进内存，也别在一次 SMTP 会话里投递上万封邮件。见 F-09。</span></li>
+<li><span class="mk">16</span><span><b>会产生外部副作用的管理命令，参数要么必填、要么默认值保守</b>，并提供 <code>--dry-run</code>。见 F-08。</span></li>
+</ul>
+
+</section><section class="chapter" id="compare">
+<h2>六、同样的异步任务：Spring 与 Hono.js 怎么做</h2>
+<p>仍用本仓库的真实场景对比：<strong>「下单成功后发送确认邮件，不阻塞用户拿到支付页面」</strong>，以及它在生产环境必然要面对的<strong>「失败要重试、要能查、要有兜底」</strong>。</p><h3>6.1 派发一个后台任务</h3><div class="cmp three"><div class="fw"><h4>Django + Celery 5.4</h4><div class="fwbody"><p>任务是独立进程，通过消息队列解耦。Django 本身<strong>不提供</strong>任何后台任务能力，Celery 是事实标准。</p><pre># tasks.py —— 本仓库的写法
+from celery import shared_task
+
+@shared_task
+def order_created(order_id):        # 传 id，不传 ORM 对象（正确）
+    order = Order.objects.get(id=order_id)
+    send_mail(...)
+
+# 视图里派发
+from django.db import transaction
+
+with transaction.atomic():
+    order = form.save()
+    transaction.on_commit(
+        lambda: order_created.delay(order.id))
+
+# settings.py（本仓库缺的就是这一段）
+CELERY_BROKER_URL = &#x27;redis://cache:6379/0&#x27;
+CELERY_RESULT_BACKEND = &#x27;redis://cache:6379/1&#x27;
+CELERY_TASK_ACKS_LATE = True</pre><ul><li><code>@shared_task</code> 让任务不绑定具体 app 实例，可跨项目复用</li><li>事务与派发的先后要<strong>自己用 <code>on_commit</code> 管</strong>，框架不会提醒</li><li>必须额外运维 broker + worker 两类进程</li></ul></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><p>三个层次可选：进程内线程池、事务事件、外部消息队列。<strong>轻量场景不需要额外基础设施</strong>。</p><pre>// ① 最轻量：@Async + 线程池（进程内，重启即丢）
+@Async(&quot;mailExecutor&quot;)
+public void orderCreated(Long orderId) { ... }
+
+// ② 事务绑定：Spring 原生支持提交后触发
+@TransactionalEventListener(
+    phase = TransactionPhase.AFTER_COMMIT)
+public void on(OrderCreatedEvent e) {
+    mailService.send(e.orderId());
+}
+
+// ③ 真正的分布式队列：Spring AMQP / Kafka
+@RabbitListener(queues = &quot;orders&quot;)
+public void handle(OrderCreatedMessage msg) { ... }
+
+// 重试是声明式的
+@Retryable(maxAttempts = 5,
+           backoff = @Backoff(delay = 1000, multiplier = 2))
+public void sendInvoice(Long id) { ... }</pre><ul><li><code>@TransactionalEventListener</code> 把「提交后才执行」做成了框架能力</li><li><code>@Async</code> 的任务活在 JVM 内存里，<strong>重启即丢</strong>，只适合可丢失的工作</li><li>要可靠投递仍需 RabbitMQ / Kafka，和 Celery 一样要运维</li></ul></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><p>Serverless / 边缘环境<strong>没有常驻进程</strong>，「后台 worker」这个概念本身不成立。</p><pre>// 边缘环境没有常驻 worker 进程，两条路：
+
+// ① waitUntil：响应先返回，任务在后台跑完
+app.post(&#x27;/orders&#x27;, async (c) =&gt; {
+  const order = await createOrder(...)
+  c.executionCtx.waitUntil(sendOrderEmail(order.id))
+  return c.json({ id: order.id })   // 立刻返回
+})
+
+// ② 队列服务（Cloudflare Queues）
+export default {
+  fetch: app.fetch,
+  async queue(batch, env) {          // 独立的消费者入口
+    for (const msg of batch.messages) {
+      await sendOrderEmail(msg.body.orderId)
+      msg.ack()                      // 显式确认
+    }
+  },
+}</pre><ul><li><code>waitUntil</code> 让响应先返回、任务继续跑，但受平台 CPU 时间上限约束</li><li>真正的队列要用平台服务（Cloudflare Queues、SQS）</li><li>消费者是<strong>另一个入口函数</strong>，不是另一个进程</li></ul></div></div></div><h3>6.2 重试、兜底与定时</h3><div class="cmp three"><div class="fw"><h4>Django + Celery</h4><div class="fwbody"><pre># 重试：装饰器参数声明
+@shared_task(
+    bind=True,
+    autoretry_for=(SMTPException, ConnectionError),
+    retry_backoff=True,        # 指数退避
+    retry_backoff_max=600,
+    retry_jitter=True,         # 加抖动，避免重试风暴
+    max_retries=5,
+    acks_late=True,            # 执行完才确认
+    soft_time_limit=30,
+    time_limit=60,
+)
+def order_created(self, order_id):
+    ...
+
+# 定时任务：Celery Beat
+app.conf.beat_schedule = {
+    &#x27;enroll-reminder&#x27;: {
+        &#x27;task&#x27;: &#x27;students.tasks.enroll_reminder&#x27;,
+        &#x27;schedule&#x27;: crontab(hour=9, minute=0),
+    },
+}</pre><p>重试策略写在<strong>装饰器参数</strong>里，声明式，且 <code>retry_backoff</code> + <code>retry_jitter</code> 开箱即用。</p><p>定时任务需要<strong>额外跑一个 celery beat 进程</strong>，且 beat 单实例运行，本身是个单点。</p></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><pre>// 重试：@Retryable + @Recover 兜底
+@Retryable(retryFor = MailException.class,
+           maxAttempts = 5,
+           backoff = @Backoff(delay = 1000,
+                              multiplier = 2,
+                              random = true))
+public void send(Long orderId) { ... }
+
+@Recover
+public void onGiveUp(MailException e, Long orderId) {
+    deadLetterRepo.save(orderId, e.getMessage());
+}
+
+// 定时任务：注解即调度，无需额外进程
+@Scheduled(cron = &quot;0 0 9 * * *&quot;)
+public void enrollReminder() { ... }
+
+// 分布式环境要加锁，否则每个实例都会跑
+@SchedulerLock(name = &quot;enrollReminder&quot;)</pre><p><code>@Recover</code> 提供了「重试耗尽后怎么办」的显式钩子，这一点比 Celery 的 <code>on_failure</code> 更顺手。</p><p><code>@Scheduled</code> 不需要独立进程，但多实例部署时必须配 ShedLock 之类的分布式锁，否则每个实例都会各跑一遍。</p></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><pre>// Cloudflare Queues 自带重试与死信队列，
+// 但配置在 wrangler.toml，不在代码里：
+//
+// [[queues.consumers]]
+// queue = &quot;orders&quot;
+// max_retries = 5
+// dead_letter_queue = &quot;orders-dlq&quot;
+
+// 代码里只决定这一条要不要重试
+async queue(batch, env) {
+  for (const msg of batch.messages) {
+    try {
+      await sendOrderEmail(msg.body.orderId)
+      msg.ack()
+    } catch (e) {
+      msg.retry({ delaySeconds: 30 })
+    }
+  }
+}
+
+// 定时任务：Cron Triggers
+export default {
+  async scheduled(event, env, ctx) { ... },
+}</pre><p>重试与死信队列由<strong>平台配置</strong>决定，代码里只能决定单条消息 ack 还是 retry。</p><p>定时任务是平台的 Cron Trigger，天然单次触发，<strong>不存在多实例重复执行的问题</strong>。</p></div></div></div><h3>6.3 逐项对照</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>维度</th><th>Django + Celery 5.4</th><th>Spring Boot 3.x</th><th>Hono.js（边缘）</th></tr></thead>
+<tbody>
+<tr><td>框架自带后台任务</td><td><strong>无</strong>，必须引入 Celery 等</td><td><strong>有</strong>，<code>@Async</code> / <code>@Scheduled</code></td><td>无，依赖平台服务</td></tr>
+<tr><td>额外基础设施</td><td>Broker + Worker 进程</td><td>轻量场景零依赖；可靠投递需 MQ</td><td>平台托管，无需自运维</td></tr>
+<tr><td>事务提交后触发</td><td>手动 <code>transaction.on_commit</code></td><td><strong>框架能力</strong> <code>@TransactionalEventListener</code></td><td>无事务概念（取决于所用 DB）</td></tr>
+<tr><td>重试与退避</td><td>装饰器参数，含 jitter</td><td><code>@Retryable</code> + <code>@Recover</code></td><td>平台配置 + <code>msg.retry()</code></td></tr>
+<tr><td>失败兜底钩子</td><td><code>on_failure</code> / 死信队列需自建</td><td><strong><code>@Recover</code></strong> 显式</td><td><strong>死信队列</strong>平台内建</td></tr>
+<tr><td>默认可靠性</td><td><code>acks_late=False</code>，<strong>崩溃即丢</strong></td><td><code>@Async</code> 重启即丢；MQ 模式可靠</td><td>队列默认至少一次投递</td></tr>
+<tr><td>定时任务</td><td>额外的 beat 进程（单点）</td><td><code>@Scheduled</code>，多实例需分布式锁</td><td>Cron Trigger，平台保证单次</td></tr>
+<tr><td>任务参数</td><td>必须可序列化，<strong>传 id 不传对象</strong></td><td>同左</td><td>JSON，同左</td></tr>
+<tr><td>可观测性</td><td>Flower / 结果后端，需自己接</td><td>Actuator + Micrometer 内建</td><td>平台面板内建</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>三句话概括</h4>
+<ul>
+<li><strong>Celery 能力最全，但它是「另一套系统」。</strong>重试、退避、路由、优先级、工作流（chain / group / chord）它都有，代价是你要额外运维 broker、worker、beat 三类进程，而且这些进程的健康状况 Django 一无所知——本仓库的 F-01 正是这种「代码写完了但运行时不存在」的典型。它也把事务与派发的时序完全交给了开发者，<code>transaction.on_commit</code> 不写就是个定时炸弹。</li>
+<li><strong>Spring 的分层选择最务实。</strong>「发个邮件、丢了也无所谓」用 <code>@Async</code>，零基础设施；「必须跟着事务走」用 <code>@TransactionalEventListener</code>，框架直接保证提交后才执行——这正是 Django 需要手写 <code>on_commit</code> 的那件事；「必须可靠投递」才上 RabbitMQ。而 <code>@Recover</code> 让「重试耗尽之后怎么办」有了标准位置，这个钩子 Celery 里要自己搭。</li>
+<li><strong>Hono 的模型完全不同：没有常驻进程，就没有 worker。</strong><code>waitUntil</code> 解决的是「响应先返回、收尾继续跑」，但它受平台 CPU 时间上限约束，不能替代真正的队列。需要可靠性时用平台队列服务，重试和死信队列是<strong>配置而非代码</strong>——好处是这些能力不用自己实现也不会被写错，坏处是你被绑在平台上，本地开发和测试都要靠模拟器。</li>
+</ul>
+
+</section>
+    <div class="footdoc">
+      由 Claude 对照本仓库源码与 Celery 5.4 / Django 5.2 源码整理生成 · 实测结论基于本机复现 · 图示为教学示意
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>
