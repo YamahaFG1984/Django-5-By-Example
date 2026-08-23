@@ -1,0 +1,1330 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORM 实战指南</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext x=%2250%22 y=%2262%22 font-size=%2262%22 text-anchor=%22middle%22%3E%F0%9F%97%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif CJK SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram svg .box{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.25; }
+.diagram svg .box-a{ fill:var(--accent2-soft); stroke:var(--accent2); stroke-width:1.25; }
+.diagram svg .box-w{ fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.25; }
+.diagram svg text{ font-family:var(--font-mono); dominant-baseline:middle; }
+.diagram svg .lbl{ fill:var(--ink-soft); }
+.diagram svg .lbl-strong{ fill:var(--ink); font-weight:700; }
+.diagram svg .lbl-accent{ fill:var(--accent2-strong); font-weight:700; }
+.diagram svg .lbl-warn{ fill:var(--danger); font-weight:700; }
+.diagram svg .edge{ stroke:var(--ink-faint); stroke-width:1.4; fill:none; }
+.diagram svg .edge-a{ stroke:var(--accent2); stroke-width:1.6; fill:none; }
+.diagram svg .edge-w{ stroke:var(--danger); stroke-width:1.6; fill:none; }
+.diagram svg .edge-dashed{ stroke-dasharray:4 3; }
+.diagram svg marker path{ fill:var(--ink-faint); }
+.diagram svg marker.m-a path{ fill:var(--accent2); }
+.diagram svg marker.m-w path{ fill:var(--danger); }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+
+
+:root{
+  --ok:#2f6d3f; --ok-soft:#e4f0e5; --ok-line:#8fbf9b;
+  --sev-hi:#9c3b2c; --sev-mid:#a86a0b; --sev-lo:#5b6357;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+    --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+  }
+}
+:root[data-theme="dark"]{
+  --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+  --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+}
+
+/* ---- lede / summary panel ---- */
+.lede{
+  border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:22px 24px; margin:0 0 30px; box-shadow:var(--shadow);
+}
+.lede h3{ margin:0 0 12px; font-size:.83rem; font-family:var(--font-mono);
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent2); font-weight:700; }
+.lede ol{ margin:0; padding-left:1.3em; }
+.lede li{ margin:0 0 .55em; }
+.lede li:last-child{ margin-bottom:0; }
+
+/* ---- finding cards ---- */
+.finding{
+  border:1px solid var(--line-strong); border-left:4px solid var(--sev-hi);
+  border-radius:5px; background:var(--surface); padding:18px 20px; margin:0 0 20px;
+  box-shadow:var(--shadow);
+}
+.finding.mid{ border-left-color:var(--sev-mid); }
+.finding.lo{ border-left-color:var(--sev-lo); }
+.finding .fhead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.finding .fid{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.09em; font-weight:700;
+  color:var(--paper); background:var(--sev-hi); padding:2px 7px; border-radius:3px;
+}
+.finding.mid .fid{ background:var(--sev-mid); }
+.finding.lo .fid{ background:var(--sev-lo); }
+.finding .ftitle{ font-weight:700; font-size:1.02rem; color:var(--ink); flex:1 1 auto; min-width:12ch; }
+.finding .fmeta{ font-family:var(--font-mono); font-size:.72rem; color:var(--ink-faint); }
+.finding p{ margin:0 0 .85em; }
+.finding p:last-child{ margin-bottom:0; }
+.finding dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:baseline; }
+.finding dt{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); white-space:nowrap; padding-top:.15em;
+}
+.finding dd{ margin:0; }
+
+/* ---- verified evidence terminal ---- */
+.term{
+  border:1px solid var(--code-border); border-radius:6px; overflow:hidden;
+  margin:0 0 1.3em; box-shadow:var(--shadow);
+}
+.term .thead{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ok); background:var(--ok-soft); padding:6px 14px; border-bottom:1px solid var(--ok-line);
+  display:flex; align-items:center; gap:8px;
+}
+.term pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink); padding:14px 16px;
+  overflow-x:auto; font-family:var(--font-mono); font-size:.8rem; line-height:1.6;
+}
+.term pre b{ color:var(--danger); font-weight:700; }
+.term pre i{ color:var(--ok); font-style:normal; font-weight:700; }
+
+/* ---- good / bad code pairing ---- */
+.pair{ display:grid; gap:14px; margin:0 0 1.4em; }
+@media (min-width:820px){ .pair.two{ grid-template-columns:1fr 1fr; } }
+.pane{ border:1px solid var(--code-border); border-radius:6px; overflow:hidden; min-width:0; }
+.pane > .ph{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  padding:6px 13px; border-bottom:1px solid var(--code-border); font-weight:700;
+}
+.pane.bad > .ph{ color:var(--danger); background:var(--danger-soft); }
+.pane.good > .ph{ color:var(--ok); background:var(--ok-soft); }
+.pane pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink);
+  padding:14px 16px; overflow-x:auto; font-family:var(--font-mono);
+  font-size:.79rem; line-height:1.62;
+}
+
+/* ---- three-way framework comparison ---- */
+.cmp{ display:grid; gap:14px; margin:0 0 1.6em; }
+@media (min-width:900px){ .cmp.three{ grid-template-columns:repeat(3,1fr); } }
+.fw{ border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:0 0 16px; min-width:0; box-shadow:var(--shadow); overflow:hidden; }
+.fw > h4{
+  margin:0 0 12px; padding:10px 16px; font-size:.86rem; font-family:var(--font-mono);
+  letter-spacing:.06em; font-weight:700; border-bottom:1px solid var(--line);
+  background:var(--surface-2); color:var(--accent2-strong);
+}
+.fw .fwbody{ padding:0 16px; }
+.fw p{ margin:0 0 .8em; font-size:.9rem; }
+.fw pre{
+  margin:0 0 .9em; background:var(--code-bg); border:1px solid var(--code-border);
+  border-radius:5px; padding:11px 12px; overflow-x:auto;
+  font-family:var(--font-mono); font-size:.74rem; line-height:1.55; color:var(--code-ink);
+}
+.fw ul{ margin:0; padding-left:1.15em; font-size:.86rem; }
+.fw li{ margin:0 0 .42em; }
+
+/* ---- decision matrix ---- */
+.matrix{ overflow-x:auto; margin:0 0 1.5em; border:1px solid var(--line); border-radius:6px; }
+.matrix table{ width:100%; border-collapse:collapse; font-size:.86rem; min-width:640px; margin:0; }
+.matrix th{
+  text-align:left; padding:10px 13px; background:var(--accent2-soft); color:var(--accent2-strong);
+  font-weight:700; border-bottom:1px solid var(--line-strong); vertical-align:bottom;
+}
+.matrix td{ padding:10px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.matrix tr:last-child td{ border-bottom:none; }
+.matrix tr:nth-child(even) td{ background:var(--surface-2); }
+.matrix td.lv{ font-family:var(--font-mono); font-weight:700; color:var(--accent-strong); white-space:nowrap; }
+
+/* ---- checklist ---- */
+.check{ list-style:none; padding:0; margin:0 0 1.5em; display:flex; flex-direction:column; gap:10px; }
+.check li{
+  display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:baseline;
+  border:1px solid var(--line); border-radius:5px; padding:12px 15px; background:var(--surface);
+  margin:0; font-size:.93rem;
+}
+.check li > .mk{ font-family:var(--font-mono); font-weight:700; color:var(--accent2); font-size:.8rem; }
+.check li b{ color:var(--accent-strong); }
+
+/* the guide uses one <h2> per section like the chapter pages, so inherit that rule */
+.chapter h4{ font-size:.97rem; margin:1.7em 0 .6em; font-weight:700; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5.2 · 专题指南</span>
+      <h1>&#x1F5C4;&#xFE0F;&nbsp; ORM 实战指南</h1>
+      <p>约束的三个层次、模型设计与查询性能，对照本仓库四个项目的真实模型代码逐处分析，并与 Spring Data JPA、Drizzle 的同场景做法对比。</p>
+    </div>
+    <nav>
+      <a href="#tldr"><span class="n">速览</span>本文结论速览</a><a href="#layers"><span class="n">分层</span>Django 里「校验」有三个互不相通的含义</a><a href="#audit"><span class="n">现状</span>本仓库模型代码逐处分析</a><a href="#findings"><span class="n">缺陷</span>八个已验证的问题与修复</a><a href="#perf"><span class="n">查询</span>查询性能：几条能直接用的规则</a><a href="#checklist"><span class="n">清单</span>上线前检查清单</a><a href="#compare"><span class="n">对比</span>同样的数据层：Spring Data JPA 与 Drizzle 怎么做</a>
+    </nav>
+    <div class="series">
+      <div class="label">相关阅读</div>
+      <a href="guide-auth.html">&#x1F510; 认证与授权实战指南</a>
+      <a href="guide-async-tasks.html">&#x2699;&#xFE0F; 异步任务实战指南</a>
+      <a href="guide-pagination.html">&#x1F4D1; 分页实战指南</a>
+      <a href="guide-rest-api.html">&#x1F50C; DRF 接口实战指南</a>
+      <a href="guide-redis-caching.html">&#x26A1; Redis 缓存实战指南</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">专题指南 · 约束 / 模型设计 / 查询性能 / 横向对比</span>
+      <h1>Django ORM 实战指南</h1>
+      <p class="sub">面向 Django 5.2。所有论断均在本机实测验证，代码分析覆盖本仓库四个项目、17 章的全部模型代码。</p>
+      <div class="meta">
+        <span>Django 5.2</span>
+        <span>含 6 张架构示意图</span>
+        <span>8 个已验证的问题</span>
+      </div>
+    </div>
+    <section class="chapter" id="tldr">
+<h2>本文结论速览</h2>
+
+<div class="lede">
+<h3>三条最重要的结论</h3>
+<ol>
+<li><strong>用中文标题收藏一张图片，保存成功后会立刻 500。</strong> <code>Image.save()</code> 用 <code>slugify(self.title)</code> 生成 slug，而 <code>slugify('日落时分的海湾')</code> 返回<strong>空串</strong>；空 slug 让 <code>get_absolute_url()</code> 抛 <code>NoReverseMatch</code>，而 <code>image_create</code> 视图保存后紧接着就是 <code>redirect(new_image.get_absolute_url())</code>。详见 <a href="#findings">F-01</a>。</li>
+<li><strong>全仓库 <code>Meta.constraints</code> 是空的，三个缺陷都由此而来。</strong> <code>unique_for_date</code> 只在表单层生效、<code>(course, order)</code> 没有唯一约束、<code>Contact</code> 既能重复也能自己关注自己——实测全部可以通过 <code>objects.create()</code> 直接写进数据库。详见 <a href="#findings">F-02、F-03、F-06</a>。</li>
+<li><strong><code>bulk_create</code> 会让 <code>OrderField</code> 算出一模一样的排序值。</strong> 实测批量插入 4 个模块，四个的 <code>order</code> 全是 <strong>0</strong>——因为四次 <code>pre_save</code> 都发生在同一批 INSERT 之前，各自查到的「上一条」是同一个。详见 <a href="#findings">F-03</a>。</li>
+</ol>
+</div>
+<p>本文结构与前五篇指南一致：先讲 <strong>Django ORM 里「校验」的三个层次</strong>（这是理解后面全部缺陷的钥匙），再<strong>逐处分析本仓库的模型代码</strong>，然后是<strong>八个已验证的问题及修复</strong>、<strong>查询性能专题</strong>，最后是<strong>上线清单</strong>与 <strong>Spring Data JPA / Drizzle 对比</strong>。所有论断都在本机 Django 5.2 上实测验证，实测输出以绿色标题的终端块标注。</p>
+
+</section><section class="chapter" id="layers">
+<h2>一、Django 里「校验」有三个互不相通的含义</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 440" role="img" aria-label="图 1 · 约束的三个层次：写入路径越「底层」，经过的校验越少，只有数据库约束无路可绕"><defs>
+          <marker id="do1-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do1-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do1-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">同一条「唯一性」规则，可以落在三个完全不同的层次上</text>
+<rect class="box-w" x="20" y="36" width="230" height="76" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="68.0" text-anchor="middle" font-size="12.5">① 表单层</text>
+<text class="lbl" x="135.0" y="86.5" text-anchor="middle" font-size="10.5">ModelForm.validate_unique()</text>
+<text class="lbl" x="135.0" y="98.5" text-anchor="middle" font-size="10.5">unique_for_date 只在这一层</text>
+<rect class="box-w" x="280" y="36" width="200" height="76" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="68.0" text-anchor="middle" font-size="12.5">② 模型层</text>
+<text class="lbl" x="380.0" y="86.5" text-anchor="middle" font-size="10.5">Model.full_clean()</text>
+<text class="lbl" x="380.0" y="98.5" text-anchor="middle" font-size="10.5">默认 save() 不会调用它</text>
+<rect class="box-a" x="510" y="36" width="230" height="76" rx="4"></rect>
+<text class="lbl-strong" x="625.0" y="68.0" text-anchor="middle" font-size="12.5">③ 数据库层</text>
+<text class="lbl" x="625.0" y="86.5" text-anchor="middle" font-size="10.5">UNIQUE / CHECK 约束</text>
+<text class="lbl" x="625.0" y="98.5" text-anchor="middle" font-size="10.5">任何写入路径都绕不过</text>
+<line x1="20" y1="140" x2="740" y2="140" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="162" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">哪些写入路径会经过哪一层</text>
+<rect class="box" x="20" y="176" width="300" height="38" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="195.0" text-anchor="middle" font-size="11.5">admin / ModelForm</text>
+<rect class="box-a" x="360" y="176" width="150" height="38" rx="4"></rect>
+<text class="lbl-strong" x="435.0" y="195.0" text-anchor="middle" font-size="11.5">①②③</text>
+<line class="edge-a" x1="320" y1="195" x2="360" y2="195" marker-end="url(#do1-ma)"></line>
+<rect class="box" x="20" y="222" width="300" height="38" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="241.0" text-anchor="middle" font-size="11.5">objects.create()</text>
+<rect class="box-w" x="360" y="222" width="150" height="38" rx="4"></rect>
+<text class="lbl-strong" x="435.0" y="241.0" text-anchor="middle" font-size="11.5">只有 ③</text>
+<line class="edge-w" x1="320" y1="241" x2="360" y2="241" marker-end="url(#do1-mw)"></line>
+<rect class="box" x="20" y="268" width="300" height="38" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="287.0" text-anchor="middle" font-size="11.5">bulk_create()</text>
+<rect class="box-w" x="360" y="268" width="150" height="38" rx="4"></rect>
+<text class="lbl-strong" x="435.0" y="287.0" text-anchor="middle" font-size="11.5">只有 ③</text>
+<line class="edge-w" x1="320" y1="287" x2="360" y2="287" marker-end="url(#do1-mw)"></line>
+<rect class="box" x="20" y="314" width="300" height="38" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="333.0" text-anchor="middle" font-size="11.5">queryset.update()</text>
+<rect class="box-w" x="360" y="314" width="150" height="38" rx="4"></rect>
+<text class="lbl-strong" x="435.0" y="333.0" text-anchor="middle" font-size="11.5">只有 ③</text>
+<line class="edge-w" x1="320" y1="333" x2="360" y2="333" marker-end="url(#do1-mw)"></line>
+<rect class="box" x="20" y="360" width="300" height="38" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="379.0" text-anchor="middle" font-size="11.5">数据导入 / 管理命令 / SQL</text>
+<rect class="box-w" x="360" y="360" width="150" height="38" rx="4"></rect>
+<text class="lbl-strong" x="435.0" y="379.0" text-anchor="middle" font-size="11.5">只有 ③</text>
+<line class="edge-w" x1="320" y1="379" x2="360" y2="379" marker-end="url(#do1-mw)"></line>
+<text class="lbl" x="540" y="240" text-anchor="start" font-size="11">结论：只有落到</text>
+<text class="lbl" x="540" y="256" text-anchor="start" font-size="11">数据库层的约束</text>
+<text class="lbl" x="540" y="272" text-anchor="start" font-size="11">才是真的约束。</text>
+<text class="lbl" x="540" y="288" text-anchor="start" font-size="11">表单校验是给人</text>
+<text class="lbl" x="540" y="304" text-anchor="start" font-size="11">看的提示，不是</text>
+<text class="lbl" x="540" y="320" text-anchor="start" font-size="11">数据完整性保证。</text></svg><figcaption class="cap">图 1 · 约束的三个层次：写入路径越「底层」，经过的校验越少，只有数据库约束无路可绕</figcaption></figure>
+<p>这是本文最重要的一节。Django 允许你在三个不同的层次上表达同一条规则，而<strong>它们的生效范围完全不同</strong>：</p>
+<div class="matrix">
+<table>
+<thead><tr><th>层次</th><th>写法</th><th>什么时候执行</th><th>能挡住谁</th></tr></thead>
+<tbody>
+<tr><td class="lv">① 表单层</td><td><code>clean_&lt;field&gt;()</code>、<code>unique_for_date</code>、<code>validators</code></td><td><code>form.is_valid()</code> 时</td><td>只能挡住走 admin / ModelForm 的写入</td></tr>
+<tr><td class="lv">② 模型层</td><td><code>Model.full_clean()</code>、<code>Model.clean()</code></td><td><strong>只有你显式调用时</strong></td><td>几乎挡不住谁——<code>save()</code> 默认不调用它</td></tr>
+<tr><td class="lv">③ 数据库层</td><td><code>Meta.constraints</code>、<code>unique=True</code></td><td>每一次 INSERT / UPDATE</td><td><strong>所有写入路径</strong>，包括原始 SQL</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="callout-warn"><p><strong>最容易踩的一条：<code>Model.save()</code> 不会调用 <code>full_clean()</code>。</strong> 很多人以为字段上写了 <code>validators=[...]</code> 或者 <code>MaxValueValidator</code> 就万无一失了，实际上 <code>Model.objects.create(discount=99999)</code> 会畅通无阻地写进数据库——那些 validator 只在表单校验时跑。本仓库 <code>Order.discount</code> 上就挂着 <code>MinValueValidator(0), MaxValueValidator(100)</code>，但没有对应的 <code>CheckConstraint</code>。</p></blockquote>
+<p>下面三节里 <strong>F-02、F-03、F-06 全部是同一个模式</strong>：规则写在了 ① 或 ②，而实际写入走的是 ③ 才能拦住的路径。</p>
+
+<h3>1.1 判断规则该写在哪一层</h3>
+<ul>
+<li><strong>凡是「数据不能这样」的规则，都应该有一条数据库约束。</strong>唯一性、取值范围、互斥关系、非空组合——这些是数据完整性，不是用户体验。</li>
+<li><strong>表单层的校验是给人看的提示。</strong>它的价值在于给出友好的错误信息、在提交前拦住明显错误，而不是保证数据正确。</li>
+<li><strong>两者不是二选一，而是都要。</strong>只有数据库约束，用户会看到一个 500；只有表单校验，脏数据会从别的入口溜进来。正确做法是<strong>数据库约束保证正确性，表单校验提供体验</strong>，并在视图里捕获 <code>IntegrityError</code> 转成友好提示。</li>
+</ul>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 同一条规则，两层都写
+class Contact(models.Model):
+    user_from = models.ForeignKey(User, related_name=&#x27;rel_from_set&#x27;, on_delete=models.CASCADE)
+    user_to = models.ForeignKey(User, related_name=&#x27;rel_to_set&#x27;, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=[&#x27;user_from&#x27;, &#x27;user_to&#x27;], name=&#x27;uniq_contact&#x27;),
+            models.CheckConstraint(
+                condition=~models.Q(user_from=models.F(&#x27;user_to&#x27;)),   # 不能关注自己
+                name=&#x27;no_self_follow&#x27;,
+            ),
+        ]</code></pre></div>
+<blockquote><p><code>CheckConstraint</code> 的参数在 <strong>Django 5.1 起由 <code>check=</code> 改名为 <code>condition=</code></strong>，旧名在 5.2 上仍可用但会发弃用警告，计划在 6.0 移除。写新代码直接用 <code>condition=</code>。</p></blockquote>
+
+</section><section class="chapter" id="audit">
+<h2>二、本仓库模型代码逐处分析</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 452" role="img" aria-label="图 6 · 全仓库 ORM 习惯速览：索引与快照做得不错，约束与预取则基本空白"><defs>
+          <marker id="do6-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do6-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do6-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">写得好的地方</text>
+<rect class="box-a" x="20" y="36" width="380" height="38" rx="4"></rect>
+<text class="lbl-strong" x="210.0" y="55.0" text-anchor="middle" font-size="11">两个管理器时把 objects 放在最前</text>
+<text class="lbl" x="420" y="56.0" text-anchor="start" font-size="10.5">第一个定义的管理器就是 _default_manager</text>
+<rect class="box-a" x="20" y="82" width="380" height="38" rx="4"></rect>
+<text class="lbl-strong" x="210.0" y="101.0" text-anchor="middle" font-size="11">Meta.indexes 覆盖了主要排序键</text>
+<text class="lbl" x="420" y="102.0" text-anchor="start" font-size="10.5">-publish / -created / -total_likes</text>
+<rect class="box-a" x="20" y="128" width="380" height="38" rx="4"></rect>
+<text class="lbl-strong" x="210.0" y="147.0" text-anchor="middle" font-size="11">OrderItem 保存下单时的价格快照</text>
+<text class="lbl" x="420" y="148.0" text-anchor="start" font-size="10.5">商品改价不影响历史订单</text>
+<rect class="box-a" x="20" y="174" width="380" height="38" rx="4"></rect>
+<text class="lbl-strong" x="210.0" y="193.0" text-anchor="middle" font-size="11">prefetch_related('target') 用在 GenericForeignKey 上</text>
+<text class="lbl" x="420" y="194.0" text-anchor="start" font-size="10.5">Django 原生支持，避免动态流 N+1</text>
+<line x1="20" y1="226" x2="740" y2="226" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="248" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">值得警惕的习惯</text>
+<rect class="box-w" x="20" y="262" width="480" height="38" rx="4"></rect>
+<text class="lbl-strong" x="260.0" y="281.0" text-anchor="middle" font-size="11">全仓库只有 7 处用了 select_related / prefetch_related</text>
+<text class="lbl-warn" x="520" y="282.0" text-anchor="start" font-size="10.5">F-05</text>
+<rect class="box-w" x="20" y="308" width="480" height="38" rx="4"></rect>
+<text class="lbl-strong" x="260.0" y="327.0" text-anchor="middle" font-size="11">65 处 CASCADE、4 处 PROTECT、2 处 SET_NULL</text>
+<text class="lbl-warn" x="520" y="328.0" text-anchor="start" font-size="10.5">删除行为多数没有专门考虑</text>
+<rect class="box-w" x="20" y="354" width="480" height="38" rx="4"></rect>
+<text class="lbl-strong" x="260.0" y="373.0" text-anchor="middle" font-size="11">Meta.constraints 全仓库为空</text>
+<text class="lbl-warn" x="520" y="374.0" text-anchor="start" font-size="10.5">F-02 / F-03 / F-06 都源于此</text>
+<rect class="box-w" x="20" y="400" width="480" height="38" rx="4"></rect>
+<text class="lbl-strong" x="260.0" y="419.0" text-anchor="middle" font-size="11">用 if not qs 判空而不是 .exists()</text>
+<text class="lbl-warn" x="520" y="420.0" text-anchor="start" font-size="10.5">F-07</text></svg><figcaption class="cap">图 6 · 全仓库 ORM 习惯速览：索引与快照做得不错，约束与预取则基本空白</figcaption></figure>
+
+<h3>2.1 blog：两个管理器与 <code>unique_for_date</code></h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class PublishedManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(status=Post.Status.PUBLISHED)
+
+
+class Post(models.Model):
+    slug = models.SlugField(max_length=250, unique_for_date=&#x27;publish&#x27;)
+    ...
+    objects = models.Manager()        # 第一个定义的管理器 = _default_manager
+    published = PublishedManager()
+
+    class Meta:
+        ordering = [&#x27;-publish&#x27;]
+        indexes = [models.Index(fields=[&#x27;-publish&#x27;])]</code></pre></div>
+<p><strong>管理器顺序写对了</strong>：Django 把<strong>第一个定义的管理器</strong>当作 <code>_default_manager</code>，它会被关联对象访问、admin、以及 <code>dumpdata</code> 使用。如果把 <code>published</code> 写在前面，admin 里就看不到草稿了。这是个很容易搞反的细节。</p>
+<p><code>unique_for_date</code> 则是 <a href="#findings">F-02</a> 的来源。</p>
+
+<h3>2.2 blog Chapter01：<code>CompositePrimaryKey</code></h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class FavouritePost(models.Model):
+    pk = models.CompositePrimaryKey(&quot;user&quot;, &quot;post&quot;)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey(&#x27;blog.Post&#x27;, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)</code></pre></div>
+<p>这是 <strong>Django 5.2 新增</strong>的复合主键支持，用在「收藏」这种天然由两个外键唯一确定的关联表上很合适——它同时提供了主键和唯一约束，比额外加一个自增 id 再加 <code>unique_together</code> 更贴切。这个模型只在 Chapter01 出现，是个教学彩蛋，后面章节就消失了。</p>
+<blockquote><p>值得对比的是同一仓库里的 <code>Contact</code>（关注关系）——它是完全同类的关联表，却用了自增主键<strong>且没有任何唯一约束</strong>（<a href="#findings">F-06</a>）。两处放在一起看，正好说明「关联表该怎么定主键」这个决定的影响。</p></blockquote>
+
+<h3>2.3 bookmarks：slug 生成、去规范化计数与动态字段</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class Image(models.Model):
+    slug = models.SlugField(max_length=200, blank=True)
+    users_like = models.ManyToManyField(User, related_name=&#x27;images_liked&#x27;, blank=True)
+    total_likes = models.PositiveIntegerField(default=0)      # 去规范化的计数
+
+    class Meta:
+        indexes = [
+            models.Index(fields=[&#x27;-created&#x27;]),
+            models.Index(fields=[&#x27;-total_likes&#x27;]),             # 给排行榜用
+        ]
+        ordering = [&#x27;-created&#x27;]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)                    # F-01 在这里
+        super().save(*args, **kwargs)</code></pre></div>
+<p><code>total_likes</code> 是典型的<strong>去规范化</strong>：点赞数本可以用 <code>users_like.count()</code> 实时算，但为了让「按点赞数排序」能走索引，把它冗余成一个字段。这个取舍是合理的，代价是必须有人负责维护它的一致性——这里交给了 <code>m2m_changed</code> 信号（<a href="#findings">F-04</a>）。</p>
+<p><strong><code>add_to_class</code> 动态加字段</strong>是全仓库最特别的一处 ORM 用法：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># account/models.py 末尾
+user_model = get_user_model()
+user_model.add_to_class(
+    &#x27;following&#x27;,
+    models.ManyToManyField(&#x27;self&#x27;, through=Contact, related_name=&#x27;followers&#x27;, symmetrical=False),
+)</code></pre></div>
+<p>它在<strong>模块导入时</strong>往 <code>auth.User</code> 上挂一个多对多字段。之所以不需要迁移，是因为这个 M2M 指定了 <code>through=Contact</code>——连接表就是已有的 <code>Contact</code> 表，不需要新建任何表或列。仓库的 <code>account/migrations/</code> 里确实<strong>没有任何迁移包含 <code>following</code></strong>，我核对过。</p>
+<blockquote class="callout-warn"><p>这个技巧在教学上很直观，但不建议照搬进生产：它让 <code>User</code> 模型的定义<strong>散落在两个 app 里</strong>，只有 import 过 <code>account.models</code> 之后这个字段才存在，任何直接操作 <code>auth.User</code> 的脚本都可能看不到它。<em>Two Scoops of Django</em> 的标准建议是：一开始就用自定义 User 模型，需要加字段就正常加。</p></blockquote>
+
+<h3>2.4 educa：自定义字段与抽象基类</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class OrderField(models.PositiveIntegerField):
+    def __init__(self, for_fields=None, *args, **kwargs):
+        self.for_fields = for_fields
+        super().__init__(*args, **kwargs)
+
+    def pre_save(self, model_instance, add):
+        if getattr(model_instance, self.attname) is None:
+            try:
+                qs = self.model.objects.all()
+                if self.for_fields:
+                    query = {f: getattr(model_instance, f) for f in self.for_fields}
+                    qs = qs.filter(**query)
+                last_item = qs.latest(self.attname)              # 每次插入多一条 SELECT
+                value = getattr(last_item, self.attname) + 1
+            except ObjectDoesNotExist:
+                value = 0
+            setattr(model_instance, self.attname, value)
+            return value
+        return super().pre_save(model_instance, add)</code></pre></div>
+<p>重写 <code>pre_save()</code> 是自定义字段的标准做法，思路清晰。问题是这个「读上一条再加一」的模式在批量插入和并发下都会出问题（<a href="#findings">F-03</a>）。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class ItemBase(models.Model):
+    owner = models.ForeignKey(User, related_name=&#x27;%(class)s_related&#x27;, on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
+
+    class Meta:
+        abstract = True
+
+    def render(self):
+        return render_to_string(f&#x27;courses/content/{self._meta.model_name}.html&#x27;, {&#x27;item&#x27;: self})
+
+
+class Text(ItemBase):
+    content = models.TextField()
+
+class Video(ItemBase):
+    url = models.URLField()</code></pre></div>
+<p><code>%(class)s_related</code> 是抽象基类里给 <code>related_name</code> 去重的标准写法——四个子类分别得到 <code>text_related</code>、<code>video_related</code> 等，不会撞名。这里用的是<strong>抽象基类</strong>而不是多表继承，每个子类一张独立的表，没有隐式 JOIN，这个选择是对的。</p>
+
+<h3>2.5 myshop：价格快照与 Python 侧聚合</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class OrderItem(models.Model):
+    product = models.ForeignKey(&#x27;shop.Product&#x27;, related_name=&#x27;order_items&#x27;, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=10, decimal_places=2)      # 下单时的价格快照
+    quantity = models.PositiveIntegerField(default=1)
+
+    def get_cost(self):
+        return self.price * self.quantity</code></pre></div>
+<p><strong>把下单时的价格存进 <code>OrderItem.price</code> 而不是每次去查 <code>product.price</code></strong>，这是电商模型的必备做法——商品改价不能影响历史订单。仓库这一点做对了，而且从 Chapter08 一路保持到 Chapter11。</p>
+<p>但 <code>Order</code> 上那几个求和方法是纯 Python 侧遍历，成了 <a href="#findings">F-05</a>。</p>
+
+</section><section class="chapter" id="findings">
+<h2>三、八个已验证的问题与修复</h2>
+
+
+<div class="finding"><div class="fhead"><span class="fid">F-01</span><span class="ftitle">非 ASCII 标题生成空 slug，详情页 URL 直接反解失败</span><span class="fmeta">已实测 · 功能</span></div><dl><dt>位置</dt><dd><code>Chapter06~07/bookmarks/images/models.py</code> · <code>Image.save()</code></dd><dt>触发</dt><dd>收藏一张图片时填写中文（或任何非拉丁文字）标题</dd><dt>影响</dt><dd>图片存进了数据库，但保存后的跳转抛 <code>NoReverseMatch</code> → 500</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 2 · slugify 对非 ASCII 标题返回空串，而空 slug 让详情页 URL 根本反解不出来"><defs>
+          <marker id="do2-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do2-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do2-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="36" width="200" height="62" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="61.0" text-anchor="middle" font-size="11.5">Image.save()</text>
+<text class="lbl" x="120.0" y="78.5" text-anchor="middle" font-size="10.5">if not self.slug:</text>
+<text class="lbl" x="120.0" y="90.5" text-anchor="middle" font-size="10.5">  self.slug = slugify(self.title)</text>
+<rect class="box" x="300" y="26" width="200" height="46" rx="4"></rect>
+<text class="lbl-strong" x="400.0" y="43.0" text-anchor="middle" font-size="11.5">英文标题</text>
+<text class="lbl" x="400.0" y="60.5" text-anchor="middle" font-size="10.5">'Sunset over the bay'</text>
+<rect class="box-w" x="300" y="88" width="200" height="46" rx="4"></rect>
+<text class="lbl-strong" x="400.0" y="105.0" text-anchor="middle" font-size="11.5">中文标题</text>
+<text class="lbl" x="400.0" y="122.5" text-anchor="middle" font-size="10.5">'日落时分的海湾'</text>
+<line class="edge" x1="220" y1="55" x2="300" y2="49" marker-end="url(#do2-m)"></line>
+<line class="edge-w" x1="220" y1="78" x2="300" y2="111" marker-end="url(#do2-mw)"></line>
+<rect class="box-a" x="560" y="26" width="180" height="46" rx="4"></rect>
+<text class="lbl-strong" x="650.0" y="49.0" text-anchor="middle" font-size="11">'sunset-over-the-bay'</text>
+<rect class="box-w" x="560" y="88" width="180" height="46" rx="4"></rect>
+<text class="lbl-strong" x="650.0" y="111.0" text-anchor="middle" font-size="12">''  （空串）</text>
+<line class="edge-a" x1="500" y1="49" x2="560" y2="49" marker-end="url(#do2-ma)"></line>
+<line class="edge-w" x1="500" y1="111" x2="560" y2="111" marker-end="url(#do2-mw)"></line>
+<line x1="20" y1="162" x2="740" y2="162" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="184" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">空 slug 会在哪里炸</text>
+<rect class="box" x="20" y="198" width="230" height="62" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="223.0" text-anchor="middle" font-size="11">get_absolute_url()</text>
+<text class="lbl" x="135.0" y="240.0" text-anchor="middle" font-size="10.5">reverse('images:detail',</text>
+<text class="lbl" x="135.0" y="252.0" text-anchor="middle" font-size="10.5">  args=[self.id, self.slug])</text>
+<rect class="box-w" x="300" y="198" width="230" height="62" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="223.0" text-anchor="middle" font-size="11">URL 规则 &lt;slug:slug&gt;</text>
+<text class="lbl" x="415.0" y="240.0" text-anchor="middle" font-size="10.5">正则 [-a-zA-Z0-9_]+</text>
+<text class="lbl" x="415.0" y="252.0" text-anchor="middle" font-size="10.5">至少要一个字符</text>
+<rect class="box-w" x="580" y="198" width="160" height="62" rx="4"></rect>
+<text class="lbl-strong" x="660.0" y="223.0" text-anchor="middle" font-size="11.5">NoReverseMatch</text>
+<text class="lbl" x="660.0" y="240.5" text-anchor="middle" font-size="10.5">视图 500</text>
+<line class="edge" x1="250" y1="229" x2="300" y2="229" marker-end="url(#do2-m)"></line>
+<line class="edge-w" x1="530" y1="229" x2="580" y2="229" marker-end="url(#do2-mw)"></line>
+<line x1="20" y1="288" x2="740" y2="288" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl-warn" x="20" y="310.0" text-anchor="start" font-size="10.5">image_create 视图在保存成功后紧接着 return redirect(new_image.get_absolute_url())——</text>
+<text class="lbl-warn" x="20" y="325.5" text-anchor="start" font-size="10.5">也就是说：用中文标题收藏一张图，图片存下来了，但紧接着的跳转直接 500。</text>
+<text class="lbl" x="20" y="358.0" text-anchor="start" font-size="10.5">修复：slugify(self.title, allow_unicode=True) + SlugField(allow_unicode=True)，</text>
+<text class="lbl" x="20" y="373.5" text-anchor="start" font-size="10.5">并且 URL 那一段要改用 re_path 或自定义转换器（内置 &lt;slug:&gt; 转换器只认 ASCII）。</text></svg><figcaption class="cap">图 2 · slugify 对非 ASCII 标题返回空串，而空 slug 让详情页 URL 根本反解不出来</figcaption></figure>
+<div class="term"><div class="thead">实测 · slugify 对不同标题的输出</div><pre>slugify('Sunset over the bay')  -> 'sunset-over-the-bay'
+slugify('日落时分的海湾')          -> <b>''</b>
+slugify('Café Münchén')         -> 'cafe-munchen'
+slugify('写真 2026')              -> '2026'
+slugify('🎉🎉🎉')                  -> <b>''</b>
+
+存进数据库的 slug : ''
+get_absolute_url() 抛 <b>NoReverseMatch</b>:
+  Reverse for 'image_detail' with arguments '(1, '')' not found.
+  1 pattern(s) tried: ['images/detail/(?P&lt;id&gt;[0-9]+)/(?P&lt;slug&gt;[-a-zA-Z0-9_]+)/\\Z']</pre></div>
+<p><code>image_create</code> 视图保存成功后紧接着就是 <code>return redirect(new_image.get_absolute_url())</code>——所以用中文标题收藏图片，<strong>图片会被保存，但用户看到的是 500</strong>。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状</div><pre>class Image(models.Model):
+    slug = models.SlugField(max_length=200, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)</pre></div>
+<div class="pane good"><div class="ph">✓ 允许 Unicode，并给空值兜底</div><pre>class Image(models.Model):
+    slug = models.SlugField(max_length=200, blank=True,
+                            allow_unicode=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title,
+                                allow_unicode=True) or &#x27;image&#x27;
+        super().save(*args, **kwargs)</pre></div>
+</div>
+<blockquote class="callout-warn"><p><strong>只改模型还不够。</strong> Django 内置的 <code>&lt;slug:...&gt;</code> 路径转换器正则是 <code>[-a-zA-Z0-9_]+</code>，<strong>不匹配中文</strong>。要让 Unicode slug 真的能用在 URL 里，还得换掉这一段路由：</p>
+<pre style="margin:.6em 0 0;font-family:var(--font-mono);font-size:.78rem;overflow-x:auto;">re_path(r'^detail/(?P&lt;id&gt;\d+)/(?P&lt;slug&gt;[-\w]+)/$', views.image_detail, name='detail')</pre>
+<p style="margin-top:.6em;"><code>\w</code> 在 Python 正则里默认匹配 Unicode 字母，所以中文能过。<strong>那个 <code>or 'image'</code> 的兜底也不能省</strong>——纯 emoji 标题在 <code>allow_unicode=True</code> 下依然会得到空串。</p></blockquote>
+
+<div class="finding"><div class="fhead"><span class="fid">F-02</span><span class="ftitle">unique_for_date 不是数据库约束，重复 slug 会让详情页 500</span><span class="fmeta">已实测 · 正确性</span></div><dl><dt>位置</dt><dd><code>Chapter02~03/mysite/blog/models.py</code> · <code>Post.slug</code></dd><dt>触发</dt><dd>通过 <code>objects.create()</code>、数据导入或管理命令写入同 slug 同日期的文章</dd><dt>影响</dt><dd><code>post_detail</code> 的 <code>get_object_or_404</code> 抛 <code>MultipleObjectsReturned</code> → 500</dd></dl></div>
+<div class="term"><div class="thead">实测</div><pre>slug 字段声明：unique_for_date='publish'，unique=False
+
+建表 SQL：
+  CREATE TABLE "app_post" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "title" varchar(250) NOT NULL, "slug" varchar(250) NOT NULL, ...)
+  含 UNIQUE 吗: <b>False</b>
+
+直接用 ORM 建两条同 slug、同发布日期的文章：
+  都创建成功了: id=1, id=2
+
+post_detail 的查询：
+  -> 抛 <b>MultipleObjectsReturned</b>: get() returned more than one Post -- it returned 2!
+     get_object_or_404 只把 DoesNotExist 转成 404，MultipleObjectsReturned 会一路冒出去 → 500
+
+对照：走 ModelForm 时是能拦住的
+  form.is_valid() -> False
+  errors -> {'slug': ['Slug must be unique for Publish date.']}</pre></div>
+<p>Django 文档对 <code>unique_for_date</code> 写得很明确：它由 <code>Model.validate_unique()</code> 实现，而 <code>validate_unique()</code> 只在 ModelForm 校验时被调用。<strong>它不会生成任何数据库约束。</strong></p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 补一条真正的数据库约束
+from django.db.models.functions import TruncDate
+
+class Post(models.Model):
+    slug = models.SlugField(max_length=250)      # unique_for_date 可以留着做表单提示
+    publish = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                &#x27;slug&#x27;, TruncDate(&#x27;publish&#x27;),
+                name=&#x27;uniq_slug_per_publish_date&#x27;,
+            ),
+        ]</code></pre></div>
+<blockquote><p><code>UniqueConstraint</code> 支持<strong>表达式</strong>（Django 4.0 起），所以可以直接对 <code>TruncDate('publish')</code> 建唯一索引，语义与 <code>unique_for_date</code> 完全一致。PostgreSQL 和 SQLite 都支持表达式索引；MySQL 需要 8.0.13+。</p></blockquote>
+
+<div class="finding"><div class="fhead"><span class="fid">F-03</span><span class="ftitle">bulk_create 让 OrderField 算出重复的排序值</span><span class="fmeta">已实测 · 正确性</span></div><dl><dt>位置</dt><dd><code>Chapter12~17/educa/courses/fields.py</code> + <code>Module</code> / <code>Content</code></dd><dt>触发</dt><dd>用 <code>bulk_create</code> 批量创建模块或内容；并发插入同样会撞</dd><dt>影响</dt><dd>多条记录拿到相同的 <code>order</code>，列表顺序变得不确定，且没有任何报错</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 420" role="img" aria-label="图 3 · bulk_create 让 OrderField 的「读上一条再加一」全部读到同一个值，四条模块都拿到 order=0"><defs>
+          <marker id="do3-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do3-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do3-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">逐条 create()：每次 pre_save 都能看到上一条已经落库的结果</text>
+<rect class="box-a" x="20" y="36" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="58.0" text-anchor="middle" font-size="11">create() 第 1 条</text>
+<text class="lbl" x="102.5" y="75.0" text-anchor="middle" font-size="10.5">查 latest → order=0</text>
+<line class="edge-a" x1="185" y1="64" x2="200" y2="64" marker-end="url(#do3-ma)"></line>
+<rect class="box-a" x="200" y="36" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="282.5" y="58.0" text-anchor="middle" font-size="11">create() 第 2 条</text>
+<text class="lbl" x="282.5" y="75.0" text-anchor="middle" font-size="10.5">查 latest → order=1</text>
+<line class="edge-a" x1="365" y1="64" x2="380" y2="64" marker-end="url(#do3-ma)"></line>
+<rect class="box-a" x="380" y="36" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="462.5" y="58.0" text-anchor="middle" font-size="11">create() 第 3 条</text>
+<text class="lbl" x="462.5" y="75.0" text-anchor="middle" font-size="10.5">查 latest → order=2</text>
+<line class="edge-a" x1="545" y1="64" x2="560" y2="64" marker-end="url(#do3-ma)"></line>
+<rect class="box-a" x="560" y="36" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="642.5" y="58.0" text-anchor="middle" font-size="11">create() 第 4 条</text>
+<text class="lbl" x="642.5" y="75.0" text-anchor="middle" font-size="10.5">查 latest → order=3</text>
+<text class="lbl" x="20" y="108.0" text-anchor="start" font-size="10.5">结果 order: [0, 1, 2, 3]  ✓    代价：每插入一条多一次 SELECT</text>
+<line x1="20" y1="132" x2="740" y2="132" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="154" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">bulk_create()：四次 pre_save 全部发生在同一批 INSERT 之前</text>
+<rect class="box-w" x="20" y="168" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="190.0" text-anchor="middle" font-size="11">pre_save 第 1 次</text>
+<text class="lbl" x="102.5" y="207.0" text-anchor="middle" font-size="10.5">查到的 latest 相同</text>
+<rect class="box-w" x="200" y="168" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="282.5" y="190.0" text-anchor="middle" font-size="11">pre_save 第 2 次</text>
+<text class="lbl" x="282.5" y="207.0" text-anchor="middle" font-size="10.5">查到的 latest 相同</text>
+<rect class="box-w" x="380" y="168" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="462.5" y="190.0" text-anchor="middle" font-size="11">pre_save 第 3 次</text>
+<text class="lbl" x="462.5" y="207.0" text-anchor="middle" font-size="10.5">查到的 latest 相同</text>
+<rect class="box-w" x="560" y="168" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="642.5" y="190.0" text-anchor="middle" font-size="11">pre_save 第 4 次</text>
+<text class="lbl" x="642.5" y="207.0" text-anchor="middle" font-size="10.5">查到的 latest 相同</text>
+<rect class="box" x="20" y="250" width="705" height="44" rx="4"></rect>
+<text class="lbl-strong" x="372.5" y="272.0" text-anchor="middle" font-size="11.5">然后才执行一次 INSERT ... VALUES (…), (…), (…), (…)</text>
+<line class="edge-w" x1="102" y1="224" x2="102" y2="250" marker-end="url(#do3-mw)"></line>
+<line class="edge-w" x1="282" y1="224" x2="282" y2="250" marker-end="url(#do3-mw)"></line>
+<line class="edge-w" x1="462" y1="224" x2="462" y2="250" marker-end="url(#do3-mw)"></line>
+<line class="edge-w" x1="642" y1="224" x2="642" y2="250" marker-end="url(#do3-mw)"></line>
+<line x1="20" y1="316" x2="740" y2="316" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<rect class="box-w" x="20" y="330" width="340" height="56" rx="4"></rect>
+<text class="lbl-strong" x="190.0" y="352.0" text-anchor="middle" font-size="11.5">实测结果</text>
+<text class="lbl" x="190.0" y="369.5" text-anchor="middle" font-size="10.5">[('B0',0), ('B1',0), ('B2',0), ('B3',0)]</text>
+<rect class="box-w" x="400" y="330" width="340" height="56" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="352.0" text-anchor="middle" font-size="11">(course, order) 上有唯一约束吗</text>
+<text class="lbl" x="570.0" y="369.0" text-anchor="middle" font-size="10.5">Meta.constraints = []  →  数据库照单全收</text></svg><figcaption class="cap">图 3 · bulk_create 让 OrderField 的「读上一条再加一」全部读到同一个值，四条模块都拿到 order=0</figcaption></figure>
+<div class="term"><div class="thead">实测 · 同一个 Course 下批量插入 4 个模块</div><pre>=== A) 逐条 create()：order 递增，符合预期 ===
+  4 次 create 共 8 条 SQL
+    SELECT 4 条（pre_save 每次都要查 latest）+ INSERT 4 条
+  结果 order: [0, 1, 2, 3]
+
+=== B) bulk_create()：pre_save 仍会被调用，但全部在插入之前 ===
+  结果: [('B0', <b>0</b>), ('B1', <b>0</b>), ('B2', <b>0</b>), ('B3', <b>0</b>)]
+  order 有重复吗: <b>True</b>
+
+=== C) 模型上有 (course, order) 的唯一约束吗 ===
+  Meta.constraints    : []
+  Meta.unique_together: ()
+  -> 都是空的。排序值重复不会有任何报错，只会让列表顺序变得不确定。</pre></div>
+<p>顺带注意 A 的数字：<strong>每插入一条就多一次 SELECT</strong>。批量导入课程内容时，这个开销是线性叠加的。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：依赖 pre_save 自动算</div><pre>Module.objects.bulk_create([
+    Module(course=c, title=f&#x27;M{i}&#x27;)
+    for i in range(4)
+])
+# 四条的 order 全是 0</pre></div>
+<div class="pane good"><div class="ph">✓ 批量插入时显式给值</div><pre>Module.objects.bulk_create([
+    Module(course=c, title=f&#x27;M{i}&#x27;, order=i)
+    for i in range(4)
+])
+# pre_save 看到 order 不是 None，直接放行</pre></div>
+</div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 并发场景：用一次原子的聚合代替「读-加一-写」
+from django.db import transaction
+from django.db.models import Max
+
+with transaction.atomic():
+    last = (Module.objects
+            .select_for_update()          # 锁住同一课程下的行
+            .filter(course=course)
+            .aggregate(m=Max(&#x27;order&#x27;))[&#x27;m&#x27;])
+    Module.objects.create(course=course, title=&#x27;X&#x27;, order=0 if last is None else last + 1)</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 无论如何，先把约束加上——让重复变成一个响亮的错误而不是静默的乱序
+class Module(models.Model):
+    class Meta:
+        ordering = [&#x27;order&#x27;]
+        constraints = [
+            models.UniqueConstraint(fields=[&#x27;course&#x27;, &#x27;order&#x27;], name=&#x27;uniq_module_order&#x27;),
+        ]</code></pre></div>
+<blockquote class="callout-warn"><p><strong>加了唯一约束之后，拖拽排序那段代码也要改。</strong> <code>ModuleOrderView</code> 是逐条 <code>update(order=...)</code> 的，中间过程必然出现两条记录暂时同号，会直接撞约束。解决办法是把约束设为 <code>DEFERRABLE INITIALLY DEFERRED</code>（PostgreSQL 支持，Django 的 <code>UniqueConstraint(deferrable=Deferrable.DEFERRED)</code>），让它在事务提交时才检查。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-04</span><span class="ftitle">m2m_changed 处理函数没判 action 与 reverse</span><span class="fmeta">已实测 · 性能 + 健壮性</span></div><dl><dt>位置</dt><dd><code>Chapter07/bookmarks/images/signals.py</code></dd><dt>触发</dt><dd>每一次点赞 / 取消点赞</dd><dt>影响</dt><dd>每次多一轮 count + 整行 UPDATE；反向添加会抛 <code>AttributeError</code></dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 420" role="img" aria-label="图 4 · m2m_changed 每次成对触发，未判 action 就等于每次点赞多做一轮 count 与整行 UPDATE"><defs>
+          <marker id="do4-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do4-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do4-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="40" width="180" height="50" rx="4"></rect>
+<text class="lbl-strong" x="110.0" y="57.75" text-anchor="middle" font-size="11.5">image.users_like</text>
+<text class="lbl-strong" x="110.0" y="72.25" text-anchor="middle" font-size="11.5">  .add(user)</text>
+<rect class="box-w" x="280" y="26" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="45.0" text-anchor="middle" font-size="11.5">① pre_add</text>
+<text class="lbl" x="380.0" y="62.5" text-anchor="middle" font-size="10.5">此时还没加进去</text>
+<rect class="box-a" x="280" y="96" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="115.0" text-anchor="middle" font-size="11.5">② post_add</text>
+<text class="lbl" x="380.0" y="132.5" text-anchor="middle" font-size="10.5">加完了</text>
+<line class="edge" x1="200" y1="58" x2="280" y2="51" marker-end="url(#do4-m)"></line>
+<line class="edge" x1="200" y1="72" x2="280" y2="121" marker-end="url(#do4-m)"></line>
+<rect class="box-w" x="540" y="26" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="44.0" text-anchor="middle" font-size="11">count() → 旧值</text>
+<text class="lbl-strong" x="640.0" y="58.0" text-anchor="middle" font-size="11">save() 写一次库</text>
+<rect class="box-a" x="540" y="96" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="114.0" text-anchor="middle" font-size="11">count() → 新值</text>
+<text class="lbl-strong" x="640.0" y="128.0" text-anchor="middle" font-size="11">save() 再写一次</text>
+<line class="edge-w" x1="480" y1="51" x2="540" y2="51" marker-end="url(#do4-mw)"></line>
+<line class="edge-a" x1="480" y1="121" x2="540" y2="121" marker-end="url(#do4-ma)"></line>
+<line x1="20" y1="172" x2="740" y2="172" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="194" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">实测：一次点赞的实际开销与副作用</text>
+<rect class="box-w" x="20" y="208" width="230" height="56" rx="4"></rect>
+<text class="lbl-strong" x="135.0" y="230.0" text-anchor="middle" font-size="11.5">信号触发序列</text>
+<text class="lbl" x="135.0" y="247.5" text-anchor="middle" font-size="10.5">['pre_add', 'post_add']</text>
+<rect class="box-w" x="290" y="208" width="210" height="56" rx="4"></rect>
+<text class="lbl-strong" x="395.0" y="230.0" text-anchor="middle" font-size="12">期间执行的 SQL</text>
+<text class="lbl" x="395.0" y="248.0" text-anchor="middle" font-size="10.5">8 条</text>
+<rect class="box" x="540" y="208" width="200" height="56" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="230.0" text-anchor="middle" font-size="11">最终 total_likes</text>
+<text class="lbl" x="640.0" y="247.0" text-anchor="middle" font-size="10.5">1（正确，但绕了一圈）</text>
+<rect class="box-w" x="20" y="288" width="720" height="50" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="313.0" text-anchor="middle" font-size="11">UPDATE app_image SET title=…, slug=…, total_likes=… WHERE id=1   ← 整行字段都被写回</text>
+<text class="lbl-warn" x="20" y="366.0" text-anchor="start" font-size="10.5">两个额外问题：instance.save() 没传 update_fields，会覆盖别的请求对同一行其它字段的修改；</text>
+<text class="lbl-warn" x="20" y="381.5" text-anchor="start" font-size="10.5">处理函数也没判断 reverse——一旦有人写 user.images_liked.add(image)，instance 就是 User，直接 AttributeError。</text></svg><figcaption class="cap">图 4 · m2m_changed 每次成对触发，未判 action 就等于每次点赞多做一轮 count 与整行 UPDATE</figcaption></figure>
+<div class="term"><div class="thead">实测 · 一次 image.users_like.add(user)</div><pre>信号被触发的 action 序列: <b>['pre_add', 'post_add']</b>
+期间执行的 SQL 条数      : <b>8</b>
+最终 total_likes         : 1
+
+UPDATE 语句片段:
+  UPDATE "app_image" SET "title" = 'Sunset', "slug" = 'sunset', <b>"total_likes" = 0</b>
+  WHERE "app_image"."id" = 1
+  -> 没有传 update_fields，整行字段都会被写回
+
+反向操作 user.images_liked.add(image):
+  抛 <b>AttributeError: 'User' object has no attribute 'users_like'</b></pre></div>
+<p>三个问题叠在一起：<code>m2m_changed</code> 对每次操作会<strong>成对触发</strong>（<code>pre_add</code> 和 <code>post_add</code>），处理函数不判 <code>action</code> 就会跑两遍，其中 <code>pre_add</code> 那次算出的还是旧值；<code>instance.save()</code> 没有 <code>update_fields</code>，会把整行字段写回去，覆盖掉别的请求对同一行其它字段的修改；处理函数也没判 <code>reverse</code>。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状</div><pre>@receiver(m2m_changed, sender=Image.users_like.through)
+def users_like_changed(sender, instance, **kwargs):
+    instance.total_likes = instance.users_like.count()
+    instance.save()</pre></div>
+<div class="pane good"><div class="ph">✓ 判 action、判 reverse、只写目标字段</div><pre>@receiver(m2m_changed, sender=Image.users_like.through)
+def users_like_changed(sender, instance, action,
+                       reverse, pk_set, **kwargs):
+    if action not in (&#x27;post_add&#x27;, &#x27;post_remove&#x27;, &#x27;post_clear&#x27;):
+        return
+    if reverse:
+        images = Image.objects.filter(pk__in=pk_set or [])
+    else:
+        images = [instance]
+    for image in images:
+        Image.objects.filter(pk=image.pk).update(
+            total_likes=image.users_like.count())</pre></div>
+</div>
+<blockquote><p>用 <code>queryset.update()</code> 而不是 <code>instance.save()</code> 还有一个好处：<code>update()</code> 不会触发 <code>post_save</code> 信号，避免了「信号里改数据又触发信号」这类循环风险。代价是它也跳过 <code>save()</code> 里的自定义逻辑——在这个场景下正是我们想要的。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-05</span><span class="ftitle">订单总价在 Python 侧遍历，单次调用两条 SQL，列表页 N+1</span><span class="fmeta">已实测 · 性能</span></div><dl><dt>位置</dt><dd><code>Chapter08~11/myshop/orders/models.py</code> · <code>Order.get_total_cost()</code></dd><dt>触发</dt><dd>订单列表、后台订单页、发票 PDF 渲染</dd><dt>影响</dt><dd>20 条订单的列表要执行 41 条 SQL</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 5 · 同一个列表页：41 → 2 → 1 条 SQL，取决于把「遍历明细」这件事放在哪一层"><defs>
+          <marker id="do5-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do5-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="do5-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="34" width="720" height="46" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="57.0" text-anchor="middle" font-size="12">订单列表页：20 条订单，各调一次 order.get_total_cost()</text>
+<rect class="box-w" x="20" y="106" width="220" height="76" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="138.0" text-anchor="middle" font-size="12.5">现状</text>
+<text class="lbl" x="130.0" y="156.5" text-anchor="middle" font-size="10.5">Order.objects.all()</text>
+<text class="lbl" x="130.0" y="168.5" text-anchor="middle" font-size="10.5">每单 2 条 SQL（方法内部</text>
+<text class="lbl" x="130.0" y="180.5" text-anchor="middle" font-size="10.5">遍历了两遍 items）</text>
+<rect class="box-a" x="280" y="106" width="220" height="76" rx="4"></rect>
+<text class="lbl-strong" x="390.0" y="138.0" text-anchor="middle" font-size="12.5">加 prefetch_related</text>
+<text class="lbl" x="390.0" y="156.5" text-anchor="middle" font-size="10.5">Order.objects</text>
+<text class="lbl" x="390.0" y="168.5" text-anchor="middle" font-size="10.5">  .prefetch_related('items')</text>
+<rect class="box-a" x="540" y="106" width="200" height="76" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="138.0" text-anchor="middle" font-size="11">交给数据库聚合</text>
+<text class="lbl" x="640.0" y="155.0" text-anchor="middle" font-size="10.5">annotate(Sum(F(price)*F(qty)))</text>
+<rect class="box-w" x="20" y="210" width="220" height="50" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="235.0" text-anchor="middle" font-size="14">41 条 SQL</text>
+<rect class="box-a" x="280" y="210" width="220" height="50" rx="4"></rect>
+<text class="lbl-strong" x="390.0" y="235.0" text-anchor="middle" font-size="14">2 条 SQL</text>
+<rect class="box-a" x="540" y="210" width="200" height="50" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="235.0" text-anchor="middle" font-size="14">1 条 SQL</text>
+<line class="edge" x1="130" y1="182" x2="130" y2="210" marker-end="url(#do5-m)"></line>
+<line class="edge" x1="390" y1="182" x2="390" y2="210" marker-end="url(#do5-m)"></line>
+<line class="edge" x1="640" y1="182" x2="640" y2="210" marker-end="url(#do5-m)"></line>
+<line x1="20" y1="288" x2="740" y2="288" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="310.0" text-anchor="start" font-size="10.5">为什么单个订单就要 2 条：get_total_cost() 先调 get_total_cost_before_discount() 遍历一遍 items，</text>
+<text class="lbl" x="20" y="325.5" text-anchor="start" font-size="10.5">再调 get_discount()，而 get_discount() 内部又调了同一个方法，于是同样的明细被查了两次。</text>
+<text class="lbl" x="20" y="356.0" text-anchor="start" font-size="10.5">取舍：prefetch 改动最小、金额仍在 Python 里算；数据库聚合最省，但要注意 Decimal 精度与列类型的对应。</text></svg><figcaption class="cap">图 5 · 同一个列表页：41 → 2 → 1 条 SQL，取决于把「遍历明细」这件事放在哪一层</figcaption></figure>
+<div class="codewrap"><div class="langtag">python</div><pre><code>def get_total_cost_before_discount(self):
+    return sum(item.get_cost() for item in self.items.all())      # 遍历一次
+
+def get_discount(self):
+    total_cost = self.get_total_cost_before_discount()            # 又遍历一次
+    if self.discount:
+        return total_cost * (self.discount / Decimal(100))
+    return Decimal(0)
+
+def get_total_cost(self):
+    total_cost = self.get_total_cost_before_discount()            # 第 1 次
+    return total_cost - self.get_discount()                       # 里面还有第 2 次</code></pre></div>
+<div class="term"><div class="thead">实测 · 20 条订单，每单 3 条明细</div><pre>A) 单个订单调一次 get_total_cost() -> <b>2 条 SQL</b>
+B) 列表页 20 条订单各算一次        -> <b>41 条 SQL</b>（1 + 20×2）
+C) 加 prefetch_related('items')    -> <i>2 条 SQL</i>
+D) 交给数据库聚合                   -> <i>1 条 SQL</i></pre></div>
+<div class="pair two">
+<div class="pane good"><div class="ph">✓ 改动最小：视图里加 prefetch</div><pre>orders = Order.objects.prefetch_related(&#x27;items&#x27;)
+# get_total_cost() 里的 self.items.all()
+# 会命中 prefetch 缓存，不再发查询</pre></div>
+<div class="pane good"><div class="ph">✓ 更省：交给数据库</div><pre>from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+
+Order.objects.annotate(
+    subtotal=Sum(ExpressionWrapper(
+        F(&#x27;items__price&#x27;) * F(&#x27;items__quantity&#x27;),
+        output_field=DecimalField(max_digits=12,
+                                  decimal_places=2))))</pre></div>
+</div>
+<p>顺带把方法本身的重复遍历修掉——把小计算一次传下去，比让 <code>get_discount()</code> 再算一遍要清楚：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>def get_discount(self, total_cost=None):
+    if total_cost is None:
+        total_cost = self.get_total_cost_before_discount()
+    if self.discount:
+        return total_cost * (self.discount / Decimal(100))
+    return Decimal(0)
+
+def get_total_cost(self):
+    total_cost = self.get_total_cost_before_discount()
+    return total_cost - self.get_discount(total_cost)</code></pre></div>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-06</span><span class="ftitle">Contact 表既能重复关注，也能自己关注自己</span><span class="fmeta">已实测 · 正确性</span></div><dl><dt>位置</dt><dd><code>Chapter07/bookmarks/account/models.py</code> · <code>Contact</code></dd><dt>触发</dt><dd>并发点击「关注」；或直接 <code>objects.create()</code></dd><dt>影响</dt><dd>重复的关注关系；用户在自己的粉丝列表里看到自己</dd></dl></div>
+<div class="term"><div class="thead">实测</div><pre>模型上的约束：Meta.constraints = []，Meta.unique_together = []
+
+A) 视图用的是 get_or_create，正常路径下不会重复
+   连点两次「关注」后的记录数: 1
+
+B) 但 get_or_create 在并发下不是原子的
+   两个请求交错执行后的记录数: <b>2</b>
+
+C) 可以自己关注自己
+   alice 关注 alice 的记录数: <b>1</b></pre></div>
+<p><code>get_or_create()</code> 内部是「先 SELECT，没有再 INSERT」，两步之间存在竞态窗口。<strong>它的原子性依赖数据库唯一约束</strong>——有约束时，第二个请求的 INSERT 会撞约束，<code>get_or_create</code> 会捕获 <code>IntegrityError</code> 并改走 get 分支；没有约束就真的插进去两条。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class Contact(models.Model):
+    user_from = models.ForeignKey(User, related_name=&#x27;rel_from_set&#x27;, on_delete=models.CASCADE)
+    user_to = models.ForeignKey(User, related_name=&#x27;rel_to_set&#x27;, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = [&#x27;-created&#x27;]
+        indexes = [models.Index(fields=[&#x27;-created&#x27;])]
+        constraints = [
+            models.UniqueConstraint(fields=[&#x27;user_from&#x27;, &#x27;user_to&#x27;], name=&#x27;uniq_contact&#x27;),
+            models.CheckConstraint(
+                condition=~models.Q(user_from=models.F(&#x27;user_to&#x27;)),
+                name=&#x27;no_self_follow&#x27;,
+            ),
+        ]</code></pre></div>
+
+<div class="finding lo"><div class="fhead"><span class="fid">F-07</span><span class="ftitle">用 if not qs 判空，会把整个结果集拉进内存</span><span class="fmeta">已实测 · 性能</span></div><dl><dt>位置</dt><dd><code>Chapter05~07/bookmarks/actions/utils.py</code> · <code>create_action()</code></dd><dt>影响</dt><dd>只想知道「有没有」，却把所有匹配行都取了回来</dd></dl></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code>similar_actions = Action.objects.filter(user_id=user.id, verb=verb, created__gte=last_minute)
+if target:
+    similar_actions = similar_actions.filter(target_ct=target_ct, target_id=target.id)
+if not similar_actions:          # &lt;- 这里会执行 SELECT * 并把结果全部实例化
+    ...</code></pre></div>
+<p><code>if not qs</code> 走的是 <code>QuerySet.__bool__()</code>，它会调用 <code>_fetch_all()</code> 把<strong>所有匹配的行</strong>查出来并构造成模型实例，只为判断列表是否为空。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状</div><pre>if not similar_actions:
+    # SELECT id, user_id, verb, created, ...
+    # FROM actions_action WHERE ...
+    # 全部取回并实例化</pre></div>
+<div class="pane good"><div class="ph">✓ 用 exists()</div><pre>if not similar_actions.exists():
+    # SELECT 1 FROM actions_action WHERE ... LIMIT 1</pre></div>
+</div>
+<blockquote><p>反过来也有一个常见误用：如果你<strong>接下来就要遍历这个 queryset</strong>，那么先 <code>.exists()</code> 再遍历反而多了一次查询——这时用 <code>if not qs</code> 是对的，因为求值结果会被缓存复用。判断标准是<strong>「之后还用不用这批数据」</strong>：不用就 <code>exists()</code>，要用就直接求值。</p></blockquote>
+
+<div class="finding lo"><div class="fhead"><span class="fid">F-08</span><span class="ftitle">全仓库只有 7 处用了 select_related / prefetch_related</span><span class="fmeta">代码统计 · 性能</span></div><dl><dt>范围</dt><dd>全部 17 章、四个项目</dd><dt>影响</dt><dd>多数列表页与详情页存在未被发现的 N+1</dd></dl></div>
+<div class="term"><div class="thead">统计 · 全仓库（不含迁移与静态文件）</div><pre>select_related / prefetch_related 出现次数 : <b>7</b>
+on_delete 分布 : CASCADE 65 处 / PROTECT 4 处 / SET_NULL 2 处
+Meta.constraints : <b>全仓库为空</b></pre></div>
+<p>7 处里有 3 处是 DRF 的 <code>Course.objects.prefetch_related('modules')</code>（同一行在三章里重复），实际不同的用法只有 4 处。其中写得最好的是 bookmarks 的动态流：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># account/views.py · dashboard
+actions = actions.select_related(
+    &#x27;user&#x27;, &#x27;user__profile&#x27;        # 外键 / 一对一 -&gt; JOIN
+).prefetch_related(&#x27;target&#x27;)[:10]  # GenericForeignKey -&gt; 额外查询后在 Python 侧关联</code></pre></div>
+<p><strong><code>prefetch_related</code> 对 <code>GenericForeignKey</code> 是原生支持的</strong>，这一点很多人不知道，而它恰恰是动态流这类多态列表避免 N+1 的关键。Django 5.0 起还提供了 <code>GenericPrefetch</code>，可以给不同的目标类型指定各自的 queryset（这一点在 <a href="guide-rest-api.html">DRF 指南</a> F-01 里用来把 39 条查询降到 5 条）。</p>
+<p><code>on_delete</code> 的分布也值得一提：65 处 CASCADE 说明多数外键的删除行为是照着默认习惯写的，而不是每次专门考虑过。<code>chat.Message</code> 用 <code>PROTECT</code>（不让删除还有聊天记录的课程）和 <code>Order.coupon</code> 用 <code>SET_NULL</code>（优惠券下线不影响历史订单）都是想清楚了的选择——这两处正好说明这个参数值得逐个斟酌。</p>
+
+</section><section class="chapter" id="perf">
+<h2>四、查询性能：几条能直接用的规则</h2>
+
+<h3>4.1 select_related 与 prefetch_related 怎么选</h3>
+<div class="matrix">
+<table>
+<thead><tr><th></th><th><code>select_related</code></th><th><code>prefetch_related</code></th></tr></thead>
+<tbody>
+<tr><td>适用关系</td><td>外键、一对一（<strong>单值</strong>）</td><td>多对多、反向外键、GenericForeignKey（<strong>多值</strong>）</td></tr>
+<tr><td>实现方式</td><td>SQL JOIN，一次查询取回</td><td>额外一次查询，在 Python 侧做关联</td></tr>
+<tr><td>查询数</td><td>不增加</td><td>每个关系 +1</td></tr>
+<tr><td>数据量</td><td>JOIN 会让父行重复，宽表时浪费带宽</td><td>各表只取一遍，无重复</td></tr>
+<tr><td>能否嵌套</td><td><code>'user__profile'</code></td><td><code>'modules__contents'</code></td></tr>
+</tbody>
+</table>
+</div>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 两者可以同时用，各管各的关系
+Action.objects.select_related(&#x27;user&#x27;, &#x27;user__profile&#x27;).prefetch_related(&#x27;target&#x27;)
+
+# prefetch 时想给关联对象加过滤或排序，用 Prefetch 对象
+from django.db.models import Prefetch
+
+Course.objects.prefetch_related(
+    Prefetch(&#x27;modules&#x27;, queryset=Module.objects.order_by(&#x27;order&#x27;), to_attr=&#x27;ordered_modules&#x27;)
+)
+
+# GenericForeignKey 的批量预取（Django 5.0+）
+from django.contrib.contenttypes.prefetch import GenericPrefetch
+
+Content.objects.prefetch_related(
+    GenericPrefetch(&#x27;item&#x27;, [Text.objects.all(), Video.objects.all()])
+)</code></pre></div>
+
+<h3>4.2 把计算推到数据库里</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 数着算 -&gt; 交给数据库算
+Subject.objects.annotate(total_courses=Count(&#x27;courses&#x27;))
+
+# 字段间的运算用 F()，避免「读出来改完再写回去」的竞态
+from django.db.models import F
+Image.objects.filter(id=pk).update(total_likes=F(&#x27;total_likes&#x27;) + 1)
+
+# 复杂表达式要指定 output_field
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+Order.objects.annotate(
+    subtotal=Sum(ExpressionWrapper(
+        F(&#x27;items__price&#x27;) * F(&#x27;items__quantity&#x27;),
+        output_field=DecimalField(max_digits=12, decimal_places=2))))</code></pre></div>
+<blockquote class="callout-warn"><p><strong><code>annotate(Count(...))</code> 会引入 <code>GROUP BY</code>，而 <code>GROUP BY</code> 会让 <code>Meta.ordering</code> 静默失效</strong>——Django 源码里的原话是「A default ordering doesn't affect GROUP BY queries」。本仓库的 <code>SubjectViewSet</code> 正踩在这上面，导致分页顺序不稳定。完整复现与修复见 <a href="guide-rest-api.html">DRF 指南</a> F-02。</p></blockquote>
+
+<h3>4.3 只取需要的列</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 只要几个字段时别把整行模型实例化
+Post.objects.values(&#x27;id&#x27;, &#x27;title&#x27;)             # 返回字典
+Post.objects.values_list(&#x27;id&#x27;, flat=True)      # 返回扁平列表
+
+# 大字段（TextField / JSONField）用 defer 推迟加载
+Post.objects.defer(&#x27;body&#x27;)
+
+# 反过来只要指定字段
+Post.objects.only(&#x27;title&#x27;, &#x27;slug&#x27;)</code></pre></div>
+<blockquote><p><code>only()</code> 和 <code>defer()</code> 有个陷阱：访问被推迟的字段会<strong>触发一次额外查询</strong>，在循环里就变成了 N+1。它们适合「确定不会碰那些字段」的场景，不确定时用 <code>values()</code> 更安全，因为拿到的是字典，碰不到的字段压根不存在。</p></blockquote>
+
+<h3>4.4 怎么发现 N+1</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 测试里断言查询数 —— 最有效的防回归手段
+def test_order_list_query_count(self):
+    with self.assertNumQueries(2):
+        list(Order.objects.prefetch_related(&#x27;items&#x27;))
+
+# 开发时打印实际 SQL
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
+
+with CaptureQueriesContext(connection) as ctx:
+    ...
+print(len(ctx), [q[&#x27;sql&#x27;][:80] for q in ctx.captured_queries])</code></pre></div>
+<p><code>django-debug-toolbar</code>（本仓库 educa 已装）能看页面的查询数，但它<strong>只对 HTML 响应生效</strong>，看不到 JSON API。API 侧只能靠 <code>assertNumQueries</code> 或 APM。</p>
+
+</section><section class="chapter" id="checklist">
+<h2>五、上线前检查清单</h2>
+
+<ul class="check">
+<li><span class="mk">01</span><span><b>凡是「数据不能这样」的规则，都要有数据库约束</b>。表单校验只是提示，<code>objects.create()</code> 一行就能绕过。见第一节。</span></li>
+<li><span class="mk">02</span><span><b><code>Model.save()</code> 不调用 <code>full_clean()</code></b>。字段上的 <code>validators</code> 在 <code>create()</code> 路径上完全不生效。</span></li>
+<li><span class="mk">03</span><span><b><code>unique_for_date</code> / <code>unique_for_month</code> 不是数据库约束</b>，需要额外加 <code>UniqueConstraint</code>。见 F-02。</span></li>
+<li><span class="mk">04</span><span><b>关联表要有唯一约束</b>（如「谁关注了谁」「谁收藏了什么」）。<code>get_or_create</code> 的原子性<strong>依赖</strong>这个约束。见 F-06。</span></li>
+<li><span class="mk">05</span><span><b>排序字段要有 (父, 序号) 的唯一约束</b>，并考虑用 <code>deferrable</code> 让重排能在事务内完成。见 F-03。</span></li>
+<li><span class="mk">06</span><span><b>slug 由用户输入生成时要处理非 ASCII 与空值</b>：<code>allow_unicode=True</code> 加一个兜底默认值。见 F-01。</span></li>
+<li><span class="mk">07</span><span><b>计数器自增用 <code>F()</code> 表达式</b>，不要「读出来加一再存回去」——后者在并发下会丢更新。</span></li>
+<li><span class="mk">08</span><span><b>信号处理函数要判 <code>action</code> 和 <code>reverse</code></b>，并用 <code>update()</code> 或 <code>save(update_fields=[...])</code> 只写目标字段。见 F-04。</span></li>
+<li><span class="mk">09</span><span><b><code>bulk_create</code> / <code>update()</code> 跳过 <code>save()</code> 与信号</b>。依赖 <code>save()</code> 里逻辑的字段，批量操作时要显式赋值。见 F-03。</span></li>
+<li><span class="mk">10</span><span><b>列表页一律检查 N+1</b>：外键用 <code>select_related</code>，多值关系用 <code>prefetch_related</code>，GenericForeignKey 用 <code>GenericPrefetch</code>。见 F-05、F-08。</span></li>
+<li><span class="mk">11</span><span><b>关键端点写 <code>assertNumQueries</code> 断言</b>。这是唯一能在 CI 里挡住 N+1 回归的手段。</span></li>
+<li><span class="mk">12</span><span><b>能在数据库算的就别在 Python 里算</b>：<code>Count</code>、<code>Sum</code>、<code>annotate</code>。但要留意 <code>annotate</code> 引入的 <code>GROUP BY</code> 会让 <code>Meta.ordering</code> 失效。</span></li>
+<li><span class="mk">13</span><span><b>判空用 <code>.exists()</code>，除非之后还要用这批数据</b>。见 F-07。</span></li>
+<li><span class="mk">14</span><span><b>每个 <code>on_delete</code> 都单独想一下</b>。<code>CASCADE</code> 是最省事的默认，但订单、日志、审计记录多半应该是 <code>PROTECT</code> 或 <code>SET_NULL</code>。</span></li>
+<li><span class="mk">15</span><span><b>第一个定义的管理器就是默认管理器</b>。带过滤的自定义管理器不要放在 <code>objects</code> 前面，否则 admin 和关联访问都会看到被过滤的数据。</span></li>
+<li><span class="mk">16</span><span><b>新项目一开始就用自定义 User 模型</b>，不要靠 <code>add_to_class</code> 往 <code>auth.User</code> 上挂东西。</span></li>
+</ul>
+
+</section><section class="chapter" id="compare">
+<h2>六、同样的数据层：Spring Data JPA 与 Drizzle 怎么做</h2>
+<p>仍用本仓库的真实模型对比：<strong>「课程 — 模块 — 内容的三级结构，加上学员多对多」</strong>，以及日常最常写的<strong>「列表查询与聚合」</strong>。</p><h3>6.1 模型 / schema 的表达方式</h3><div class="cmp three"><div class="fw"><h4>Django ORM</h4><div class="fwbody"><p>模型类<strong>同时</strong>是表结构定义、校验规则和业务方法的载体。迁移由框架从模型差异自动生成。</p><pre>class Course(models.Model):
+    owner = models.ForeignKey(
+        User, related_name=&#x27;courses_created&#x27;,
+        on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+    students = models.ManyToManyField(
+        User, related_name=&#x27;courses_joined&#x27;, blank=True)
+
+    class Meta:
+        ordering = [&#x27;-created&#x27;]
+        indexes = [models.Index(fields=[&#x27;-created&#x27;])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[&#x27;owner&#x27;, &#x27;title&#x27;],
+                name=&#x27;uniq_course_per_owner&#x27;),
+        ]
+
+# 迁移由框架生成，与模型定义强绑定
+# python manage.py makemigrations &amp;&amp; migrate</pre><ul><li>模型即真相：改字段 → <code>makemigrations</code> → 迁移文件，一条链路</li><li><code>Meta.constraints</code> 才是真约束；表单校验挡不住 <code>create()</code></li><li>关联的删除行为（<code>on_delete</code>）是<strong>必填参数</strong>，逼你每次都想一下</li></ul></div></div><div class="fw"><h4>Spring Data JPA</h4><div class="fwbody"><p>实体类描述对象映射，<strong>建表脚本通常独立管理</strong>（Flyway / Liquibase），两者要人工保持同步。</p><pre>@Entity
+@Table(name = &quot;course&quot;,
+    indexes = @Index(columnList = &quot;created DESC&quot;),
+    uniqueConstraints = @UniqueConstraint(
+        columnNames = {&quot;owner_id&quot;, &quot;title&quot;}))
+public class Course {
+    @Id @GeneratedValue Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)   // 默认 EAGER，必须显式改
+    User owner;
+
+    String title;
+
+    @ManyToMany
+    @JoinTable(name = &quot;course_students&quot;)
+    Set&lt;User&gt; students = new HashSet&lt;&gt;();
+}
+
+// 建表默认交给 Flyway / Liquibase，
+// 与实体定义是两份独立的东西</pre><ul><li>实体与迁移分离：更可控，也更容易写着写着就不一致</li><li>单值关联<strong>默认 EAGER</strong>，是 N+1 的头号来源，必须显式改 LAZY</li><li>约束写在注解里，但真正建表的是迁移脚本——注解只在自动建表模式下生效</li></ul></div></div><div class="fw"><h4>Hono + Drizzle</h4><div class="fwbody"><p>schema 是普通 TypeScript 对象，<strong>类型直接从 schema 推导</strong>，没有运行时的对象映射层。</p><pre>// Drizzle：schema 就是 TypeScript，类型从这里推导
+export const course = pgTable(&#x27;course&#x27;, {
+  id: serial(&#x27;id&#x27;).primaryKey(),
+  ownerId: integer(&#x27;owner_id&#x27;)
+    .references(() =&gt; user.id, { onDelete: &#x27;cascade&#x27; })
+    .notNull(),
+  title: varchar(&#x27;title&#x27;, { length: 200 }).notNull(),
+  createdAt: timestamp(&#x27;created_at&#x27;).defaultNow(),
+}, (t) =&gt; ({
+  createdIdx: index(&#x27;created_idx&#x27;).on(desc(t.createdAt)),
+  uniqOwnerTitle: unique().on(t.ownerId, t.title),
+}))
+
+export type Course = typeof course.$inferSelect
+
+// 迁移：drizzle-kit generate 从 schema 差异生成 SQL</pre><ul><li><code>$inferSelect</code> 让查询结果的类型自动跟着 schema 走</li><li>没有模型方法这一层，业务逻辑放哪儿完全由你决定</li><li>迁移由 <code>drizzle-kit</code> 对比 schema 生成，思路与 Django 接近</li></ul></div></div></div><h3>6.2 查询与 N+1</h3><div class="cmp three"><div class="fw"><h4>Django ORM</h4><div class="fwbody"><pre># 惰性：这一行不查库
+qs = Course.objects.filter(owner=u)
+
+# 这些都还是惰性的，只是在拼 SQL
+qs = qs.exclude(title=&#x27;&#x27;).order_by(&#x27;-created&#x27;)[:20]
+
+# 直到求值才真正执行
+for c in qs: ...           # 迭代
+list(qs); bool(qs); len(qs)  # 都会求值
+
+# 解决 N+1：外键用 select_related（JOIN）
+Course.objects.select_related(&#x27;owner&#x27;, &#x27;subject&#x27;)
+
+# 多对多 / 反向关系用 prefetch_related（额外一次查询）
+Course.objects.prefetch_related(&#x27;modules__contents&#x27;)
+
+# 聚合放数据库里做
+Order.objects.annotate(
+    subtotal=Sum(F(&#x27;items__price&#x27;) * F(&#x27;items__quantity&#x27;)))</pre><p>QuerySet 是<strong>惰性且可链式</strong>的，同一个 queryset 求值一次后会缓存结果——但每次 <code>.all()</code> 都会得到新对象，这正是本文 F-05 里同样的明细被查两次的原因。</p><p><code>select_related</code>（JOIN，用于外键 / 一对一）与 <code>prefetch_related</code>（额外查询 + Python 侧关联，用于多对多 / 反向 / GenericForeignKey）分工明确，是解决 N+1 的主力。</p></div></div><div class="fw"><h4>Spring Data JPA</h4><div class="fwbody"><pre>// JPA 默认 EAGER 抓单值关联，很容易一不留神就多查
+@ManyToOne(fetch = FetchType.LAZY)   // 务必显式写
+
+// 解决 N+1：@EntityGraph 或 fetch join
+@EntityGraph(attributePaths = {&quot;owner&quot;, &quot;subject&quot;})
+List&lt;Course&gt; findByOwnerId(Long id);
+
+@Query(&quot;SELECT c FROM Course c JOIN FETCH c.modules &quot;
+     + &quot;WHERE c.owner.id = :id&quot;)
+List&lt;Course&gt; findWithModules(@Param(&quot;id&quot;) Long id);
+
+// 聚合：JPQL 或 Criteria
+@Query(&quot;SELECT new CourseStat(c.id, SUM(i.price * i.qty)) &quot;
+     + &quot;FROM Course c JOIN c.items i GROUP BY c.id&quot;)
+List&lt;CourseStat&gt; stats();
+
+// LazyInitializationException 是这套模型的经典陷阱：
+// 出了事务边界再碰懒加载字段就会炸</pre><p>JPA 有<strong>持久化上下文</strong>这一层，实体在事务内是「被托管」的，改了字段不 save 也会写回——威力大，但也让「这行代码到底会不会发 SQL」变得难以一眼看清。</p><p><code>LazyInitializationException</code> 是这套模型最经典的陷阱：出了事务边界再访问懒加载字段就会抛异常。Django 没有对应问题，代价是它也没有自动脏检查。</p></div></div><div class="fw"><h4>Hono + Drizzle</h4><div class="fwbody"><pre>// Drizzle：写起来接近 SQL，没有惰性代理这一层
+const rows = await db
+  .select()
+  .from(course)
+  .where(eq(course.ownerId, uid))
+  .orderBy(desc(course.createdAt))
+  .limit(20)
+
+// 关联查询是显式的，没有「不小心触发一次查询」这回事
+const withModules = await db.query.course.findMany({
+  with: { modules: { with: { contents: true } } },
+})
+
+// 聚合
+await db
+  .select({ id: order.id,
+            subtotal: sum(sql`${item.price} * ${item.qty}`) })
+  .from(order)
+  .leftJoin(item, eq(item.orderId, order.id))
+  .groupBy(order.id)</pre><p>没有惰性代理、没有持久化上下文，<strong>写了几个 await 就发几条 SQL</strong>，查询开销完全可预测。</p><p>代价是所有便利都要自己搭：没有 <code>get_or_create</code>、没有信号、没有模型级校验，也没有 admin。</p></div></div></div><h3>6.3 逐项对照</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>维度</th><th>Django ORM</th><th>Spring Data JPA</th><th>Drizzle（Hono 生态）</th></tr></thead>
+<tbody>
+<tr><td>schema 与迁移</td><td>模型即真相，迁移自动生成</td><td>实体与迁移脚本<strong>分离</strong></td><td>schema 即真相，迁移自动生成</td></tr>
+<tr><td>关联默认抓取</td><td><strong>全部惰性</strong></td><td>单值关联<strong>默认 EAGER</strong></td><td>不抓，要什么写什么</td></tr>
+<tr><td>N+1 的解法</td><td><code>select_related</code> / <code>prefetch_related</code></td><td><code>@EntityGraph</code> / <code>JOIN FETCH</code></td><td><code>with:</code> 显式声明</td></tr>
+<tr><td>脏检查自动写回</td><td><strong>无</strong>，必须显式 <code>save()</code></td><td><strong>有</strong>，事务提交时自动 flush</td><td>无</td></tr>
+<tr><td>模型上挂业务方法</td><td><strong>常见</strong>（胖模型）</td><td>通常放 Service 层</td><td>无处可挂，只能放函数里</td></tr>
+<tr><td>约束声明</td><td><code>Meta.constraints</code> → 迁移 → 数据库</td><td>注解 + 迁移脚本两处</td><td>schema 里声明 → 迁移</td></tr>
+<tr><td>校验层次</td><td>表单 / <code>full_clean()</code> / 数据库，<strong>三层且各管各的</strong></td><td>Bean Validation + 数据库</td><td>Zod 等外部库 + 数据库</td></tr>
+<tr><td>信号 / 钩子</td><td><code>pre_save</code> / <code>m2m_changed</code> 等</td><td>JPA 生命周期回调 / 事件</td><td>无</td></tr>
+<tr><td>批量写入</td><td><code>bulk_create</code>（<strong>跳过 save 与信号</strong>）</td><td><code>saveAll</code> + batch size</td><td><code>insert().values([...])</code></td></tr>
+<tr><td>原始 SQL 逃生口</td><td><code>raw()</code> / <code>RawSQL</code> / <code>connection.cursor()</code></td><td><code>@Query(nativeQuery=true)</code></td><td><code>sql</code> 模板标签，随处可插</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>三句话概括</h4>
+<ul>
+<li><strong>Django ORM 的优点和缺点是同一件事：模型类承担得太多。</strong>它同时是表结构、校验规则、业务方法和序列化起点，这让小项目推进极快——本仓库四个项目加起来不到两千行模型代码就跑通了博客、电商、社交和在线教育。代价是「校验」这个词在 Django 里有三个互不相通的含义（表单层、<code>full_clean()</code>、数据库约束），而<strong>默认的 <code>save()</code> 一层都不走</strong>。本文的 F-02、F-03、F-06 全部源于此：规则写在了不该写的层次上。</li>
+<li><strong>JPA 的持久化上下文更强大，也更难预测。</strong>实体在事务内被托管、脏检查自动写回、一级缓存去重，这些在复杂业务里很有价值；但「这行代码会不会发 SQL」在 JPA 里往往要看事务边界和抓取策略才能回答，而 Django 里基本是「你写了查询才有查询」。JPA 单值关联<strong>默认 EAGER</strong> 更是一个反直觉的默认值，是它 N+1 问题的主要来源。</li>
+<li><strong>Drizzle 代表的方向是「把 ORM 变薄」。</strong>没有惰性代理、没有持久化上下文，写几个 await 就发几条 SQL，配合 TypeScript 从 schema 推导出的类型，查询结果的形状在编译期就是确定的。它换来的是可预测性，付出的是所有便利设施——Django 那套 admin、信号、表单、<code>get_or_create</code> 在这里一个都没有。选它的团队通常是<strong>明确不想要那层抽象</strong>，而不是还没来得及搭。</li>
+</ul>
+
+</section>
+    <div class="footdoc">
+      由 Claude 对照本仓库源码与 Django 5.2 源码整理生成 · 实测结论基于本机复现 · 图示为教学示意
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>
