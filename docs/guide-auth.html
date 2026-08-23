@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>认证与授权实战指南</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext x=%2250%22 y=%2262%22 font-size=%2262%22 text-anchor=%22middle%22%3E%F0%9F%94%90%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif CJK SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram svg .box{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.25; }
+.diagram svg .box-a{ fill:var(--accent2-soft); stroke:var(--accent2); stroke-width:1.25; }
+.diagram svg .box-w{ fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.25; }
+.diagram svg text{ font-family:var(--font-mono); dominant-baseline:middle; }
+.diagram svg .lbl{ fill:var(--ink-soft); }
+.diagram svg .lbl-strong{ fill:var(--ink); font-weight:700; }
+.diagram svg .lbl-accent{ fill:var(--accent2-strong); font-weight:700; }
+.diagram svg .lbl-warn{ fill:var(--danger); font-weight:700; }
+.diagram svg .edge{ stroke:var(--ink-faint); stroke-width:1.4; fill:none; }
+.diagram svg .edge-a{ stroke:var(--accent2); stroke-width:1.6; fill:none; }
+.diagram svg .edge-w{ stroke:var(--danger); stroke-width:1.6; fill:none; }
+.diagram svg .edge-dashed{ stroke-dasharray:4 3; }
+.diagram svg marker path{ fill:var(--ink-faint); }
+.diagram svg marker.m-a path{ fill:var(--accent2); }
+.diagram svg marker.m-w path{ fill:var(--danger); }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+
+
+:root{
+  --ok:#2f6d3f; --ok-soft:#e4f0e5; --ok-line:#8fbf9b;
+  --sev-hi:#9c3b2c; --sev-mid:#a86a0b; --sev-lo:#5b6357;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+    --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+  }
+}
+:root[data-theme="dark"]{
+  --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+  --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+}
+
+/* ---- lede / summary panel ---- */
+.lede{
+  border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:22px 24px; margin:0 0 30px; box-shadow:var(--shadow);
+}
+.lede h3{ margin:0 0 12px; font-size:.83rem; font-family:var(--font-mono);
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent2); font-weight:700; }
+.lede ol{ margin:0; padding-left:1.3em; }
+.lede li{ margin:0 0 .55em; }
+.lede li:last-child{ margin-bottom:0; }
+
+/* ---- finding cards ---- */
+.finding{
+  border:1px solid var(--line-strong); border-left:4px solid var(--sev-hi);
+  border-radius:5px; background:var(--surface); padding:18px 20px; margin:0 0 20px;
+  box-shadow:var(--shadow);
+}
+.finding.mid{ border-left-color:var(--sev-mid); }
+.finding.lo{ border-left-color:var(--sev-lo); }
+.finding .fhead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.finding .fid{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.09em; font-weight:700;
+  color:var(--paper); background:var(--sev-hi); padding:2px 7px; border-radius:3px;
+}
+.finding.mid .fid{ background:var(--sev-mid); }
+.finding.lo .fid{ background:var(--sev-lo); }
+.finding .ftitle{ font-weight:700; font-size:1.02rem; color:var(--ink); flex:1 1 auto; min-width:12ch; }
+.finding .fmeta{ font-family:var(--font-mono); font-size:.72rem; color:var(--ink-faint); }
+.finding p{ margin:0 0 .85em; }
+.finding p:last-child{ margin-bottom:0; }
+.finding dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:baseline; }
+.finding dt{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); white-space:nowrap; padding-top:.15em;
+}
+.finding dd{ margin:0; }
+
+/* ---- verified evidence terminal ---- */
+.term{
+  border:1px solid var(--code-border); border-radius:6px; overflow:hidden;
+  margin:0 0 1.3em; box-shadow:var(--shadow);
+}
+.term .thead{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ok); background:var(--ok-soft); padding:6px 14px; border-bottom:1px solid var(--ok-line);
+  display:flex; align-items:center; gap:8px;
+}
+.term pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink); padding:14px 16px;
+  overflow-x:auto; font-family:var(--font-mono); font-size:.8rem; line-height:1.6;
+}
+.term pre b{ color:var(--danger); font-weight:700; }
+.term pre i{ color:var(--ok); font-style:normal; font-weight:700; }
+
+/* ---- good / bad code pairing ---- */
+.pair{ display:grid; gap:14px; margin:0 0 1.4em; }
+@media (min-width:820px){ .pair.two{ grid-template-columns:1fr 1fr; } }
+.pane{ border:1px solid var(--code-border); border-radius:6px; overflow:hidden; min-width:0; }
+.pane > .ph{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  padding:6px 13px; border-bottom:1px solid var(--code-border); font-weight:700;
+}
+.pane.bad > .ph{ color:var(--danger); background:var(--danger-soft); }
+.pane.good > .ph{ color:var(--ok); background:var(--ok-soft); }
+.pane pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink);
+  padding:14px 16px; overflow-x:auto; font-family:var(--font-mono);
+  font-size:.79rem; line-height:1.62;
+}
+
+/* ---- three-way framework comparison ---- */
+.cmp{ display:grid; gap:14px; margin:0 0 1.6em; }
+@media (min-width:900px){ .cmp.three{ grid-template-columns:repeat(3,1fr); } }
+.fw{ border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:0 0 16px; min-width:0; box-shadow:var(--shadow); overflow:hidden; }
+.fw > h4{
+  margin:0 0 12px; padding:10px 16px; font-size:.86rem; font-family:var(--font-mono);
+  letter-spacing:.06em; font-weight:700; border-bottom:1px solid var(--line);
+  background:var(--surface-2); color:var(--accent2-strong);
+}
+.fw .fwbody{ padding:0 16px; }
+.fw p{ margin:0 0 .8em; font-size:.9rem; }
+.fw pre{
+  margin:0 0 .9em; background:var(--code-bg); border:1px solid var(--code-border);
+  border-radius:5px; padding:11px 12px; overflow-x:auto;
+  font-family:var(--font-mono); font-size:.74rem; line-height:1.55; color:var(--code-ink);
+}
+.fw ul{ margin:0; padding-left:1.15em; font-size:.86rem; }
+.fw li{ margin:0 0 .42em; }
+
+/* ---- decision matrix ---- */
+.matrix{ overflow-x:auto; margin:0 0 1.5em; border:1px solid var(--line); border-radius:6px; }
+.matrix table{ width:100%; border-collapse:collapse; font-size:.86rem; min-width:640px; margin:0; }
+.matrix th{
+  text-align:left; padding:10px 13px; background:var(--accent2-soft); color:var(--accent2-strong);
+  font-weight:700; border-bottom:1px solid var(--line-strong); vertical-align:bottom;
+}
+.matrix td{ padding:10px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.matrix tr:last-child td{ border-bottom:none; }
+.matrix tr:nth-child(even) td{ background:var(--surface-2); }
+.matrix td.lv{ font-family:var(--font-mono); font-weight:700; color:var(--accent-strong); white-space:nowrap; }
+
+/* ---- checklist ---- */
+.check{ list-style:none; padding:0; margin:0 0 1.5em; display:flex; flex-direction:column; gap:10px; }
+.check li{
+  display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:baseline;
+  border:1px solid var(--line); border-radius:5px; padding:12px 15px; background:var(--surface);
+  margin:0; font-size:.93rem;
+}
+.check li > .mk{ font-family:var(--font-mono); font-weight:700; color:var(--accent2); font-size:.8rem; }
+.check li b{ color:var(--accent-strong); }
+
+/* the guide uses one <h2> per section like the chapter pages, so inherit that rule */
+.chapter h4{ font-size:.97rem; margin:1.7em 0 .6em; font-weight:700; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5.2 · 专题指南</span>
+      <h1>&#x1F510;&nbsp; 认证与授权实战指南</h1>
+      <p>认证后端、四种授权粒度与安全默认值，对照本仓库 bookmarks 与 educa 的真实代码逐处分析，并与 Spring、Hono.js 的同场景做法对比。</p>
+    </div>
+    <nav>
+      <a href="#tldr"><span class="n">速览</span>本文结论速览</a><a href="#concepts"><span class="n">分界</span>认证与授权的分界，以及 Django 的四种粒度</a><a href="#audit"><span class="n">现状</span>本仓库认证与授权代码逐处分析</a><a href="#findings"><span class="n">缺陷</span>七个已验证的问题与修复</a><a href="#defaults"><span class="n">默认</span>Django 的安全默认值，以及本仓库动了哪些</a><a href="#checklist"><span class="n">清单</span>上线前检查清单</a><a href="#compare"><span class="n">对比</span>同样的认证与授权：Spring 与 Hono.js 怎么做</a>
+    </nav>
+    <div class="series">
+      <div class="label">相关阅读</div>
+      <a href="guide-async-tasks.html">&#x2699;&#xFE0F; 异步任务实战指南</a>
+      <a href="guide-pagination.html">&#x1F4D1; 分页实战指南</a>
+      <a href="guide-rest-api.html">&#x1F50C; DRF 接口实战指南</a>
+      <a href="guide-redis-caching.html">&#x26A1; Redis 缓存实战指南</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">专题指南 · 机制 / 粒度 / 缺陷分析 / 横向对比</span>
+      <h1>Django 认证与授权实战指南</h1>
+      <p class="sub">面向 Django 5.2。所有论断均在本机实测验证，代码分析来自本仓库 <code>Chapter04~07</code> 的 bookmarks、<code>Chapter12~17</code> 的 educa 与 <code>Chapter08~11</code> 的 myshop。</p>
+      <div class="meta">
+        <span>Django 5.2 · DRF 3.15 · Channels 4.1</span>
+        <span>含 6 张架构示意图</span>
+        <span>7 个已验证的问题</span>
+      </div>
+    </div>
+    <section class="chapter" id="tldr">
+<h2>本文结论速览</h2>
+
+<div class="lede">
+<h3>三条最重要的结论</h3>
+<ol>
+<li><strong>拖拽排序端点同时缺了两道防线。</strong> <code>ModuleOrderView</code> / <code>ContentOrderView</code> 既没有 <code>LoginRequiredMixin</code>，又主动加了 <code>CsrfExemptMixin</code>。实测：已登录用户<strong>不带 CSRF token 的 POST 返回 200 且数据被修改</strong>；去掉 <code>CsrfExemptMixin</code> 后返回 403。这是一个可被跨站利用的写端点。详见 <a href="#findings">F-02</a>。</li>
+<li><strong>课程聊天室的 WebSocket 入口没有任何鉴权。</strong> 用真实 <code>WebsocketCommunicator</code> 实测：<strong>匿名用户和未报名用户都能连接成功</strong>，并完整收到房间里的广播。而配对的 HTTP 视图对同样的两种身份分别返回登录跳转和 403。详见 <a href="#findings">F-03</a>。</li>
+<li><strong>自定义认证后端引入了一个 1700 倍的用户枚举计时侧信道。</strong> 实测 <code>EmailAuthBackend</code>：邮箱存在时 297 ms、不存在时 0.17 ms；Django 内置 <code>ModelBackend</code> 的对应比值是 1.00 倍——因为它故意跑一遍哈希把两条路径拉平。详见 <a href="#findings">F-05</a>。</li>
+</ol>
+</div>
+<p>本文结构与前四篇指南一致：先厘清<strong>认证与授权的分界及 Django 的四种授权粒度</strong>，再<strong>逐处分析本仓库的认证与授权代码</strong>，然后是<strong>七个已验证的问题及修复</strong>、<strong>安全默认值专题</strong>，最后是<strong>上线清单</strong>与 <strong>Spring / Hono.js 对比</strong>。所有论断都在本机 Django 5.2 上实测验证，实测输出以绿色标题的终端块标注。</p>
+<blockquote><p><strong>一点说明</strong>：本文只分析这个教学仓库自身的代码，目的是把「认证授权容易在哪里出错」讲清楚。书里的很多简化是<strong>教学取舍</strong>而非作者疏忽——但正因为它是很多人照抄的起点，这些地方值得标出来。文中对每一条都区分了「实测复现」与「代码阅读」两种来源。</p></blockquote>
+
+</section><section class="chapter" id="concepts">
+<h2>一、认证与授权的分界，以及 Django 的四种粒度</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 440" role="img" aria-label="图 1 · 认证回答「你是谁」，授权回答「你能做什么」；Django 的授权有四种粒度，通常需要叠加使用"><defs>
+          <marker id="du1-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du1-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du1-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">认证 Authentication —— 你是谁</text>
+<rect class="box-a" x="20" y="36" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="61.0" text-anchor="middle" font-size="12.5">凭据校验</text>
+<text class="lbl" x="130.0" y="79.5" text-anchor="middle" font-size="10.5">AUTHENTICATION_BACKENDS</text>
+<text class="lbl" x="130.0" y="91.5" text-anchor="middle" font-size="10.5">authenticate() 依次尝试</text>
+<rect class="box-a" x="280" y="36" width="200" height="62" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="61.0" text-anchor="middle" font-size="12.5">建立会话</text>
+<text class="lbl" x="380.0" y="79.5" text-anchor="middle" font-size="10.5">login() 写 session</text>
+<text class="lbl" x="380.0" y="91.5" text-anchor="middle" font-size="10.5">request.user 从此可用</text>
+<rect class="box-a" x="520" y="36" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="61.0" text-anchor="middle" font-size="12.5">会话维持</text>
+<text class="lbl" x="630.0" y="79.5" text-anchor="middle" font-size="10.5">SessionMiddleware</text>
+<text class="lbl" x="630.0" y="91.5" text-anchor="middle" font-size="10.5">+ AuthenticationMiddleware</text>
+<line class="edge" x1="240" y1="67" x2="280" y2="67" marker-end="url(#du1-m)"></line>
+<line class="edge" x1="480" y1="67" x2="520" y2="67" marker-end="url(#du1-m)"></line>
+<line x1="20" y1="126" x2="740" y2="126" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="148" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">授权 Authorization —— 你能做什么（Django 提供四种粒度）</text>
+<rect class="box-a" x="20" y="162" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="187.0" text-anchor="middle" font-size="11.5">① 登录与否</text>
+<rect class="box" x="190" y="162" width="330" height="50" rx="4"></rect>
+<text class="lbl-strong" x="355.0" y="187.0" text-anchor="middle" font-size="10.5">LoginRequiredMixin / @login_required</text>
+<text class="lbl" x="540" y="184.0" text-anchor="start" font-size="10.5">最粗：只区分登录/未登录</text>
+<rect class="box-a" x="20" y="222" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="247.0" text-anchor="middle" font-size="11.5">② 模型级权限</text>
+<rect class="box" x="190" y="222" width="330" height="50" rx="4"></rect>
+<text class="lbl-strong" x="355.0" y="240.25" text-anchor="middle" font-size="10.5">PermissionRequiredMixin</text>
+<text class="lbl-strong" x="355.0" y="253.75" text-anchor="middle" font-size="10.5">permission_required='courses.add_course'</text>
+<text class="lbl" x="540" y="244.0" text-anchor="start" font-size="10.5">「能不能新增课程」</text>
+<rect class="box-a" x="20" y="282" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="307.0" text-anchor="middle" font-size="11.5">③ 所有权过滤</text>
+<rect class="box" x="190" y="282" width="330" height="50" rx="4"></rect>
+<text class="lbl-strong" x="355.0" y="307.0" text-anchor="middle" font-size="10.5">get_queryset().filter(owner=request.user)</text>
+<text class="lbl" x="540" y="304.0" text-anchor="start" font-size="10.5">「只能看到自己的课程」</text>
+<rect class="box-a" x="20" y="342" width="150" height="50" rx="4"></rect>
+<text class="lbl-strong" x="95.0" y="367.0" text-anchor="middle" font-size="11.5">④ 对象级权限</text>
+<rect class="box" x="190" y="342" width="330" height="50" rx="4"></rect>
+<text class="lbl-strong" x="355.0" y="367.0" text-anchor="middle" font-size="10.5">has_object_permission(request, view, obj)</text>
+<text class="lbl" x="540" y="364.0" text-anchor="start" font-size="10.5">「这一个对象你能不能动」</text>
+<line x1="20" y1="408" x2="740" y2="408" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="428.0" text-anchor="start" font-size="10.5">本仓库四种都用到了：educa 的课程管理用 ①②③ 叠加，DRF 的 IsEnrolled 用 ④。</text></svg><figcaption class="cap">图 1 · 认证回答「你是谁」，授权回答「你能做什么」；Django 的授权有四种粒度，通常需要叠加使用</figcaption></figure>
+<p>两个词经常被混着说，但它们回答的是完全不同的问题，出错方式也不同：</p>
+<ul>
+<li><strong>认证（Authentication）回答「你是谁」。</strong> 出错的典型形态是：让不该进来的人进来了（弱口令、停用账号仍可登录），或者泄露了「谁存在」这类元信息（用户枚举）。</li>
+<li><strong>授权（Authorization）回答「你能做什么」。</strong> 出错的典型形态是：越权读到别人的数据、越权修改别人的数据，或者某个入口<strong>压根忘了检查</strong>。</li>
+</ul>
+<p>Django 的授权有四种粒度，它们<strong>互相独立、需要主动叠加</strong>——这是理解本文后面所有缺陷的关键：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># ① 登录与否
+class CourseUpdateView(LoginRequiredMixin, UpdateView): ...
+
+# ② 模型级权限（Django 为每个模型自动创建 add/change/delete/view 四种）
+class CourseUpdateView(PermissionRequiredMixin, UpdateView):
+    permission_required = &#x27;courses.change_course&#x27;
+
+# ③ 所有权过滤 —— 「能改课程」不等于「能改这门课程」
+def get_queryset(self):
+    return super().get_queryset().filter(owner=self.request.user)
+
+# ④ 对象级权限（DRF）
+class IsEnrolled(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.students.filter(id=request.user.id).exists()</code></pre></div>
+<blockquote class="callout-warn"><p><strong>第 ② 和第 ③ 层的区别是最容易被忽略的。</strong> Django 的模型级权限只能表达「这个用户能不能修改<em>课程</em>这类对象」，<strong>无法表达「能不能修改<em>这一门</em>课程」</strong>。所以只加 <code>PermissionRequiredMixin</code> 而不做所有权过滤，等于让任何有 <code>change_course</code> 权限的讲师都能改别人的课。本仓库 <code>OwnerCourseMixin</code> 把 ①②③ 三层叠在一起，这一点做得是对的。</p></blockquote>
+<div class="codewrap"><div class="langtag">python</div><pre><code># educa 的做法：三层叠加
+class OwnerMixin:
+    def get_queryset(self):                                   # ③
+        return super().get_queryset().filter(owner=self.request.user)
+
+class OwnerCourseMixin(OwnerMixin, LoginRequiredMixin, PermissionRequiredMixin):   # ①②
+    model = Course
+
+class CourseUpdateView(OwnerCourseEditMixin, UpdateView):
+    permission_required = &#x27;courses.change_course&#x27;</code></pre></div>
+<blockquote><p>还有一层常被忘记的：<strong>列表的可见性不由对象级权限保证</strong>。DRF 的 <code>has_object_permission</code> 只在 <code>get_object()</code> 被调用时触发，<code>list</code> 动作<strong>完全不会</strong>逐条调用它。列表能看到什么，只能靠 <code>get_queryset()</code> 过滤。这一点在 <a href="guide-rest-api.html">DRF 指南</a>第五节详细讨论过。</p></blockquote>
+
+</section><section class="chapter" id="audit">
+<h2>二、本仓库认证与授权代码逐处分析</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 450" role="img" aria-label="图 6 · 全仓库授权手段一览：缺口集中出现在偏离标准视图的两个入口上"><defs>
+          <marker id="du6-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du6-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du6-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="30" width="240" height="46" rx="4"></rect>
+<text class="lbl-strong" x="140.0" y="53.0" text-anchor="middle" font-size="11.5">bookmarks · 图片/关注</text>
+<rect class="box" x="290" y="30" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="53.0" text-anchor="middle" font-size="11">@login_required</text>
+<text class="lbl" x="560" y="54.0" text-anchor="start" font-size="10.5">覆盖到位</text>
+<rect class="box-a" x="20" y="86" width="240" height="46" rx="4"></rect>
+<text class="lbl-strong" x="140.0" y="109.0" text-anchor="middle" font-size="11.5">educa · 课程管理 CBV</text>
+<rect class="box" x="290" y="86" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="109.0" text-anchor="middle" font-size="11">Login + Permission + owner 过滤</text>
+<text class="lbl" x="560" y="110.0" text-anchor="start" font-size="10.5">三层叠加，最规范</text>
+<rect class="box-w" x="20" y="142" width="240" height="46" rx="4"></rect>
+<text class="lbl-strong" x="140.0" y="165.0" text-anchor="middle" font-size="11.5">educa · 拖拽排序</text>
+<rect class="box" x="290" y="142" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="165.0" text-anchor="middle" font-size="11">只有 queryset 过滤</text>
+<text class="lbl-warn" x="560" y="166.0" text-anchor="start" font-size="10.5">F-02 双重缺口</text>
+<rect class="box-a" x="20" y="198" width="240" height="46" rx="4"></rect>
+<text class="lbl-strong" x="140.0" y="221.0" text-anchor="middle" font-size="11.5">educa · 聊天室 HTTP</text>
+<rect class="box" x="290" y="198" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="221.0" text-anchor="middle" font-size="11">@login_required + 报名校验</text>
+<text class="lbl" x="560" y="222.0" text-anchor="start" font-size="10.5">覆盖到位</text>
+<rect class="box-w" x="20" y="254" width="240" height="46" rx="4"></rect>
+<text class="lbl-strong" x="140.0" y="277.0" text-anchor="middle" font-size="11.5">educa · 聊天室 WebSocket</text>
+<rect class="box" x="290" y="254" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="277.0" text-anchor="middle" font-size="11">无</text>
+<text class="lbl-warn" x="560" y="278.0" text-anchor="start" font-size="10.5">F-03 完全开放</text>
+<rect class="box-a" x="20" y="310" width="240" height="46" rx="4"></rect>
+<text class="lbl-strong" x="140.0" y="333.0" text-anchor="middle" font-size="11.5">educa · DRF contents</text>
+<rect class="box" x="290" y="310" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="333.0" text-anchor="middle" font-size="11">IsAuthenticated + IsEnrolled</text>
+<text class="lbl" x="560" y="334.0" text-anchor="start" font-size="10.5">对象级权限正确</text>
+<rect class="box-a" x="20" y="366" width="240" height="46" rx="4"></rect>
+<text class="lbl-strong" x="140.0" y="389.0" text-anchor="middle" font-size="11.5">myshop · 后台订单/发票</text>
+<rect class="box" x="290" y="366" width="250" height="46" rx="4"></rect>
+<text class="lbl-strong" x="415.0" y="389.0" text-anchor="middle" font-size="11">@staff_member_required</text>
+<text class="lbl" x="560" y="390.0" text-anchor="start" font-size="10.5">覆盖到位</text>
+<line x1="20" y1="424" x2="740" y2="424" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="444.0" text-anchor="start" font-size="10.5">规律：走 Django/DRF 标准视图的地方保护都到位；两处缺口都出现在「非标准入口」——</text>
+<text class="lbl" x="20" y="459.5" text-anchor="start" font-size="10.5">一个是 AJAX 端点，一个是 WebSocket。越是绕开框架惯例的地方，越需要自己补齐检查。</text></svg><figcaption class="cap">图 6 · 全仓库授权手段一览：缺口集中出现在偏离标准视图的两个入口上</figcaption></figure>
+
+<h3>2.1 bookmarks：自定义认证后端</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># account/authentication.py
+class EmailAuthBackend:
+    def authenticate(self, request, username=None, password=None):
+        try:
+            user = User.objects.get(email=username)
+            if user.check_password(password):
+                return user
+            return None
+        except (User.DoesNotExist, User.MultipleObjectsReturned):
+            return None
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None</code></pre></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code>AUTHENTICATION_BACKENDS = [
+    &#x27;django.contrib.auth.backends.ModelBackend&#x27;,      # 按 username
+    &#x27;account.authentication.EmailAuthBackend&#x27;,        # 按 email
+    &#x27;social_core.backends.google.GoogleOAuth2&#x27;,       # Google 登录
+]</code></pre></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 430" role="img" aria-label="图 2 · 后端链依次尝试；EmailAuthBackend 漏掉了 ModelBackend 里的两项保护"><defs>
+          <marker id="du2-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du2-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du2-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box" x="20" y="40" width="170" height="56" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="61.0" text-anchor="middle" font-size="11">authenticate(</text>
+<text class="lbl-strong" x="105.0" y="75.0" text-anchor="middle" font-size="11">  username, password)</text>
+<rect class="box-a" x="250" y="30" width="220" height="76" rx="4"></rect>
+<text class="lbl-strong" x="360.0" y="62.0" text-anchor="middle" font-size="11.5">① ModelBackend</text>
+<text class="lbl" x="360.0" y="79.5" text-anchor="middle" font-size="10.5">按 username 查</text>
+<text class="lbl" x="360.0" y="91.5" text-anchor="middle" font-size="10.5">有 user_can_authenticate()</text>
+<text class="lbl" x="360.0" y="103.5" text-anchor="middle" font-size="10.5">有计时拉平</text>
+<rect class="box-w" x="250" y="130" width="220" height="76" rx="4"></rect>
+<text class="lbl-strong" x="360.0" y="162.0" text-anchor="middle" font-size="11.5">② EmailAuthBackend</text>
+<text class="lbl" x="360.0" y="179.5" text-anchor="middle" font-size="10.5">按 email 查</text>
+<text class="lbl" x="360.0" y="191.5" text-anchor="middle" font-size="10.5">无 is_active 检查</text>
+<text class="lbl" x="360.0" y="203.5" text-anchor="middle" font-size="10.5">无计时拉平</text>
+<line class="edge" x1="190" y1="60" x2="250" y2="60" marker-end="url(#du2-m)"></line>
+<line class="edge" x1="190" y1="78" x2="250" y2="160" marker-end="url(#du2-m)"></line>
+<text class="lbl" x="20" y="120.0" text-anchor="start" font-size="10.5">依次尝试，</text>
+<text class="lbl" x="20" y="135.5" text-anchor="start" font-size="10.5">第一个返回</text>
+<text class="lbl" x="20" y="151.0" text-anchor="start" font-size="10.5">非 None 的</text>
+<text class="lbl" x="20" y="166.5" text-anchor="start" font-size="10.5">后端胜出</text>
+<rect class="box-a" x="530" y="30" width="210" height="76" rx="4"></rect>
+<text class="lbl-strong" x="635.0" y="62.0" text-anchor="middle" font-size="12.5">返回 user</text>
+<text class="lbl" x="635.0" y="80.5" text-anchor="middle" font-size="10.5">已通过 is_active 检查</text>
+<line class="edge-a" x1="470" y1="68" x2="530" y2="68" marker-end="url(#du2-ma)"></line>
+<rect class="box-w" x="530" y="130" width="210" height="76" rx="4"></rect>
+<text class="lbl-strong" x="635.0" y="162.0" text-anchor="middle" font-size="12.5">返回 user</text>
+<text class="lbl" x="635.0" y="180.5" text-anchor="middle" font-size="10.5">停用账号也会被放行</text>
+<line class="edge-w" x1="470" y1="168" x2="530" y2="168" marker-end="url(#du2-mw)"></line>
+<line x1="20" y1="236" x2="740" y2="236" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="258" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">实测：同一个被停用的账号</text>
+<rect class="box-a" x="20" y="272" width="340" height="56" rx="4"></rect>
+<text class="lbl-strong" x="190.0" y="294.0" text-anchor="middle" font-size="12.5">用「用户名」认证（ModelBackend）</text>
+<text class="lbl" x="190.0" y="312.5" text-anchor="middle" font-size="10.5">-&gt; None，正确拒绝</text>
+<rect class="box-w" x="400" y="272" width="340" height="56" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="294.0" text-anchor="middle" font-size="12.5">用「邮箱」认证（EmailAuthBackend）</text>
+<text class="lbl" x="570.0" y="312.5" text-anchor="middle" font-size="10.5">-&gt; 返回 user 对象，放行</text>
+<text class="lbl" x="20" y="360.0" text-anchor="start" font-size="10.5">缓解因素：当前 URL 用的是 Django 内置 LoginView，它的 AuthenticationForm 会额外调用</text>
+<text class="lbl" x="20" y="375.5" text-anchor="start" font-size="10.5">confirm_login_allowed() 拦下停用账号。所以登录入口是安全的——风险在于任何直接调用</text>
+<text class="lbl" x="20" y="391.0" text-anchor="start" font-size="10.5">authenticate() 并信任返回值的代码（仓库里被注释掉的 user_login 视图就额外写了 is_active 兜底）。</text></svg><figcaption class="cap">图 2 · 后端链依次尝试；EmailAuthBackend 漏掉了 ModelBackend 里的两项保护</figcaption></figure>
+<p>后端链的语义是<strong>依次尝试，第一个返回非 <code>None</code> 的胜出</strong>。这个自定义后端本身思路没问题（让用户能用邮箱登录），但它是<strong>从零实现</strong>的，因而漏掉了 <code>ModelBackend</code> 里两项不显眼但重要的保护——见 <a href="#findings">F-04</a> 与 <a href="#findings">F-05</a>。</p>
+<p>同一个 app 的 <code>forms.py</code> 里还有一个更直接的问题（<a href="#findings">F-01</a>），它让注册功能整体不可用。</p>
+
+<h3>2.2 educa：课程管理的三层叠加</h3>
+<p>这是全仓库授权写得最规范的一处，前面已经引用过。值得补充的是 <code>PermissionRequiredMixin</code> 依赖的是 Django <strong>自动创建的模型权限</strong>：每个模型迁移时都会生成 <code>add_x</code> / <code>change_x</code> / <code>delete_x</code> / <code>view_x</code> 四条，通过 Group 分配给讲师。</p>
+<blockquote><p>一个容易忽略的细节：<code>PermissionRequiredMixin</code> 默认 <code>raise_exception = False</code>，意味着<strong>权限不足的已登录用户会被重定向到登录页</strong>，而不是收到 403。这在体验上很奇怪（用户明明登录了却被要求再登录一次），也让「未登录」和「权限不足」两种情况变得难以区分。生产上通常设 <code>raise_exception = True</code>。</p></blockquote>
+
+<h3>2.3 educa：两个偏离标准视图的入口</h3>
+<p><strong>拖拽排序端点</strong>——这是 AJAX 端点，没有走 <code>LoginRequiredMixin</code>：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class ModuleOrderView(CsrfExemptMixin, JsonRequestResponseMixin, View):
+    def post(self, request):
+        for id, order in self.request_json.items():
+            Module.objects.filter(
+                id=id, course__owner=request.user      # 唯一的防线
+            ).update(order=order)
+        return self.render_json_response({&#x27;saved&#x27;: &#x27;OK&#x27;})</code></pre></div>
+<p><strong>WebSocket 消费者</strong>——这是 ASGI 入口，完全在 HTTP 的检查体系之外：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.user = self.scope[&#x27;user&#x27;]
+        self.id = self.scope[&#x27;url_route&#x27;][&#x27;kwargs&#x27;][&#x27;course_id&#x27;]
+        self.room_group_name = f&#x27;chat_{self.id}&#x27;
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()          # 没有任何检查</code></pre></div>
+<p>对照同一个聊天室的 HTTP 入口，检查是完整的：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>@login_required
+def course_chat_room(request, course_id):
+    try:
+        course = request.user.courses_joined.get(id=course_id)
+    except Course.DoesNotExist:
+        return HttpResponseForbidden()
+    ...</code></pre></div>
+<blockquote class="callout-warn"><p><strong>这两处缺口有一个共同点：都出现在「偏离标准视图」的入口上。</strong> 走 <code>ListView</code> / <code>DetailView</code> / DRF <code>ViewSet</code> 的地方，开发者会自然地想到加 mixin；而 AJAX 端点和 WebSocket 消费者不在那套惯例里，检查就容易被整个忘掉。<strong>凡是新增一种入口类型，都要重新问一遍「这里的认证和授权谁来做」。</strong></p></blockquote>
+
+<h3>2.4 写对了的地方</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>位置</th><th>做法</th><th>为什么是对的</th></tr></thead>
+<tbody>
+<tr><td><code>myshop</code> · <code>payment_process</code></td><td><code>request.session.get('order_id')</code></td><td>订单 id 来自<strong>会话</strong>而非 URL 参数，天然没有 IDOR（改 URL 改不了别人的订单）</td></tr>
+<tr><td><code>myshop</code> · 后台订单与发票</td><td><code>@staff_member_required</code></td><td>比 <code>@login_required</code> 更严，同时要求 <code>is_staff</code></td></tr>
+<tr><td><code>myshop</code> · Stripe webhook</td><td><code>construct_event()</code> 验签</td><td>外部回调必须验签，否则任何人都能伪造「已支付」</td></tr>
+<tr><td><code>educa</code> · DRF <code>contents</code></td><td><code>IsAuthenticated + IsEnrolled</code></td><td>对象级权限；实测三种身份分别得到 401 / 403 / 200</td></tr>
+<tr><td><code>educa</code> · <code>IsEnrolled</code> 实现</td><td><code>.filter(...).exists()</code></td><td>没有把整个学员列表拉进内存</td></tr>
+</tbody>
+</table>
+</div>
+
+</section><section class="chapter" id="findings">
+<h2>三、七个已验证的问题与修复</h2>
+
+
+<div class="finding"><div class="fhead"><span class="fid">F-01</span><span class="ftitle">clean_email 引用了未导入的 User，注册功能整体 500</span><span class="fmeta">已实测 · 功能 + 安全</span></div><dl><dt>位置</dt><dd><code>Chapter05~07/bookmarks/account/forms.py</code></dd><dt>触发</dt><dd>任何一次注册或资料编辑提交</dd><dt>影响</dt><dd>表单校验抛 <code>NameError</code> → 500；且邮箱唯一性检查从未真正生效</dd></dl></div>
+<div class="codewrap"><div class="langtag">python</div><pre><code>from django import forms
+from django.contrib.auth import get_user_model      # 导入的是这个
+
+from .models import Profile
+# 注意：模块里没有 `User = get_user_model()`，也没有 from ... import User
+
+
+class UserRegistrationForm(forms.ModelForm):
+    class Meta:
+        model = get_user_model()                     # 这里用对了
+        fields = [&#x27;username&#x27;, &#x27;first_name&#x27;, &#x27;email&#x27;]
+
+    def clean_email(self):
+        data = self.cleaned_data[&#x27;email&#x27;]
+        if User.objects.filter(email=data).exists():  # &lt;- User 从未被定义
+            raise forms.ValidationError(&#x27;Email already in use.&#x27;)
+        return data</code></pre></div>
+<div class="term"><div class="thead">实测 · 逐字照抄仓库的表单</div><pre>form.is_valid() 抛出 <b>NameError: name 'User' is not defined</b>
+
+影响：clean_email 是表单校验的一部分，任何一次注册提交都会走到这里。
+      NameError 不是 ValidationError，Django 不会把它转成表单错误，
+      它会一路冒到视图外面 —— 也就是说注册功能整体返回 500。
+      同时那个「邮箱唯一性」检查从来没有真正生效过。</pre></div>
+<p><code>UserEditForm.clean_email()</code> 里有<strong>完全相同</strong>的问题。Chapter04 还没有 <code>clean_email</code>，Chapter05 引入时就带着这个错误，一直延续到 Chapter07。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状</div><pre>from django.contrib.auth import get_user_model
+
+class UserRegistrationForm(forms.ModelForm):
+    def clean_email(self):
+        data = self.cleaned_data[&#x27;email&#x27;]
+        if User.objects.filter(email=data).exists():
+            raise forms.ValidationError(&#x27;Email already in use.&#x27;)
+        return data</pre></div>
+<div class="pane good"><div class="ph">✓ 补上模块级绑定</div><pre>from django.contrib.auth import get_user_model
+
+User = get_user_model()          # &lt;- 补这一行
+
+class UserRegistrationForm(forms.ModelForm):
+    def clean_email(self):
+        data = self.cleaned_data[&#x27;email&#x27;]
+        if User.objects.filter(email__iexact=data).exists():
+            raise forms.ValidationError(&#x27;Email already in use.&#x27;)
+        return data</pre></div>
+</div>
+<blockquote><p>顺带把 <code>filter(email=...)</code> 改成 <code>email__iexact</code>：邮箱的域名部分大小写不敏感，<code>Alice@Example.com</code> 和 <code>alice@example.com</code> 在实践中应当视为同一个地址。只做精确匹配的话，唯一性检查可以被大小写变体绕过。</p></blockquote>
+
+<div class="finding"><div class="fhead"><span class="fid">F-02</span><span class="ftitle">拖拽排序端点既不要求登录，又豁免了 CSRF</span><span class="fmeta">已实测 · 安全</span></div><dl><dt>位置</dt><dd><code>Chapter13~17/educa/courses/views.py</code> · <code>ModuleOrderView</code> / <code>ContentOrderView</code></dd><dt>触发</dt><dd>任意第三方页面向该端点发起跨站 POST</dd><dt>影响</dt><dd>已登录讲师的课程模块顺序可被任意站点篡改；匿名 POST 触发 500</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 430" role="img" aria-label="图 4 · 拖拽排序端点同时缺了两道防线：既不要求登录，也豁免了 CSRF 校验"><defs>
+          <marker id="du4-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du4-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du4-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-w" x="20" y="34" width="720" height="50" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="53.0" text-anchor="middle" font-size="12">class ModuleOrderView(CsrfExemptMixin, JsonRequestResponseMixin, View)</text>
+<text class="lbl" x="380.0" y="71.0" text-anchor="middle" font-size="10.5">没有 LoginRequiredMixin，也没有 PermissionRequiredMixin</text>
+<line x1="20" y1="108" x2="740" y2="108" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="130" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">缺口一 · 匿名请求可以直接进到 post() 方法体</text>
+<rect class="box" x="20" y="144" width="210" height="56" rx="4"></rect>
+<text class="lbl-strong" x="125.0" y="166.0" text-anchor="middle" font-size="12.5">匿名 POST</text>
+<text class="lbl" x="125.0" y="184.5" text-anchor="middle" font-size="10.5">没有任何前置检查</text>
+<rect class="box-w" x="290" y="144" width="240" height="56" rx="4"></rect>
+<text class="lbl-strong" x="410.0" y="166.0" text-anchor="middle" font-size="12.5">course__owner=AnonymousUser</text>
+<text class="lbl" x="410.0" y="184.5" text-anchor="middle" font-size="10.5">ORM 抛 TypeError</text>
+<rect class="box-w" x="590" y="144" width="150" height="56" rx="4"></rect>
+<text class="lbl-strong" x="665.0" y="166.0" text-anchor="middle" font-size="12.5">HTTP 500</text>
+<text class="lbl" x="665.0" y="184.5" text-anchor="middle" font-size="10.5">而不是 403</text>
+<line class="edge" x1="230" y1="172" x2="290" y2="172" marker-end="url(#du4-m)"></line>
+<line class="edge-w" x1="530" y1="172" x2="590" y2="172" marker-end="url(#du4-mw)"></line>
+<text class="lbl-warn" x="20" y="218.0" text-anchor="start" font-size="10.5">数据确实没被改，但那是因为「崩掉了」，不是因为「被拒绝」。</text>
+<line x1="20" y1="240" x2="740" y2="240" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="262" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">缺口二 · 已登录用户会被跨站请求伪造</text>
+<rect class="box" x="20" y="276" width="210" height="62" rx="4"></rect>
+<text class="lbl-strong" x="125.0" y="301.0" text-anchor="middle" font-size="12.5">恶意站点上的表单</text>
+<text class="lbl" x="125.0" y="319.5" text-anchor="middle" font-size="10.5">自动向本站 POST</text>
+<text class="lbl" x="125.0" y="331.5" text-anchor="middle" font-size="10.5">浏览器会带上会话 Cookie</text>
+<rect class="box-w" x="290" y="276" width="240" height="62" rx="4"></rect>
+<text class="lbl-strong" x="410.0" y="301.0" text-anchor="middle" font-size="12.5">CsrfExemptMixin</text>
+<text class="lbl" x="410.0" y="319.5" text-anchor="middle" font-size="10.5">不校验 CSRF token</text>
+<rect class="box-w" x="590" y="276" width="150" height="62" rx="4"></rect>
+<text class="lbl-strong" x="665.0" y="301.0" text-anchor="middle" font-size="12.5">200 OK</text>
+<text class="lbl" x="665.0" y="319.5" text-anchor="middle" font-size="10.5">受害者的课程</text>
+<text class="lbl" x="665.0" y="331.5" text-anchor="middle" font-size="10.5">模块顺序被改</text>
+<line class="edge" x1="230" y1="307" x2="290" y2="307" marker-end="url(#du4-m)"></line>
+<line class="edge-w" x1="530" y1="307" x2="590" y2="307" marker-end="url(#du4-mw)"></line>
+<line x1="20" y1="356" x2="740" y2="356" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<rect class="box-w" x="20" y="370" width="340" height="46" rx="4"></rect>
+<text class="lbl-strong" x="190.0" y="387.0" text-anchor="middle" font-size="11.5">实测 · 不带 CSRF token 的 POST</text>
+<text class="lbl" x="190.0" y="404.5" text-anchor="middle" font-size="10.5">现状 -&gt; 200，数据被改</text>
+<rect class="box-a" x="400" y="370" width="340" height="46" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="387.0" text-anchor="middle" font-size="11.5">去掉 CsrfExemptMixin 后</text>
+<text class="lbl" x="570.0" y="404.5" text-anchor="middle" font-size="10.5">-&gt; 403，数据未变</text>
+<line class="edge-a" x1="360" y1="393" x2="400" y2="393" marker-end="url(#du4-ma)"></line></svg><figcaption class="cap">图 4 · 拖拽排序端点同时缺了两道防线：既不要求登录，也豁免了 CSRF 校验</figcaption></figure>
+<div class="term"><div class="thead">实测 · 两个缺口分别验证</div><pre>=== A) 匿名用户直接 POST（没有 LoginRequiredMixin）===
+  HTTP 状态 : <b>500</b>
+  数据有变吗: 未变
+  -> 没有 LoginRequiredMixin，请求直接进到了 post() 方法体；
+     course__owner=AnonymousUser 让 ORM 抛 TypeError（AnonymousUser 没有 pk），
+     于是返回 500 而不是 403/302。数据确实没被改，但这是「崩掉了」而非「被拒绝」。
+
+=== B) 已登录用户跨站 POST（CsrfExemptMixin 的真正代价）===
+  不带 CSRF token 的 POST -> <b>200  {"saved": "OK"}</b>
+  数据被改了吗: <b>是，顺序已被修改</b>
+
+  对照：同一个视图去掉 CsrfExemptMixin 之后
+  不带 CSRF token 的 POST -> <i>403</i>   &lt;- 被 CSRF 中间件拦住
+  数据被改了吗: 未变</pre></div>
+<p><strong>为什么书里要加 <code>CsrfExemptMixin</code>？</strong> 因为前端用 <code>html5sortable</code> 拖拽后发的是原始 <code>fetch</code> POST，作者为了省去传 CSRF token 的步骤直接豁免了校验。但正确做法是<strong>把 token 带上</strong>，而不是关掉检查——同一个项目的 <code>base.html</code> 里其实已经有读取 CSRF token 的代码了。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：关掉检查</div><pre>class ModuleOrderView(
+        CsrfExemptMixin,
+        JsonRequestResponseMixin,
+        View):
+    def post(self, request):
+        for id, order in self.request_json.items():
+            Module.objects.filter(
+                id=id, course__owner=request.user
+            ).update(order=order)
+        return self.render_json_response({&#x27;saved&#x27;: &#x27;OK&#x27;})</pre></div>
+<div class="pane good"><div class="ph">✓ 补齐登录检查，保留 CSRF</div><pre>class ModuleOrderView(
+        LoginRequiredMixin,
+        PermissionRequiredMixin,
+        JsonRequestResponseMixin,
+        View):
+    permission_required = &#x27;courses.change_course&#x27;
+
+    def post(self, request):
+        for id, order in self.request_json.items():
+            Module.objects.filter(
+                id=id, course__owner=request.user
+            ).update(order=order)
+        return self.render_json_response({&#x27;saved&#x27;: &#x27;OK&#x27;})</pre></div>
+</div>
+<div class="codewrap"><div class="langtag">javascript</div><pre><code>// 前端把 CSRF token 放进请求头即可，无需豁免
+const csrftoken = Cookies.get(&#x27;csrftoken&#x27;);
+
+fetch(url, {
+  method: &#x27;POST&#x27;,
+  headers: {&#x27;X-CSRFToken&#x27;: csrftoken, &#x27;Content-Type&#x27;: &#x27;application/json&#x27;},
+  mode: &#x27;same-origin&#x27;,
+  body: JSON.stringify(order),
+});</code></pre></div>
+
+<div class="finding"><div class="fhead"><span class="fid">F-03</span><span class="ftitle">WebSocket 入口没有任何鉴权，匿名用户可进入任意课程聊天室</span><span class="fmeta">已实测 · 安全</span></div><dl><dt>位置</dt><dd><code>Chapter16~17/educa/chat/consumers.py</code> · <code>ChatConsumer.connect()</code></dd><dt>触发</dt><dd>直接连接 <code>ws://host/ws/chat/room/&lt;任意 course_id&gt;/</code></dd><dt>影响</dt><dd>未报名者与匿名者可读取付费课程聊天内容，并向房间广播消息</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 420" role="img" aria-label="图 5 · 同一个聊天室，HTTP 入口三道检查、WebSocket 入口零道检查"><defs>
+          <marker id="du5-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du5-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du5-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">HTTP 侧 · chat/views.py —— 检查完整</text>
+<rect class="box-a" x="20" y="36" width="200" height="62" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="61.0" text-anchor="middle" font-size="12.5">@login_required</text>
+<text class="lbl" x="120.0" y="79.5" text-anchor="middle" font-size="10.5">未登录 → 跳转登录页</text>
+<rect class="box-a" x="280" y="36" width="250" height="62" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="54.0" text-anchor="middle" font-size="11">request.user.courses_joined</text>
+<text class="lbl-strong" x="405.0" y="68.0" text-anchor="middle" font-size="11">  .get(id=course_id)</text>
+<text class="lbl" x="405.0" y="85.0" text-anchor="middle" font-size="10.5">未报名 → 403 Forbidden</text>
+<rect class="box-a" x="590" y="36" width="150" height="62" rx="4"></rect>
+<text class="lbl-strong" x="665.0" y="67.0" text-anchor="middle" font-size="12.5">渲染聊天室</text>
+<line class="edge-a" x1="220" y1="67" x2="280" y2="67" marker-end="url(#du5-ma)"></line>
+<line class="edge-a" x1="530" y1="67" x2="590" y2="67" marker-end="url(#du5-ma)"></line>
+<line x1="20" y1="126" x2="740" y2="126" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="148" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">WebSocket 侧 · chat/consumers.py connect() —— 一道检查都没有</text>
+<rect class="box-w" x="20" y="162" width="200" height="68" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="190.0" text-anchor="middle" font-size="12.5">self.scope['user']</text>
+<text class="lbl" x="120.0" y="208.5" text-anchor="middle" font-size="10.5">只是取出来</text>
+<text class="lbl" x="120.0" y="220.5" text-anchor="middle" font-size="10.5">没有判断 is_authenticated</text>
+<rect class="box-w" x="280" y="162" width="250" height="68" rx="4"></rect>
+<text class="lbl-strong" x="405.0" y="190.0" text-anchor="middle" font-size="12.5">group_add(chat_&lt;course_id&gt;)</text>
+<text class="lbl" x="405.0" y="208.5" text-anchor="middle" font-size="10.5">course_id 直接来自 URL</text>
+<text class="lbl" x="405.0" y="220.5" text-anchor="middle" font-size="10.5">没有校验报名关系</text>
+<rect class="box-w" x="590" y="162" width="150" height="68" rx="4"></rect>
+<text class="lbl-strong" x="665.0" y="190.0" text-anchor="middle" font-size="12.5">await self.accept()</text>
+<text class="lbl" x="665.0" y="208.5" text-anchor="middle" font-size="10.5">无条件接受</text>
+<line class="edge-w" x1="220" y1="196" x2="280" y2="196" marker-end="url(#du5-mw)"></line>
+<line class="edge-w" x1="530" y1="196" x2="590" y2="196" marker-end="url(#du5-mw)"></line>
+<line x1="20" y1="254" x2="740" y2="254" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="276" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">实测（真实 WebsocketCommunicator 连接）</text>
+<rect class="box-w" x="20" y="290" width="350" height="56" rx="4"></rect>
+<text class="lbl-strong" x="195.0" y="312.0" text-anchor="middle" font-size="12.5">匿名用户（完全未登录）</text>
+<text class="lbl" x="195.0" y="330.5" text-anchor="middle" font-size="10.5">连接是否被接受: True</text>
+<rect class="box-w" x="400" y="290" width="340" height="56" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="312.0" text-anchor="middle" font-size="12.5">已登录但未报名该课程</text>
+<text class="lbl" x="570.0" y="330.5" text-anchor="middle" font-size="10.5">连接是否被接受: True</text>
+<text class="lbl-warn" x="20" y="372.0" text-anchor="start" font-size="10.5">未报名者发出的消息，匿名连接完整收到了——房间对任何人开放读写。</text>
+<text class="lbl-warn" x="20" y="387.5" text-anchor="start" font-size="10.5">asgi.py 里的 AllowedHostsOriginValidator 只校验 Origin 头，防的是「别的站点」，不是「错误的用户」。</text></svg><figcaption class="cap">图 5 · 同一个聊天室，HTTP 入口三道检查、WebSocket 入口零道检查</figcaption></figure>
+<div class="term"><div class="thead">实测 · 真实 WebsocketCommunicator 连接</div><pre>=== HTTP 侧（chat/views.py）的行为，作为对照 ===
+  @login_required + request.user.courses_joined.get(id=course_id)
+  未登录 -> 重定向到登录页 ；已登录但未报名 -> 403 Forbidden
+
+=== WebSocket 侧（chat/consumers.py connect()）的实际行为 ===
+  匿名用户（完全未登录）                连接是否被接受: <b>True</b>
+  已登录但未报名该课程                 连接是否被接受: <b>True</b>
+
+=== 未报名者能不能收到房间里的广播 ===
+  匿名连接收到了: '我不是这门课的学生'
+  -> 未报名者发的消息，匿名者也完整收到了：房间对任何人开放读写。</pre></div>
+<p><code>asgi.py</code> 里的 <code>AllowedHostsOriginValidator</code> 容易让人误以为已经有防护了——但它<strong>只校验 <code>Origin</code> 请求头</strong>，防的是「从别的站点发起的 WebSocket 连接」（跨站 WebSocket 劫持），完全不管「连接的是不是正确的用户」。</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：无条件 accept</div><pre>async def connect(self):
+    self.user = self.scope[&#x27;user&#x27;]
+    self.id = self.scope[&#x27;url_route&#x27;][&#x27;kwargs&#x27;][&#x27;course_id&#x27;]
+    self.room_group_name = f&#x27;chat_{self.id}&#x27;
+    await self.channel_layer.group_add(
+        self.room_group_name, self.channel_name)
+    await self.accept()</pre></div>
+<div class="pane good"><div class="ph">✓ 先鉴权再 accept</div><pre>from channels.db import database_sync_to_async
+
+@database_sync_to_async
+def _is_enrolled(user, course_id):
+    if not user.is_authenticated:
+        return False
+    return user.courses_joined.filter(id=course_id).exists()
+
+async def connect(self):
+    self.user = self.scope[&#x27;user&#x27;]
+    self.id = self.scope[&#x27;url_route&#x27;][&#x27;kwargs&#x27;][&#x27;course_id&#x27;]
+    if not await _is_enrolled(self.user, self.id):
+        await self.close(code=4003)      # 拒绝，不要 accept
+        return
+    self.room_group_name = f&#x27;chat_{self.id}&#x27;
+    await self.channel_layer.group_add(
+        self.room_group_name, self.channel_name)
+    await self.accept()</pre></div>
+</div>
+<blockquote class="callout-warn"><p><strong>顺序也很重要</strong>：必须在 <code>group_add</code> 和 <code>accept()</code> <em>之前</em>拒绝。如果先 <code>accept()</code> 再检查，连接已经建立、也已经加入了广播组，在你关闭它之前就可能收到消息。</p>
+<p>另外 <code>receive()</code> 里是<strong>先广播再落库</strong>的：<code>group_send</code> 成功但 <code>persist_message</code> 失败时，所有人都看到了一条并未保存的消息。这个顺序问题在<a href="guide-async-tasks.html">异步任务指南</a>第 2.4 节讨论过。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-04</span><span class="ftitle">自定义认证后端不检查 is_active，停用账号可通过 authenticate()</span><span class="fmeta">已实测 · 安全</span></div><dl><dt>位置</dt><dd><code>Chapter05~07/bookmarks/account/authentication.py</code></dd><dt>触发</dt><dd>被停用的用户用邮箱作为凭据</dd><dt>影响</dt><dd>任何直接调用 <code>authenticate()</code> 并信任返回值的代码都会放行停用账号</dd></dl></div>
+<div class="term"><div class="thead">实测 · 同一个 is_active=False 的账号</div><pre>用「用户名」认证 (ModelBackend)     -> <i>None</i>
+用「邮箱」认证   (EmailAuthBackend) -> <b>alice</b>   &lt;- 停用账号被放行
+
+但走 Django 内置 LoginView 时表单还会拦一道：
+  AuthenticationForm.is_valid() -> False
+  错误信息 -> This account is inactive.</pre></div>
+<blockquote><p><strong>要如实说明缓解因素</strong>：仓库当前的 URL 配置用的是 Django 内置 <code>LoginView</code>，它的 <code>AuthenticationForm.confirm_login_allowed()</code> 会额外拦下停用账号，所以<strong>登录入口这条路是安全的</strong>。真正的风险在于：任何直接调用 <code>authenticate()</code> 并信任返回值的代码都会放行——仓库里那个被注释掉的 <code>user_login</code> 视图就额外写了 <code>if user.is_active</code> 来兜底，说明作者是知道这件事的。但依赖「每个调用点都记得自己检查」是脆弱的，正确的位置是后端内部。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-05</span><span class="ftitle">自定义认证后端缺少计时拉平，形成 1700 倍的用户枚举侧信道</span><span class="fmeta">已实测 · 安全</span></div><dl><dt>位置</dt><dd><code>Chapter05~07/bookmarks/account/authentication.py</code></dd><dt>触发</dt><dd>攻击者拿一份邮箱清单逐个尝试登录，只观察响应时间</dd><dt>影响</dt><dd>可精确判定任意邮箱是否在本站注册过，无需猜对任何密码</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 3 · 用户枚举计时侧信道：实测 1700 倍的耗时差，而 Django 内置后端是 1.00 倍"><defs>
+          <marker id="du3-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du3-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="du3-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">EmailAuthBackend（仓库写法）</text>
+<rect class="box-a" x="20" y="36" width="210" height="62" rx="4"></rect>
+<text class="lbl-strong" x="125.0" y="61.0" text-anchor="middle" font-size="12.5">邮箱存在，密码错误</text>
+<text class="lbl" x="125.0" y="79.5" text-anchor="middle" font-size="10.5">查库 → check_password()</text>
+<text class="lbl" x="125.0" y="91.5" text-anchor="middle" font-size="10.5">跑一次完整哈希</text>
+<rect class="box-w" x="280" y="36" width="210" height="62" rx="4"></rect>
+<text class="lbl-strong" x="385.0" y="61.0" text-anchor="middle" font-size="12.5">邮箱不存在</text>
+<text class="lbl" x="385.0" y="79.5" text-anchor="middle" font-size="10.5">查库抛 DoesNotExist</text>
+<text class="lbl" x="385.0" y="91.5" text-anchor="middle" font-size="10.5">立即 return None</text>
+<rect class="box-w" x="540" y="36" width="200" height="62" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="61.0" text-anchor="middle" font-size="12">297 ms  vs  0.17 ms</text>
+<text class="lbl" x="640.0" y="79.0" text-anchor="middle" font-size="10.5">相差 1700 倍</text>
+<line class="edge edge-dashed" x1="230" y1="67" x2="280" y2="67" marker-end="url(#du3-m)"></line>
+<line class="edge-w" x1="490" y1="67" x2="540" y2="67" marker-end="url(#du3-mw)"></line>
+<line x1="20" y1="126" x2="740" y2="126" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="148" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">Django 内置 ModelBackend（对照）</text>
+<rect class="box-a" x="20" y="162" width="210" height="62" rx="4"></rect>
+<text class="lbl-strong" x="125.0" y="187.0" text-anchor="middle" font-size="12.5">用户名存在</text>
+<text class="lbl" x="125.0" y="205.5" text-anchor="middle" font-size="10.5">check_password()</text>
+<rect class="box-a" x="280" y="162" width="210" height="62" rx="4"></rect>
+<text class="lbl-strong" x="385.0" y="187.0" text-anchor="middle" font-size="12.5">用户名不存在</text>
+<text class="lbl" x="385.0" y="205.5" text-anchor="middle" font-size="10.5">UserModel().set_password()</text>
+<text class="lbl" x="385.0" y="217.5" text-anchor="middle" font-size="10.5">故意跑一遍哈希</text>
+<rect class="box-a" x="540" y="162" width="200" height="62" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="187.0" text-anchor="middle" font-size="12">297 ms  vs  298 ms</text>
+<text class="lbl" x="640.0" y="205.0" text-anchor="middle" font-size="10.5">相差 1.00 倍</text>
+<line class="edge edge-dashed" x1="230" y1="193" x2="280" y2="193" marker-end="url(#du3-m)"></line>
+<line class="edge-a" x1="490" y1="193" x2="540" y2="193" marker-end="url(#du3-ma)"></line>
+<line x1="20" y1="252" x2="740" y2="252" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<rect class="box" x="20" y="268" width="720" height="56" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="289.0" text-anchor="middle" font-size="11">Django 源码注释：Run the default password hasher once to reduce the timing</text>
+<text class="lbl-strong" x="380.0" y="303.0" text-anchor="middle" font-size="11">difference between an existing and a nonexistent user. (#20760)</text>
+<text class="lbl-warn" x="20" y="356.0" text-anchor="start" font-size="10.5">攻击者拿一份邮箱清单逐个尝试，只看响应时间就能筛出哪些邮箱在你站上注册过——</text>
+<text class="lbl-warn" x="20" y="371.5" text-anchor="start" font-size="10.5">不需要猜对任何一个密码。这类信息本身就是有价值的（撞库目标、社工素材、竞品用户画像）。</text></svg><figcaption class="cap">图 3 · 用户枚举计时侧信道：实测 1700 倍的耗时差，而 Django 内置后端是 1.00 倍</figcaption></figure>
+<div class="term"><div class="thead">实测 · 每组 40 次取中位数</div><pre>=== EmailAuthBackend（仓库写法）===
+  邮箱存在、密码错误 :  297.53 ms
+  邮箱不存在         :    <b>0.17 ms</b>
+  比值               : <b>1700.9×</b>
+
+=== Django 内置 ModelBackend（对照）===
+  用户名存在、密码错误 :  296.98 ms
+  用户名不存在         :  297.91 ms
+  比值                 :    <i>1.00×</i>
+
+=== 修复后（补上 set_password 拉平）===
+  比值                 :    <i>0.99×</i></pre></div>
+<p><strong>Django 内置后端为什么慢？因为它是故意的。</strong> 源码里写得很清楚：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># django/contrib/auth/backends.py（5.2 源码）
+try:
+    user = UserModel._default_manager.get_by_natural_key(username)
+except UserModel.DoesNotExist:
+    # Run the default password hasher once to reduce the timing
+    # difference between an existing and a nonexistent user (#20760).
+    UserModel().set_password(password)
+else:
+    if user.check_password(password) and self.user_can_authenticate(user):
+        return user</code></pre></div>
+<p><strong>修复：继承 <code>ModelBackend</code>，而不是从零实现。</strong> 这样 <code>user_can_authenticate()</code>、权限相关方法（<code>get_all_permissions</code>、<code>has_perm</code> 等）也都自动带上了，一并解决 F-04：</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：从零实现</div><pre>class EmailAuthBackend:
+    def authenticate(self, request, username=None, password=None):
+        try:
+            user = User.objects.get(email=username)
+            if user.check_password(password):
+                return user
+            return None
+        except (User.DoesNotExist,
+                User.MultipleObjectsReturned):
+            return None</pre></div>
+<div class="pane good"><div class="ph">✓ 继承 ModelBackend</div><pre>class EmailAuthBackend(ModelBackend):
+    def authenticate(self, request, username=None,
+                     password=None, **kwargs):
+        if username is None or password is None:
+            return None
+        try:
+            user = User.objects.get(email__iexact=username)
+        except User.DoesNotExist:
+            User().set_password(password)   # 拉平耗时
+            return None
+        except User.MultipleObjectsReturned:
+            return None
+        if (user.check_password(password)
+                and self.user_can_authenticate(user)):
+            return user
+        return None</pre></div>
+</div>
+<blockquote><p>顺带说明为什么加 <code>**kwargs</code>：Django 的 <code>authenticate()</code> 会检查每个后端的函数签名，签名不匹配的后端会被<strong>静默跳过</strong>。原实现的签名是固定的三个参数，社交登录传来的其他 kwargs 会让它被跳过——这恰好是期望行为，但依赖签名不匹配来实现「跳过」是隐晦的，显式接受 <code>**kwargs</code> 更清楚。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-06</span><span class="ftitle">email 没有唯一约束，两个同邮箱账号会让邮箱登录彻底失效</span><span class="fmeta">已实测 · 可用性</span></div><dl><dt>位置</dt><dd>默认 <code>auth.User</code> 模型 + <code>EmailAuthBackend</code> 的异常处理</dd><dt>触发</dt><dd>两个账号用了同一个邮箱（因 F-01，唯一性检查从未生效，所以这很容易发生）</dd><dt>影响</dt><dd>两个用户都无法用邮箱登录，且提示是「密码错误」，无从排查</dd></dl></div>
+<div class="term"><div class="thead">实测</div><pre>数据库里 email='alice@example.com' 的用户数: 2
+Django 默认 User.email 有唯一约束吗: <b>False</b>
+用邮箱认证 -> <b>None</b>
+  MultipleObjectsReturned 被 except 吞掉，返回 None：
+  => 两个用户从此都无法用邮箱登录，而且报错信息是「密码错误」，无从排查。
+用用户名认证仍然可以 -> alice</pre></div>
+<p>三个问题叠在一起：Django 默认 <code>User.email</code> <strong>没有唯一约束</strong>；表单层的唯一性检查因 F-01 从未生效；而后端把 <code>MultipleObjectsReturned</code> 和「用户不存在」用同一个 <code>except</code> 吞掉了。</p>
+<p><strong>真正的修复是在数据库层加约束</strong>——表单校验挡不住并发提交，也挡不住 admin、管理命令、数据导入这些路径：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 自定义 User 模型时直接声明（新项目的正确起点）
+class User(AbstractUser):
+    email = models.EmailField(&#x27;email address&#x27;, unique=True)
+
+# 已经用了默认 User、不便迁移时，可以加约束
+class Meta:
+    constraints = [
+        models.UniqueConstraint(
+            Lower(&#x27;email&#x27;), name=&#x27;uniq_user_email_ci&#x27;,
+            condition=~Q(email=&#x27;&#x27;),      # 允许多个空邮箱
+        )
+    ]</code></pre></div>
+<blockquote><p><em>Two Scoops of Django</em> 里最常被引用的一条建议就是<strong>「项目一开始就用自定义 User 模型」</strong>，哪怕它一开始只是 <code>class User(AbstractUser): pass</code>。原因正是这类需求——邮箱唯一、加字段、改认证字段——事后迁移默认 User 模型的代价极高。本仓库用的是默认 <code>auth.User</code>，还靠 <code>add_to_class()</code> 往上动态挂字段（Chapter07 的关注关系），这在教学上很直观，但不是可以照搬到生产的做法。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-07</span><span class="ftitle">Chapter13 的 GET 登出链接在 Django 5.2 上直接失效</span><span class="fmeta">已实测 · 功能</span></div><dl><dt>位置</dt><dd><code>Chapter13/educa/courses/templates/base.html</code></dd><dt>触发</dt><dd>点击「Sign out」</dd><dt>影响</dt><dd>返回 405，用户登不出去；Ch12、Ch14、Ch17 用的是正确的 POST 表单</dd></dl></div>
+<div class="term"><div class="thead">实测 · Django 5.2</div><pre>Django 5.2 的 LogoutView 允许哪些方法: <b>['post', 'options']</b>
+
+=== Chapter13 的写法：&lt;a href="{% url 'logout' %}"&gt; —— 也就是 GET ===
+  GET /accounts/logout/ -> <b>405</b>
+  点击后是否仍登录: <b>True</b>
+
+=== Chapter12 / 14 / 17 的写法：POST 表单 + csrf_token ===
+  POST /accounts/logout/ -> <i>200</i>
+  点击后是否仍登录: <i>False</i></pre></div>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ Chapter13</div><pre>&lt;li&gt;&lt;a href=&quot;{% url &quot;logout&quot; %}&quot;&gt;Sign out&lt;/a&gt;&lt;/li&gt;</pre></div>
+<div class="pane good"><div class="ph">✓ Chapter12 / 14 / 17</div><pre>&lt;li&gt;
+  &lt;form action=&quot;{% url &quot;logout&quot; %}&quot; method=&quot;post&quot;&gt;
+    &lt;button type=&quot;submit&quot;&gt;Sign out&lt;/button&gt;
+    {% csrf_token %}
+  &lt;/form&gt;
+&lt;/li&gt;</pre></div>
+</div>
+<p><strong>Django 为什么要禁掉 GET 登出？</strong> 因为 GET 按定义应当是安全的、无副作用的。允许 GET 登出意味着任何第三方页面放一个 <code>&lt;img src="https://你的站点/accounts/logout/"&gt;</code> 就能把访问者登出——危害有限，但它确实是一个<strong>无需 CSRF token 就能触发的状态变更</strong>。Django 5.0 起 <code>LogoutView</code> 只接受 POST。</p>
+
+</section><section class="chapter" id="defaults">
+<h2>四、Django 的安全默认值，以及本仓库动了哪些</h2>
+
+<p>把前面七条放在一起看，有一个很清楚的规律：<strong>本仓库的安全问题，几乎全部出现在「主动关掉或绕过 Django 默认保护」的地方。</strong></p>
+<div class="matrix">
+<table>
+<thead><tr><th>Django 的默认保护</th><th>默认状态</th><th>本仓库的情况</th></tr></thead>
+<tbody>
+<tr><td>CSRF 校验（中间件）</td><td><strong>开启</strong></td><td>被 <code>CsrfExemptMixin</code> 在两个端点上关掉（F-02）</td></tr>
+<tr><td><code>ModelBackend</code> 的 <code>is_active</code> 检查</td><td><strong>开启</strong></td><td>自定义后端从零实现，绕过了（F-04）</td></tr>
+<tr><td><code>ModelBackend</code> 的计时拉平</td><td><strong>开启</strong></td><td>同上，绕过了（F-05）</td></tr>
+<tr><td><code>LogoutView</code> 只接受 POST</td><td><strong>强制</strong></td><td>Ch13 仍用 GET 链接，功能直接失效（F-07）</td></tr>
+<tr><td>会话 Cookie <code>HttpOnly</code></td><td><strong>开启</strong></td><td>未改动，正确</td></tr>
+<tr><td>会话 Cookie <code>SameSite=Lax</code></td><td><strong>开启</strong></td><td>未改动，正确</td></tr>
+<tr><td>密码 PBKDF2 加盐哈希</td><td><strong>开启</strong></td><td>未改动，正确</td></tr>
+<tr><td><code>login()</code> 轮换 session key</td><td><strong>开启</strong></td><td>未改动，正确（防会话固定攻击）</td></tr>
+<tr><td>登录失败限流</td><td><strong>不内置</strong></td><td>没有；撞库无任何阻力</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="callout-warn"><p><strong>这条规律本身就是最实用的一条经验</strong>：当你要写 <code>csrf_exempt</code>、要自己实现认证后端、要绕开 <code>LoginRequiredMixin</code> 时，就是在拆掉框架替你装好的护栏。这些时刻值得停下来问一句「我是不是在用一个更麻烦的方式解决一个框架已经解决了的问题」——F-02 的 CSRF 豁免就是典型：正确做法是把 token 带上，而不是关掉校验。</p></blockquote>
+
+<h3>4.1 生产环境该补的几项</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code># 传输与 Cookie（本仓库 educa 的 prod.py 已有前三项）
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+# 这几项本仓库没有
+SECURE_HSTS_SECONDS = 31536000          # 先用小值验证，确认无误再加到一年
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_REFERRER_POLICY = &#x27;same-origin&#x27;
+SECURE_CONTENT_TYPE_NOSNIFF = True      # 默认已是 True
+X_FRAME_OPTIONS = &#x27;DENY&#x27;                # 默认 &#x27;DENY&#x27;
+
+# 会话
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# 密码哈希：把 Argon2 放最前，旧密码会在下次登录时自动升级
+PASSWORD_HASHERS = [
+    &#x27;django.contrib.auth.hashers.Argon2PasswordHasher&#x27;,
+    &#x27;django.contrib.auth.hashers.PBKDF2PasswordHasher&#x27;,
+    &#x27;django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher&#x27;,
+    &#x27;django.contrib.auth.hashers.BCryptSHA256PasswordHasher&#x27;,
+]</code></pre></div>
+<blockquote><p><code>PASSWORD_HASHERS</code> 列表的第一项是「新密码用什么算法」，其余是「还能验证哪些历史算法」。用户下次成功登录时，Django 会<strong>自动把旧哈希重新算成第一项的算法</strong>——所以换哈希算法不需要强制所有人改密码。启用 Argon2 需要 <code>pip install django[argon2]</code>。</p></blockquote>
+
+<h3>4.2 Django 不提供、但生产必须有的</h3>
+<ul>
+<li><strong>登录失败限流</strong>。Django 完全不内置。<code>django-axes</code> 是最常用的方案，能按 IP / 用户名限制失败次数并临时封锁。没有它，撞库攻击不受任何阻力——而本文的 F-05（用户枚举）恰好为撞库提供了精准的目标清单，两者叠加危害显著放大。</li>
+<li><strong>二次验证（2FA）</strong>。<code>django-otp</code> / <code>django-two-factor-auth</code>。</li>
+<li><strong>敏感操作的重新认证</strong>。改邮箱、改密码、删账号前要求再输一次密码。Django 的 <code>PasswordChangeForm</code> 做到了（要求 <code>old_password</code>），但改邮箱这类操作没有对应机制。本仓库的 <code>UserEditForm</code> 允许直接改邮箱而不需要验证当前密码——如果攻击者拿到了一个已登录的会话，就能把账号邮箱改成自己的，再走密码重置流程完成接管。</li>
+<li><strong>会话审计与主动失效</strong>。「查看我的登录设备」「退出所有其他设备」这类功能需要自己实现。</li>
+</ul>
+
+</section><section class="chapter" id="checklist">
+<h2>五、上线前检查清单</h2>
+
+<ul class="check">
+<li><span class="mk">01</span><span><b>新项目一开始就用自定义 User 模型</b>，哪怕内容是空的。事后迁移的代价极高。见 F-06。</span></li>
+<li><span class="mk">02</span><span><b>邮箱唯一性要落到数据库约束上</b>，不能只靠表单校验——表单挡不住并发、admin、管理命令和数据导入。</span></li>
+<li><span class="mk">03</span><span><b>自定义认证后端要继承 <code>ModelBackend</code></b>，不要从零实现。否则会漏掉 <code>is_active</code> 检查、计时拉平和一整套权限方法。见 F-04、F-05。</span></li>
+<li><span class="mk">04</span><span><b>用户不存在时也要跑一遍密码哈希</b>，把响应时间拉平。否则就是一个用户枚举接口。</span></li>
+<li><span class="mk">05</span><span><b>装上登录失败限流</b>（django-axes 等）。Django 不内置，而这是撞库的唯一阻力。</span></li>
+<li><span class="mk">06</span><span><b>不要用 <code>csrf_exempt</code> 来省事</b>。AJAX 端点应当把 CSRF token 放进 <code>X-CSRFToken</code> 头。真正需要豁免的只有外部回调（如 Stripe webhook），且必须用签名校验替代。见 F-02。</span></li>
+<li><span class="mk">07</span><span><b>每新增一种入口类型就重新审一遍鉴权</b>：AJAX 端点、WebSocket 消费者、管理命令、Webhook、定时任务——它们都不在标准视图的 mixin 惯例里。见 F-02、F-03。</span></li>
+<li><span class="mk">08</span><span><b>WebSocket 要在 <code>accept()</code> 之前鉴权</b>，先 accept 再检查等于已经把人放进了广播组。</span></li>
+<li><span class="mk">09</span><span><b>模型级权限不等于对象级权限</b>。「能改课程」和「能改这门课程」是两件事，必须叠加所有权过滤。</span></li>
+<li><span class="mk">10</span><span><b>列表可见性靠 <code>get_queryset()</code>，不靠对象级权限</b>。<code>has_object_permission</code> 对 <code>list</code> 动作完全不生效。</span></li>
+<li><span class="mk">11</span><span><b><code>PermissionRequiredMixin</code> 设 <code>raise_exception = True</code></b>，否则权限不足的已登录用户会被莫名其妙重定向到登录页。</span></li>
+<li><span class="mk">12</span><span><b>登出必须用 POST 表单</b>。Django 5.0 起 <code>LogoutView</code> 不再接受 GET。见 F-07。</span></li>
+<li><span class="mk">13</span><span><b>敏感操作要求重新认证</b>：改邮箱、改密码、删账号。否则一个被盗的会话就足以完成账号接管。</span></li>
+<li><span class="mk">14</span><span><b>生产补齐 HSTS、Referrer-Policy、Cookie Secure</b>，并跑一遍 <code>python manage.py check --deploy</code>。</span></li>
+<li><span class="mk">15</span><span><b>把 <code>PASSWORD_HASHERS</code> 的第一项设为 Argon2</b>，旧密码会在下次登录时自动升级，无需强制改密。</span></li>
+<li><span class="mk">16</span><span><b>缓存不能绕过授权</b>。给需要登录的视图加 <code>cache_page</code> 会让缓存在权限检查之前命中——这个坑在<a href="guide-redis-caching.html">缓存指南</a> F-01 里有完整复现。</span></li>
+</ul>
+
+</section><section class="chapter" id="compare">
+<h2>六、同样的认证与授权：Spring 与 Hono.js 怎么做</h2>
+<p>仍用本仓库的真实场景对比：<strong>「只有课程的拥有者才能编辑课程，只有报名的学生才能看内容」</strong>，以及支撑它的<strong>「认证方式与安全默认值」</strong>。</p><h3>6.1 认证与授权的表达方式</h3><div class="cmp three"><div class="fw"><h4>Django 5.2</h4><div class="fwbody"><p>认证是<strong>后端链</strong>，授权靠<strong>在视图上叠加 mixin</strong>。默认是「没写检查就是公开」。</p><pre># 认证：后端链，依次尝试
+AUTHENTICATION_BACKENDS = [
+    &#x27;django.contrib.auth.backends.ModelBackend&#x27;,
+    &#x27;account.authentication.EmailAuthBackend&#x27;,
+]
+
+# 授权：四种粒度，靠叠加
+class CourseUpdateView(
+        LoginRequiredMixin,          # ① 要登录
+        PermissionRequiredMixin,     # ② 要有模型权限
+        UpdateView):
+    permission_required = &#x27;courses.change_course&#x27;
+
+    def get_queryset(self):          # ③ 只能改自己的
+        return super().get_queryset().filter(
+            owner=self.request.user)
+
+# ④ 对象级（DRF）
+class IsEnrolled(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.students.filter(
+            id=request.user.id).exists()</pre><ul><li>四种授权粒度各自独立，需要开发者<strong>主动叠加</strong></li><li><code>PermissionRequiredMixin</code> 只到模型级；对象级要靠 queryset 过滤或 DRF 权限类</li><li><strong>默认放行</strong>：忘了加 mixin 的视图就是公开的——本文 F-02 正是如此</li></ul></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><p>Spring Security 的过滤器链<strong>集中声明</strong>整站规则，方法级注解再做细化。</p><pre>// 认证：过滤器链，集中配置
+@Bean
+SecurityFilterChain chain(HttpSecurity http) throws Exception {
+    return http
+        .authorizeHttpRequests(a -&gt; a
+            .requestMatchers(&quot;/api/public/**&quot;).permitAll()
+            .requestMatchers(&quot;/api/admin/**&quot;).hasRole(&quot;ADMIN&quot;)
+            .anyRequest().authenticated())     // 默认拒绝
+        .formLogin(Customizer.withDefaults())
+        .build();
+}
+
+// 授权：方法级注解，SpEL 可调 Bean
+@PreAuthorize(&quot;hasAuthority(&#x27;COURSE_EDIT&#x27;) and &quot;
+            + &quot;@ownership.isOwner(#id, authentication)&quot;)
+public Course update(Long id, CourseDto dto) { ... }
+
+// 对象级：@PostAuthorize 在返回后校验
+@PostAuthorize(&quot;returnObject.owner.username &quot;
+             + &quot;== authentication.name&quot;)
+public Course find(Long id) { ... }</pre><ul><li><code>.anyRequest().authenticated()</code> 让「<strong>默认拒绝</strong>」成为一行配置</li><li><code>@PreAuthorize</code> 的 SpEL 能直接调 Bean，把业务判断写成可复用组件</li><li>路由规则集中在一处，<strong>可以整体审查</strong>，不必逐个视图翻</li></ul></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><p>认证和授权都是普通中间件，<strong>执行顺序就是代码顺序</strong>，没有任何隐式行为。</p><pre>// 认证与授权都是中间件，顺序即语义
+import { jwt } from &#x27;hono/jwt&#x27;
+
+app.use(&#x27;/api/*&#x27;, jwt({ secret: env.JWT_SECRET }))
+
+const requireEnrolled = createMiddleware(async (c, next) =&gt; {
+  const { sub } = c.get(&#x27;jwtPayload&#x27;)
+  const ok = await db.isEnrolled(c.req.param(&#x27;id&#x27;), sub)
+  if (!ok) return c.json({ error: &#x27;forbidden&#x27; }, 403)
+  await next()
+})
+
+app.get(&#x27;/api/courses/:id/contents&#x27;,
+  requireEnrolled,          // 显式挂在这一条路由上
+  handler)
+
+// 没有「默认拒绝」——没挂中间件的路由就是公开的</pre><ul><li>最容易读懂：先认证后鉴权一目了然</li><li><strong>没有默认拒绝</strong>，也没有集中式规则表，漏挂一条路由就是漏洞</li><li>对象级授权没有抽象，每处自己查库</li></ul></div></div></div><h3>6.2 安全默认值</h3><div class="cmp three"><div class="fw"><h4>Django 5.2</h4><div class="fwbody"><pre># Django 内置的安全默认值（本仓库大多没动）
+CSRF_COOKIE_SECURE = True        # prod.py 里设了
+SESSION_COOKIE_SECURE = True     # prod.py 里设了
+SECURE_SSL_REDIRECT = True       # prod.py 里设了
+
+# 这些本仓库没设，但生产该设
+SESSION_COOKIE_HTTPONLY = True   # 默认就是 True
+SESSION_COOKIE_SAMESITE = &#x27;Lax&#x27;  # 默认 &#x27;Lax&#x27;
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+# 密码哈希：默认 PBKDF2；想更强可以把 Argon2 排在最前
+PASSWORD_HASHERS = [
+    &#x27;django.contrib.auth.hashers.Argon2PasswordHasher&#x27;,
+    &#x27;django.contrib.auth.hashers.PBKDF2PasswordHasher&#x27;,
+]
+
+# 登录限流：Django 不内置，需 django-axes 等</pre><p>Django 的安全默认值相当扎实：CSRF 中间件默认开启、会话 Cookie 默认 HttpOnly、密码默认 PBKDF2 加盐。<strong>本仓库的问题几乎都出在主动关掉或绕过这些默认值的地方</strong>（<code>CsrfExemptMixin</code>、自定义认证后端）。</p><p>缺的一块是<strong>登录限流</strong>——Django 不内置，撞库防护要靠 <code>django-axes</code> 这类第三方包。本仓库没有。</p></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><pre>// Spring Security 的默认拒绝是框架级的
+.anyRequest().authenticated()
+
+// CSRF 默认开启，且默认只豁免安全方法
+.csrf(c -&gt; c.csrfTokenRepository(
+    CookieCsrfTokenRepository.withHttpOnlyFalse()))
+
+// 会话固定攻击防护：默认开启
+.sessionManagement(s -&gt; s
+    .sessionFixation().migrateSession()
+    .maximumSessions(1))          // 同账号并发会话上限
+
+// 密码哈希：默认 bcrypt，可切 Argon2
+@Bean
+PasswordEncoder encoder() {
+    return PasswordEncoderFactories
+        .createDelegatingPasswordEncoder();
+}
+
+// 登录限流：需 Bucket4j 或自己实现 AuthenticationFailureHandler</pre><p>会话固定攻击防护、并发会话上限这类细节是<strong>框架内建</strong>的，Django 里要自己想着做（<code>login()</code> 会轮换 session key，但并发会话上限没有对应物）。</p><p><code>DelegatingPasswordEncoder</code> 会在哈希串里存算法前缀，<strong>换算法时旧密码能平滑升级</strong>——Django 的 <code>PASSWORD_HASHERS</code> 列表也是同样思路。</p></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><pre>// 什么默认都没有，安全项全是显式选择
+import { csrf } from &#x27;hono/csrf&#x27;
+import { secureHeaders } from &#x27;hono/secure-headers&#x27;
+
+app.use(secureHeaders())     // CSP / HSTS / X-Frame-Options
+app.use(&#x27;/form/*&#x27;, csrf())   // 只保护你点名的路由
+
+// 会话通常不用 Cookie，用 JWT：
+// 好处是无状态；代价是签发后无法直接吊销，
+// 必须靠短有效期 + refresh token 轮换
+
+// 密码哈希在边缘环境是个真问题：
+// bcrypt/argon2 是原生模块，Workers 上跑不了，
+// 通常改用 Web Crypto 的 PBKDF2，
+// 或者干脆把认证外包给平台（Auth0 / Clerk）</pre><p>边缘环境下密码哈希是个真实的工程约束：bcrypt / argon2 依赖原生模块，Workers 跑不了。这直接推动了「认证外包给平台」的做法。</p><p>什么都没有默认开启，意味着<strong>安全性完全取决于团队的自觉</strong>——没有框架帮你兜底，但也没有你以为开着、实际被某行代码关掉的情况。</p></div></div></div><h3>6.3 逐项对照</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>维度</th><th>Django 5.2</th><th>Spring Boot 3.x</th><th>Hono.js</th></tr></thead>
+<tbody>
+<tr><td>默认策略</td><td><strong>默认放行</strong>，逐视图加检查</td><td><strong>默认拒绝</strong>可一行配置</td><td>默认放行，逐路由挂中间件</td></tr>
+<tr><td>规则位置</td><td>散在各视图的 mixin 上</td><td><strong>集中</strong>在 SecurityFilterChain</td><td>散在路由注册处</td></tr>
+<tr><td>能否整体审查</td><td>难，要逐个视图翻</td><td><strong>容易</strong>，一个 Bean 看全</td><td>中等，看路由表</td></tr>
+<tr><td>对象级授权</td><td>queryset 过滤 / DRF 权限类</td><td><code>@PreAuthorize</code> + SpEL 调 Bean</td><td>手写中间件</td></tr>
+<tr><td>CSRF 默认</td><td><strong>开启</strong>（可被 <code>csrf_exempt</code> 关掉）</td><td><strong>开启</strong></td><td>需显式 <code>csrf()</code></td></tr>
+<tr><td>密码哈希</td><td>PBKDF2（可换 Argon2），带升级机制</td><td>bcrypt（Delegating，带前缀升级）</td><td>边缘受限，常用 PBKDF2 或外包</td></tr>
+<tr><td>会话固定防护</td><td>login() 轮换 session key</td><td><strong>内建策略可配</strong></td><td>JWT 无会话概念</td></tr>
+<tr><td>并发会话上限</td><td><strong>无</strong></td><td><strong>有</strong> <code>maximumSessions</code></td><td>无</td></tr>
+<tr><td>登录限流</td><td><strong>无</strong>，需 django-axes</td><td>无，需 Bucket4j</td><td>平台层或第三方</td></tr>
+<tr><td>非 HTTP 入口</td><td>Channels 消费者<strong>要自己补鉴权</strong></td><td>WebSocket 可纳入同一套安全配置</td><td>中间件同样适用</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>三句话概括</h4>
+<ul>
+<li><strong>Django 的安全默认值很扎实，但授权是「默认放行」的。</strong>CSRF 中间件默认开、会话 Cookie 默认 HttpOnly、密码默认加盐哈希——本仓库的所有缺口，几乎都出现在<strong>主动关掉或绕过这些默认值</strong>的地方：<code>CsrfExemptMixin</code> 关掉了 CSRF，自定义认证后端绕过了 <code>ModelBackend</code> 的两项保护，WebSocket 消费者完全走在 HTTP 的检查体系之外。而授权规则散落在各个视图的 mixin 上，导致「哪个视图漏了检查」这个问题很难通过通读代码回答。</li>
+<li><strong>Spring 最大的结构性优势是「默认拒绝 + 集中声明」。</strong><code>.anyRequest().authenticated()</code> 一行就把「忘了加保护」这类错误从「静默漏洞」变成了「访问被拒」，而整站规则集中在一个 Bean 里意味着安全审查有一个明确的入口。本文的 F-02（拖拽排序端点没有任何登录检查）在 Spring 的默认拒绝模型下不会发生。</li>
+<li><strong>Hono 什么都不给，但也什么都不藏。</strong>认证和授权就是按顺序执行的中间件，读代码就能确定一条路由受哪些保护，不存在「以为开着、其实被某行代码关掉了」的情况。代价是没有任何兜底：漏挂一条路由就是一个公开端点，而且边缘环境连密码哈希都受限，这也是「认证外包给平台」在这个生态里格外流行的原因。</li>
+</ul>
+
+</section>
+    <div class="footdoc">
+      由 Claude 对照本仓库源码与 Django 5.2 源码整理生成 · 实测结论基于本机复现 · 图示为教学示意
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>
