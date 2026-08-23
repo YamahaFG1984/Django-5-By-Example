@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分页实战指南</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext x=%2250%22 y=%2262%22 font-size=%2262%22 text-anchor=%22middle%22%3E%F0%9F%93%91%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+  --shadow:0 1px 2px rgba(20,24,18,.06), 0 6px 20px rgba(20,24,18,.05);
+  --font-display:"Iowan Old Style","Sitka Text","Songti SC","Noto Serif CJK SC","Noto Serif SC","STSong",Palatino,Georgia,serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#14171ubuntu; --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+    --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+    --line:#333a2c; --line-strong:#454d3c;
+    --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+    --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+    --danger:#e2786a; --danger-soft:#2e1c17;
+    --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --surface:#1b1f1a; --surface-2:#20241d;
+  --ink:#e8e9e2; --ink-soft:#a7ac9f; --ink-faint:#767c70;
+  --line:#333a2c; --line-strong:#454d3c;
+  --accent:#dba434; --accent-strong:#f0b94a; --accent-soft:#3a2c11;
+  --accent2:#4fc4b8; --accent2-strong:#7dd8ce; --accent2-soft:#16302c;
+  --danger:#e2786a; --danger-soft:#2e1c17;
+  --code-ink:#dfe3d8; --code-bg:#1e2219; --code-border:#333a2c;
+}
+:root[data-theme="light"]{
+  --paper:#eef1ee; --surface:#ffffff; --surface-2:#f4f6f2;
+  --ink:#1a1d19; --ink-soft:#565c53; --ink-faint:#8a9086;
+  --line:#d7dbd2; --line-strong:#c1c7ba;
+  --accent:#a86a0b; --accent-strong:#8a5608; --accent-soft:#f4e6cc;
+  --accent2:#1c7b73; --accent2-strong:#155f59; --accent2-soft:#e3f1ef;
+  --danger:#9c3b2c; --danger-soft:#f7e9e6;
+  --code-ink:#262a24; --code-bg:#e7ebe2; --code-border:#cfd6c6;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16.5px; line-height:1.78;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--accent-soft); }
+a{ color:var(--accent-strong); text-decoration-thickness:1px; text-underline-offset:2px; }
+a:hover{ color:var(--accent2-strong); }
+a:focus-visible, button:focus-visible, summary:focus-visible{
+  outline:2px solid var(--accent2); outline-offset:2px; border-radius:2px;
+}
+
+.shell{ display:flex; max-width:1320px; margin:0 auto; align-items:flex-start; }
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0; height:100vh; width:288px; flex:0 0 288px;
+  overflow-y:auto; padding:34px 22px 34px 30px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.toc .brand{ display:block; margin-bottom:4px; }
+.toc .brand .kicker{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent2); display:block; margin-bottom:6px;
+}
+.toc .brand h1{
+  font-family:var(--font-display); font-size:1.5rem; margin:0 0 4px; line-height:1.25;
+  text-wrap:balance; font-weight:600;
+}
+.toc .brand p{ margin:0 0 22px; font-size:.83rem; color:var(--ink-soft); line-height:1.55; }
+.toc nav{ display:flex; flex-direction:column; gap:2px; margin-bottom:22px; }
+.toc nav a{
+  display:flex; align-items:baseline; gap:10px; text-decoration:none; color:var(--ink-soft);
+  padding:7px 10px; border-radius:5px; font-size:.885rem; border-left:2px solid transparent;
+}
+.toc nav a:hover{ background:var(--surface-2); color:var(--ink); }
+.toc nav a.active{ background:var(--accent2-soft); color:var(--accent2-strong); border-left-color:var(--accent2); font-weight:600;}
+.toc nav a .n{
+  font-family:var(--font-mono); font-size:.78rem; color:var(--ink-faint); flex:0 0 auto; min-width:1.4em;
+}
+.toc nav a.active .n{ color:var(--accent2); }
+.toc .series{
+  border-top:1px solid var(--line); padding-top:16px; display:flex; flex-direction:column; gap:6px;
+}
+.toc .series .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;}
+.toc .series a{ font-size:.83rem; color:var(--ink-soft); text-decoration:none; padding:4px 2px; }
+.toc .series a.current{ color:var(--accent-strong); font-weight:600; }
+.toc .series a:hover{ color:var(--accent2-strong); }
+
+/* ---------- main content ---------- */
+main{ flex:1 1 auto; min-width:0; padding:56px clamp(20px,5vw,72px) 120px; }
+.masthead{ max-width:74ch; margin:0 0 56px; }
+.masthead .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent2);
+  display:block; margin-bottom:14px;
+}
+.masthead h1{ font-family:var(--font-display); font-size:clamp(1.9rem,3.4vw,2.6rem); line-height:1.18; margin:0 0 16px; text-wrap:balance; }
+.masthead .sub{ font-size:1.02rem; color:var(--ink-soft); line-height:1.7; max-width:62ch; }
+.masthead .meta{ margin-top:22px; display:flex; gap:18px; flex-wrap:wrap; font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+.chapter{ max-width:74ch; padding-top:64px; scroll-margin-top:24px; }
+.chapter:first-of-type{ padding-top:0; }
+.chapter + .chapter{ border-top:1px solid var(--line); }
+.chapter-head{ display:flex; align-items:flex-start; gap:18px; margin-bottom:22px; }
+.chapter-head .chnum{
+  font-family:var(--font-display); font-size:2.5rem; line-height:1; color:var(--line-strong);
+  font-weight:600; flex:0 0 auto; letter-spacing:-.01em;
+}
+.chapter-head h2.chtitle{
+  font-family:var(--font-display); font-size:1.55rem; line-height:1.3; margin:.1em 0 0; font-weight:600; text-wrap:balance;
+}
+
+.chapter h2{
+  font-family:var(--font-display); font-size:1.28rem; margin:2.4em 0 .9em; padding-left:14px;
+  border-left:3px solid var(--accent2); line-height:1.4; font-weight:600;
+}
+.chapter h2:first-child{ margin-top:0; }
+.chapter h3{ font-size:1.03rem; margin:2em 0 .7em; font-weight:700; color:var(--ink); }
+.chapter p{ margin:0 0 1.15em; }
+.chapter ul, .chapter ol{ margin:0 0 1.2em; padding-left:1.4em; }
+.chapter li{ margin:0 0 .5em; }
+.chapter li > p{ margin:0; }
+.chapter strong{ color:var(--accent-strong); font-weight:700; }
+:root[data-theme="dark"] .chapter strong{ color:var(--accent-strong); }
+
+.chapter code{
+  font-family:var(--font-mono); font-size:.86em; background:var(--code-bg); color:var(--code-ink);
+  padding:.15em .4em; border-radius:4px; border:1px solid var(--code-border);
+}
+.codewrap{ margin:0 0 1.3em; border-radius:7px; overflow:hidden; border:1px solid var(--code-border); box-shadow:var(--shadow); }
+.codewrap .langtag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-faint); background:var(--surface-2); padding:6px 14px; border-bottom:1px solid var(--code-border);
+}
+.chapter pre{
+  margin:0; background:var(--code-bg); padding:16px 18px; overflow-x:auto;
+}
+.chapter pre code{ background:none; border:none; padding:0; font-size:.85rem; line-height:1.65; color:var(--code-ink); white-space:pre; }
+
+.chapter table{ width:100%; border-collapse:collapse; margin:0 0 1.4em; font-size:.9rem; }
+.tablewrap{ overflow-x:auto; margin:0 0 1.4em; border-radius:6px; border:1px solid var(--line); }
+.tablewrap table{ margin:0; }
+.chapter th{ text-align:left; background:var(--accent2-soft); color:var(--accent2-strong); font-weight:700; padding:9px 13px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+.chapter td{ padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.chapter tr:last-child td{ border-bottom:none; }
+.chapter tr:nth-child(even) td{ background:var(--surface-2); }
+
+.chapter blockquote{
+  margin:0 0 1.3em; padding:14px 18px; border-left:3px solid var(--ink-faint); background:var(--surface-2);
+  border-radius:0 6px 6px 0; color:var(--ink-soft); font-size:.92rem;
+}
+.chapter blockquote.callout-warn{ border-left-color:var(--danger); background:var(--danger-soft); color:var(--ink); }
+.chapter blockquote.callout-warn strong{ color:var(--danger); }
+.chapter blockquote p{ margin:0 0 .6em; }
+.chapter blockquote p:last-child{ margin-bottom:0; }
+
+/* ---------- diagram card ---------- */
+.diagram{
+  position:relative; border:1px solid var(--line-strong); background:var(--surface);
+  border-radius:5px; padding:22px 22px 16px; margin:0 0 2em; box-shadow:var(--shadow);
+}
+.diagram::before, .diagram::after,
+.diagram .corner-br::before, .diagram .corner-bl::before{ content:""; }
+.diagram .tick{ position:absolute; width:11px; height:11px; border:1.5px solid var(--accent2); opacity:.7; }
+.diagram .tick.tl{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+.diagram .tick.tr{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+.diagram .tick.bl{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+.diagram .tick.br{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+.diagram svg{ display:block; width:100%; height:auto; }
+.diagram svg .box{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.25; }
+.diagram svg .box-a{ fill:var(--accent2-soft); stroke:var(--accent2); stroke-width:1.25; }
+.diagram svg .box-w{ fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.25; }
+.diagram svg text{ font-family:var(--font-mono); dominant-baseline:middle; }
+.diagram svg .lbl{ fill:var(--ink-soft); }
+.diagram svg .lbl-strong{ fill:var(--ink); font-weight:700; }
+.diagram svg .lbl-accent{ fill:var(--accent2-strong); font-weight:700; }
+.diagram svg .lbl-warn{ fill:var(--danger); font-weight:700; }
+.diagram svg .edge{ stroke:var(--ink-faint); stroke-width:1.4; fill:none; }
+.diagram svg .edge-a{ stroke:var(--accent2); stroke-width:1.6; fill:none; }
+.diagram svg .edge-w{ stroke:var(--danger); stroke-width:1.6; fill:none; }
+.diagram svg .edge-dashed{ stroke-dasharray:4 3; }
+.diagram svg marker path{ fill:var(--ink-faint); }
+.diagram svg marker.m-a path{ fill:var(--accent2); }
+.diagram svg marker.m-w path{ fill:var(--danger); }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; color:var(--ink-faint);
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+.diagram .cap b{ color:var(--accent2-strong); font-weight:700; }
+
+.footdoc{ max-width:74ch; margin-top:80px; padding-top:26px; border-top:1px solid var(--line); font-size:.82rem; color:var(--ink-faint); font-family:var(--font-mono); }
+
+@media (max-width:960px){
+  .shell{ flex-direction:column; }
+  .toc{ position:relative; width:100%; height:auto; flex-basis:auto; border-right:none; border-bottom:1px solid var(--line); padding:22px 20px; }
+  main{ padding:40px 20px 90px; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .toc nav a{ transition:background-color .12s ease, color .12s ease; }
+}
+
+
+:root{
+  --ok:#2f6d3f; --ok-soft:#e4f0e5; --ok-line:#8fbf9b;
+  --sev-hi:#9c3b2c; --sev-mid:#a86a0b; --sev-lo:#5b6357;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+    --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+  }
+}
+:root[data-theme="dark"]{
+  --ok:#79c98c; --ok-soft:#16301c; --ok-line:#2f5c3a;
+  --sev-hi:#e2786a; --sev-mid:#dba434; --sev-lo:#98a08f;
+}
+
+/* ---- lede / summary panel ---- */
+.lede{
+  border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:22px 24px; margin:0 0 30px; box-shadow:var(--shadow);
+}
+.lede h3{ margin:0 0 12px; font-size:.83rem; font-family:var(--font-mono);
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent2); font-weight:700; }
+.lede ol{ margin:0; padding-left:1.3em; }
+.lede li{ margin:0 0 .55em; }
+.lede li:last-child{ margin-bottom:0; }
+
+/* ---- finding cards ---- */
+.finding{
+  border:1px solid var(--line-strong); border-left:4px solid var(--sev-hi);
+  border-radius:5px; background:var(--surface); padding:18px 20px; margin:0 0 20px;
+  box-shadow:var(--shadow);
+}
+.finding.mid{ border-left-color:var(--sev-mid); }
+.finding.lo{ border-left-color:var(--sev-lo); }
+.finding .fhead{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.finding .fid{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.09em; font-weight:700;
+  color:var(--paper); background:var(--sev-hi); padding:2px 7px; border-radius:3px;
+}
+.finding.mid .fid{ background:var(--sev-mid); }
+.finding.lo .fid{ background:var(--sev-lo); }
+.finding .ftitle{ font-weight:700; font-size:1.02rem; color:var(--ink); flex:1 1 auto; min-width:12ch; }
+.finding .fmeta{ font-family:var(--font-mono); font-size:.72rem; color:var(--ink-faint); }
+.finding p{ margin:0 0 .85em; }
+.finding p:last-child{ margin-bottom:0; }
+.finding dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:baseline; }
+.finding dt{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); white-space:nowrap; padding-top:.15em;
+}
+.finding dd{ margin:0; }
+
+/* ---- verified evidence terminal ---- */
+.term{
+  border:1px solid var(--code-border); border-radius:6px; overflow:hidden;
+  margin:0 0 1.3em; box-shadow:var(--shadow);
+}
+.term .thead{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ok); background:var(--ok-soft); padding:6px 14px; border-bottom:1px solid var(--ok-line);
+  display:flex; align-items:center; gap:8px;
+}
+.term pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink); padding:14px 16px;
+  overflow-x:auto; font-family:var(--font-mono); font-size:.8rem; line-height:1.6;
+}
+.term pre b{ color:var(--danger); font-weight:700; }
+.term pre i{ color:var(--ok); font-style:normal; font-weight:700; }
+
+/* ---- good / bad code pairing ---- */
+.pair{ display:grid; gap:14px; margin:0 0 1.4em; }
+@media (min-width:820px){ .pair.two{ grid-template-columns:1fr 1fr; } }
+.pane{ border:1px solid var(--code-border); border-radius:6px; overflow:hidden; min-width:0; }
+.pane > .ph{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+  padding:6px 13px; border-bottom:1px solid var(--code-border); font-weight:700;
+}
+.pane.bad > .ph{ color:var(--danger); background:var(--danger-soft); }
+.pane.good > .ph{ color:var(--ok); background:var(--ok-soft); }
+.pane pre{
+  margin:0; background:var(--code-bg); color:var(--code-ink);
+  padding:14px 16px; overflow-x:auto; font-family:var(--font-mono);
+  font-size:.79rem; line-height:1.62;
+}
+
+/* ---- three-way framework comparison ---- */
+.cmp{ display:grid; gap:14px; margin:0 0 1.6em; }
+@media (min-width:900px){ .cmp.three{ grid-template-columns:repeat(3,1fr); } }
+.fw{ border:1px solid var(--line-strong); border-radius:6px; background:var(--surface);
+  padding:0 0 16px; min-width:0; box-shadow:var(--shadow); overflow:hidden; }
+.fw > h4{
+  margin:0 0 12px; padding:10px 16px; font-size:.86rem; font-family:var(--font-mono);
+  letter-spacing:.06em; font-weight:700; border-bottom:1px solid var(--line);
+  background:var(--surface-2); color:var(--accent2-strong);
+}
+.fw .fwbody{ padding:0 16px; }
+.fw p{ margin:0 0 .8em; font-size:.9rem; }
+.fw pre{
+  margin:0 0 .9em; background:var(--code-bg); border:1px solid var(--code-border);
+  border-radius:5px; padding:11px 12px; overflow-x:auto;
+  font-family:var(--font-mono); font-size:.74rem; line-height:1.55; color:var(--code-ink);
+}
+.fw ul{ margin:0; padding-left:1.15em; font-size:.86rem; }
+.fw li{ margin:0 0 .42em; }
+
+/* ---- decision matrix ---- */
+.matrix{ overflow-x:auto; margin:0 0 1.5em; border:1px solid var(--line); border-radius:6px; }
+.matrix table{ width:100%; border-collapse:collapse; font-size:.86rem; min-width:640px; margin:0; }
+.matrix th{
+  text-align:left; padding:10px 13px; background:var(--accent2-soft); color:var(--accent2-strong);
+  font-weight:700; border-bottom:1px solid var(--line-strong); vertical-align:bottom;
+}
+.matrix td{ padding:10px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+.matrix tr:last-child td{ border-bottom:none; }
+.matrix tr:nth-child(even) td{ background:var(--surface-2); }
+.matrix td.lv{ font-family:var(--font-mono); font-weight:700; color:var(--accent-strong); white-space:nowrap; }
+
+/* ---- checklist ---- */
+.check{ list-style:none; padding:0; margin:0 0 1.5em; display:flex; flex-direction:column; gap:10px; }
+.check li{
+  display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:baseline;
+  border:1px solid var(--line); border-radius:5px; padding:12px 15px; background:var(--surface);
+  margin:0; font-size:.93rem;
+}
+.check li > .mk{ font-family:var(--font-mono); font-weight:700; color:var(--accent2); font-size:.8rem; }
+.check li b{ color:var(--accent-strong); }
+
+/* the guide uses one <h2> per section like the chapter pages, so inherit that rule */
+.chapter h4{ font-size:.97rem; margin:1.7em 0 .6em; font-weight:700; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">
+      <span class="kicker">Django 5.2 · 专题指南</span>
+      <h1>&#x1F4D1;&nbsp; 分页实战指南</h1>
+      <p>Paginator 的两条 SQL、OFFSET 的代价、键集分页，对照本仓库四处真实分页代码逐处分析，并与 Spring、Hono.js 的同场景做法对比。</p>
+    </div>
+    <nav>
+      <a href="#tldr"><span class="n">速览</span>本文结论速览</a><a href="#mechanics"><span class="n">机制</span>Django 的分页机制：两条 SQL</a><a href="#audit"><span class="n">现状</span>本仓库四处分页逐处分析</a><a href="#findings"><span class="n">缺陷</span>八个已验证的问题与修复</a><a href="#keyset"><span class="n">键集</span>键集分页：F-01 与 F-02 的共同解</a><a href="#checklist"><span class="n">清单</span>上线前检查清单</a><a href="#compare"><span class="n">对比</span>同样的分页：Spring 与 Hono.js 怎么做</a>
+    </nav>
+    <div class="series">
+      <div class="label">相关阅读</div>
+      <a href="guide-rest-api.html">&#x1F50C; DRF 接口实战指南</a>
+      <a href="guide-redis-caching.html">&#x26A1; Redis 缓存实战指南</a>
+      <a href="notes-01-blog.html">&#x1F4DD; Blog 项目深读笔记</a>
+    </div>
+  </aside>
+  <main>
+    <div class="masthead">
+      <span class="kicker">专题指南 · 机制 / 选型 / 缺陷分析 / 横向对比</span>
+      <h1>Django 分页实战指南</h1>
+      <p class="sub">面向 Django 5.2。性能数字均在本机 20 万行数据上实测得到，代码分析来自本仓库 <code>Chapter02~03</code>、<code>Chapter06~07</code>、<code>Chapter15~17</code> 的四处真实分页实现。</p>
+      <div class="meta">
+        <span>Django 5.2 · DRF 3.15.1</span>
+        <span>含 6 张架构示意图</span>
+        <span>8 个已验证的问题</span>
+      </div>
+    </div>
+    <section class="chapter" id="tldr">
+<h2>本文结论速览</h2>
+
+<div class="lede">
+<h3>三条最重要的结论</h3>
+<ol>
+<li><strong>OFFSET 分页的代价随翻页深度线性增长。</strong> 实测 20 万行的表，第 10000 页比第 1 页慢 <strong>58 倍</strong>（16.03 ms vs 0.28 ms）；同样深度换成键集分页是 <strong>0.35 ms</strong>，与第 1 页持平。详见 <a href="#findings">F-01</a>。</li>
+<li><strong>翻页期间只要有人写入，OFFSET 分页就会重复或漏掉记录。</strong> 已复现两种情形：新发一篇文章导致「文章 08」在第 1 页和第 2 页各出现一次；删掉一篇导致「文章 07」用户永远看不到。本仓库四处分页全部受影响。详见 <a href="#findings">F-02</a>。</li>
+<li><strong>每翻一页都要 COUNT 一次全表。</strong> 实测 20 万行时 <code>COUNT(*)</code> 占单次请求耗时的 <strong>90%</strong>——而 bookmarks 的无限滚动<strong>根本不需要总数</strong>，这笔钱是白花的。详见 <a href="#findings">F-05</a>。</li>
+</ol>
+</div>
+<p>本文结构与<a href="guide-redis-caching.html">缓存指南</a>、<a href="guide-rest-api.html">DRF 指南</a>一致：先讲 <strong>Django 5.2 的分页机制与三套 API</strong>，再<strong>逐处分析本仓库的四处分页代码</strong>，然后是<strong>八个已验证的问题及修复</strong>、<strong>键集分页专题</strong>，最后是<strong>上线清单</strong>与 <strong>Spring / Hono.js 对比</strong>。所有性能数字都在本机 Django 5.2 上实测得到，实测输出以绿色标题的终端块标注。</p>
+<blockquote><p><strong>关于测试环境</strong>：性能实测用的是 SQLite（本机没有 PostgreSQL），数据量 20 万行、排序列带索引。SQLite 与 PostgreSQL 在 <code>LIMIT/OFFSET</code> 上的行为是一致的——都必须沿索引走过并丢弃 OFFSET 指定的行数，所以<strong>趋势和量级可以外推</strong>，但绝对毫秒数不要直接套用到你的生产库上。逻辑类结论（重复、漏项、排序不确定）与数据库无关。</p></blockquote>
+
+</section><section class="chapter" id="mechanics">
+<h2>一、Django 的分页机制：两条 SQL</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 1 · Paginator 的两条 SQL：一条 COUNT 全表、一条 LIMIT/OFFSET 取当页，每次请求都各来一遍"><defs>
+          <marker id="dp1-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp1-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp1-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="34" width="200" height="68" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="62.0" text-anchor="middle" font-size="12.5">Paginator(qs, 3)</text>
+<text class="lbl" x="120.0" y="80.5" text-anchor="middle" font-size="10.5">只是把 queryset 和</text>
+<text class="lbl" x="120.0" y="92.5" text-anchor="middle" font-size="10.5">每页条数包起来，不查库</text>
+<rect class="box-w" x="280" y="34" width="200" height="68" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="62.0" text-anchor="middle" font-size="12.5">.num_pages / .count</text>
+<text class="lbl" x="380.0" y="80.5" text-anchor="middle" font-size="10.5">触发第一条 SQL：</text>
+<text class="lbl" x="380.0" y="92.5" text-anchor="middle" font-size="10.5">SELECT COUNT(*)</text>
+<rect class="box-a" x="540" y="34" width="200" height="68" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="62.0" text-anchor="middle" font-size="11.5">缓存在实例上</text>
+<text class="lbl" x="640.0" y="79.5" text-anchor="middle" font-size="10.5">cached_property</text>
+<text class="lbl" x="640.0" y="91.5" text-anchor="middle" font-size="10.5">同一个 Paginator 只 COUNT 一次</text>
+<line class="edge" x1="220" y1="68" x2="280" y2="68" marker-end="url(#dp1-m)"></line>
+<line class="edge" x1="480" y1="68" x2="540" y2="68" marker-end="url(#dp1-m)"></line>
+<rect class="box-w" x="280" y="148" width="200" height="68" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="176.0" text-anchor="middle" font-size="12.5">.page(2)</text>
+<text class="lbl" x="380.0" y="194.5" text-anchor="middle" font-size="10.5">触发第二条 SQL：</text>
+<text class="lbl" x="380.0" y="206.5" text-anchor="middle" font-size="10.5">LIMIT 3 OFFSET 3</text>
+<line class="edge" x1="380" y1="102" x2="380" y2="148" marker-end="url(#dp1-m)"></line>
+<rect class="box-a" x="540" y="148" width="200" height="68" rx="4"></rect>
+<text class="lbl-strong" x="640.0" y="176.0" text-anchor="middle" font-size="12.5">Page 对象</text>
+<text class="lbl" x="640.0" y="194.5" text-anchor="middle" font-size="10.5">has_next / number /</text>
+<text class="lbl" x="640.0" y="206.5" text-anchor="middle" font-size="10.5">object_list / paginator</text>
+<line class="edge" x1="480" y1="182" x2="540" y2="182" marker-end="url(#dp1-m)"></line>
+<line x1="20" y1="250" x2="740" y2="250" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl-strong" x="20" y="272.0" text-anchor="start" font-size="11.5">每次请求都会新建一个 Paginator ⇒ 每翻一页都重新 COUNT 一次全表。</text>
+<rect class="box-w" x="20" y="292" width="340" height="62" rx="4"></rect>
+<text class="lbl-strong" x="190.0" y="317.0" text-anchor="middle" font-size="12.5">实测 · 20 万行表</text>
+<text class="lbl" x="190.0" y="335.5" text-anchor="middle" font-size="10.5">COUNT(*) 3.28 ms / 取 20 行 0.38 ms</text>
+<text class="lbl" x="190.0" y="347.5" text-anchor="middle" font-size="10.5">COUNT 占单次请求耗时的 90%</text>
+<rect class="box-w" x="400" y="292" width="340" height="62" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="317.0" text-anchor="middle" font-size="12.5">无限滚动根本不需要总数</text>
+<text class="lbl" x="570.0" y="335.5" text-anchor="middle" font-size="10.5">但 Paginator 无条件付了这笔钱</text>
+<line class="edge-w" x1="360" y1="323" x2="400" y2="323" marker-end="url(#dp1-mw)"></line></svg><figcaption class="cap">图 1 · Paginator 的两条 SQL：一条 COUNT 全表、一条 LIMIT/OFFSET 取当页，每次请求都各来一遍</figcaption></figure>
+<p><code>Paginator</code> 本身是个惰性的包装器，构造时不查库。真正触发 SQL 的是两个动作：</p>
+<ul>
+<li>访问 <code>.count</code> / <code>.num_pages</code> → <code>SELECT COUNT(*)</code>。这是 <code>cached_property</code>，同一个 <code>Paginator</code> 实例只算一次。</li>
+<li>调用 <code>.page(n)</code> → <code>LIMIT page_size OFFSET (n-1)*page_size</code>。</li>
+</ul>
+<div class="term"><div class="thead">实测 · 1000 篇文章、每页 3 条，观察实际 SQL</div><pre>请求第 1 页 -> 2 条 SQL
+    [COUNT]
+    [SELECT 数据] ...FROM "blog_post" ORDER BY "blog_post"."publish" DESC LIMIT 3
+
+请求第 2 页 -> 2 条 SQL
+    [COUNT]
+    [SELECT 数据] ...ORDER BY "blog_post"."publish" DESC LIMIT 3 OFFSET 3
+
+请求第 50 页 -> 2 条 SQL
+    [COUNT]
+    [SELECT 数据] ...ORDER BY "blog_post"."publish" DESC <b>LIMIT 3 OFFSET 147</b></pre></div>
+<p>注意「<code>cached_property</code> 只算一次」是<strong>实例级</strong>的缓存。而 Web 请求里每次都会新建一个 <code>Paginator</code>，所以实际效果是<strong>每翻一页都重新 COUNT 一次全表</strong>。</p>
+
+<h3>1.1 Django 提供的三套分页 API</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>写法</th><th>用在</th><th>本仓库用于</th><th>要点</th></tr></thead>
+<tbody>
+<tr><td class="lv">Paginator</td><td>函数视图、任何需要手动控制的地方</td><td>blog、bookmarks</td><td>最灵活；容错要自己写，或用 <code>get_page()</code></td></tr>
+<tr><td class="lv">paginate_by</td><td><code>ListView</code> 等 CBV</td><td>仅出现在注释掉的 <code>PostListView</code> 里</td><td>一个属性搞定；context 里给的是 <code>page_obj</code></td></tr>
+<tr><td class="lv">pagination_class</td><td>DRF 视图</td><td>educa 的两个 ViewSet</td><td>三种策略可选，含唯一开箱即用的游标分页</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>1.2 <code>get_page()</code>：本仓库还没用上的简化写法</h3>
+<p>仓库里三处都手写了同一段三分支容错：</p>
+<div class="pair two">
+<div class="pane bad"><div class="ph">现状：手写三分支（三处各写一遍）</div><pre>paginator = Paginator(post_list, 3)
+page_number = request.GET.get(&#x27;page&#x27;, 1)
+try:
+    posts = paginator.page(page_number)
+except PageNotAnInteger:
+    posts = paginator.page(1)
+except EmptyPage:
+    posts = paginator.page(paginator.num_pages)</pre></div>
+<div class="pane good"><div class="ph">get_page()：语义完全相同，一行</div><pre>paginator = Paginator(post_list, 3)
+posts = paginator.get_page(request.GET.get(&#x27;page&#x27;))
+
+# 非整数 -&gt; 第 1 页
+# 超出范围 -&gt; 最后一页
+# 空 queryset -&gt; 允许空第 1 页</pre></div>
+</div>
+<blockquote><p>这不是「教材写错了」——书里手写三分支是为了讲清楚 <code>PageNotAnInteger</code> 和 <code>EmptyPage</code> 这两个异常什么时候抛。理解之后，生产代码用 <code>get_page()</code> 即可。实测确认：默认配置下（<code>allow_empty_first_page=True</code>），空 queryset 上 <code>get_page(1)</code>、<code>get_page('abc')</code>、<code>page(1)</code> 都能正常返回一个空的第 1 页；<code>get_page()</code> 的价值在于把「页码不是整数」和「页码超出范围」这两种情况也一并兜住，永不抛异常。注意如果显式设了 <code>allow_empty_first_page=False</code>，空 queryset 上 <strong><code>get_page()</code> 同样会抛 <code>EmptyPage</code></strong>——它兜底的是页码本身，不是「结果集为空」这件事。</p></blockquote>
+
+</section><section class="chapter" id="audit">
+<h2>二、本仓库四处分页逐处分析</h2>
+
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 450" role="img" aria-label="图 4 · 本仓库四处分页代码的现状：三处手写 Paginator，一处 DRF，共享同一批问题"><defs>
+          <marker id="dp4-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp4-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp4-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="30" width="300" height="68" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="58.0" text-anchor="middle" font-size="12">blog · post_list()</text>
+<text class="lbl" x="170.0" y="76.0" text-anchor="middle" font-size="10.5">手写 Paginator + 三分支异常处理</text>
+<text class="lbl" x="170.0" y="88.0" text-anchor="middle" font-size="10.5">每页 3 条 · ordering=['-publish']</text>
+<rect class="box-w" x="360" y="38" width="180" height="52" rx="4"></rect>
+<text class="lbl-strong" x="450.0" y="64.0" text-anchor="middle" font-size="11">F-03 排序无决胜键</text>
+<line class="edge-w" x1="320" y1="64" x2="360" y2="64" marker-end="url(#dp4-mw)"></line>
+<rect class="box-w" x="20" y="118" width="300" height="68" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="146.0" text-anchor="middle" font-size="12">blog · post_search()</text>
+<text class="lbl" x="170.0" y="164.0" text-anchor="middle" font-size="10.5">完全没有分页</text>
+<text class="lbl" x="170.0" y="176.0" text-anchor="middle" font-size="10.5">模糊搜索命中多少返回多少</text>
+<rect class="box-w" x="360" y="126" width="180" height="52" rx="4"></rect>
+<text class="lbl-strong" x="450.0" y="152.0" text-anchor="middle" font-size="11">F-07 缺失分页</text>
+<line class="edge-w" x1="320" y1="152" x2="360" y2="152" marker-end="url(#dp4-mw)"></line>
+<rect class="box-a" x="20" y="206" width="300" height="68" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="234.0" text-anchor="middle" font-size="12">bookmarks · image_list()</text>
+<text class="lbl" x="170.0" y="252.0" text-anchor="middle" font-size="10.5">同一视图两种返回：整页 / HTML 片段</text>
+<text class="lbl" x="170.0" y="264.0" text-anchor="middle" font-size="10.5">无限滚动 · 每页 8 条</text>
+<rect class="box-w" x="360" y="214" width="180" height="52" rx="4"></rect>
+<text class="lbl-strong" x="450.0" y="240.0" text-anchor="middle" font-size="11">F-05 每页都 COUNT</text>
+<line class="edge-w" x1="320" y1="240" x2="360" y2="240" marker-end="url(#dp4-mw)"></line>
+<rect class="box-a" x="20" y="294" width="300" height="68" rx="4"></rect>
+<text class="lbl-strong" x="170.0" y="322.0" text-anchor="middle" font-size="12">educa · StandardPagination</text>
+<text class="lbl" x="170.0" y="340.0" text-anchor="middle" font-size="10.5">DRF PageNumberPagination</text>
+<text class="lbl" x="170.0" y="352.0" text-anchor="middle" font-size="10.5">page_size=10 · max_page_size=50</text>
+<rect class="box-a" x="360" y="302" width="180" height="52" rx="4"></rect>
+<text class="lbl-strong" x="450.0" y="328.0" text-anchor="middle" font-size="11">写得最规范的一处</text>
+<line class="edge-a" x1="320" y1="328" x2="360" y2="328" marker-end="url(#dp4-ma)"></line>
+<text class="lbl" x="570" y="60.0" text-anchor="start" font-size="10.5">三处手写</text>
+<text class="lbl" x="570" y="75.5" text-anchor="start" font-size="10.5">Paginator，</text>
+<text class="lbl" x="570" y="91.0" text-anchor="start" font-size="10.5">逻辑几乎相同</text>
+<text class="lbl" x="570" y="106.5" text-anchor="start" font-size="10.5">但各写了一遍</text>
+<text class="lbl" x="570" y="240.0" text-anchor="start" font-size="10.5">只有 DRF 那处</text>
+<text class="lbl" x="570" y="255.5" text-anchor="start" font-size="10.5">把每页条数、</text>
+<text class="lbl" x="570" y="271.0" text-anchor="start" font-size="10.5">上限、查询参数</text>
+<text class="lbl" x="570" y="286.5" text-anchor="start" font-size="10.5">都配全了</text>
+<line x1="20" y1="388" x2="740" y2="388" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl-warn" x="20" y="410" text-anchor="start" font-size="11">四处分页全部基于 OFFSET，全部没有决胜排序键，全部会在翻页期间数据变动时重复或漏项。</text></svg><figcaption class="cap">图 4 · 本仓库四处分页代码的现状：三处手写 Paginator，一处 DRF，共享同一批问题</figcaption></figure>
+
+<h3>2.1 blog · <code>post_list()</code>：最标准的一处</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>def post_list(request, tag_slug=None):
+    post_list = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        post_list = post_list.filter(tags__in=[tag])
+    # Pagination with 3 posts per page
+    paginator = Paginator(post_list, 3)
+    page_number = request.GET.get(&#x27;page&#x27;, 1)
+    try:
+        posts = paginator.page(page_number)
+    except PageNotAnInteger:
+        posts = paginator.page(1)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
+    return render(request, &#x27;blog/post/list.html&#x27;, {&#x27;posts&#x27;: posts, &#x27;tag&#x27;: tag})</code></pre></div>
+<p>逻辑本身没问题。三个隐患：排序键 <code>-publish</code> 不唯一（<a href="#findings">F-03</a>）；分页链接会丢查询参数（<a href="#findings">F-08</a>）；以及配套模板与 CBV 不兼容（<a href="#findings">F-04</a>）。</p>
+
+<h3>2.2 blog · <code>post_search()</code>：完全没有分页</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>def post_search(request):
+    form = SearchForm()
+    query = None
+    results = []
+    if &#x27;query&#x27; in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data[&#x27;query&#x27;]
+            results = (
+                Post.published.annotate(
+                    similarity=TrigramSimilarity(&#x27;title&#x27;, query),
+                )
+                .filter(similarity__gt=0.1)
+                .order_by(&#x27;-similarity&#x27;)
+            )
+    return render(request, &#x27;blog/post/search.html&#x27;,
+                  {&#x27;form&#x27;: form, &#x27;query&#x27;: query, &#x27;results&#x27;: results})</code></pre></div>
+<p>模糊搜索匹配多少就返回多少，没有任何上限。<code>similarity__gt=0.1</code> 是一个<strong>很低</strong>的阈值——在一个几千篇文章的博客上，一个常见词可能命中数百条，全部渲染进一个页面。这是整个仓库里最需要分页、却唯一完全没有分页的视图（<a href="#findings">F-07</a>）。</p>
+
+<h3>2.3 bookmarks · <code>image_list()</code>：一个视图两种返回</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>@login_required
+def image_list(request):
+    images = Image.objects.all()
+    paginator = Paginator(images, 8)
+    page = request.GET.get(&#x27;page&#x27;)
+    images_only = request.GET.get(&#x27;images_only&#x27;)
+    try:
+        images = paginator.page(page)
+    except PageNotAnInteger:
+        images = paginator.page(1)
+    except EmptyPage:
+        if images_only:
+            # If AJAX request and page out of range return an empty page
+            return HttpResponse(&#x27;&#x27;)
+        images = paginator.page(paginator.num_pages)
+    if images_only:
+        return render(request, &#x27;images/image/list_images.html&#x27;,
+                      {&#x27;section&#x27;: &#x27;images&#x27;, &#x27;images&#x27;: images})
+    return render(request, &#x27;images/image/list.html&#x27;,
+                  {&#x27;section&#x27;: &#x27;images&#x27;, &#x27;images&#x27;: images})</code></pre></div>
+<p>这是全书分页写得最巧的一处：<strong>同一个视图</strong>根据 <code>images_only</code> 参数决定返回整页还是只返回列表片段。首屏走完整模板，滚动加载时前端只要那一小段 HTML 直接拼接——不需要单独写一个 API，也不需要前端做模板渲染。<code>EmptyPage</code> 分支返回空字符串，前端用「收到空响应」当作没有更多数据的信号，这个约定也很干净。</p>
+<p>问题在配套的前端状态机上（<a href="#findings">F-06</a>），以及无限滚动场景下 COUNT 查询纯属浪费（<a href="#findings">F-05</a>）。</p>
+
+<h3>2.4 educa · <code>StandardPagination</code>：配置最完整的一处</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>class StandardPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = &#x27;page_size&#x27;   # 允许客户端调整每页条数
+    max_page_size = 50                    # 但设上限</code></pre></div>
+<p><code>max_page_size</code> 这一项很多人会漏。不设上限，客户端一个 <code>?page_size=999999</code> 就把分页彻底绕过去了——这在对外 API 上等于给了任何人一个免费的全表导出接口。这处写对了。</p>
+<blockquote><p>但它只在两个 ViewSet 上逐个配置，没有配 <code>DEFAULT_PAGINATION_CLASS</code> 全局默认值。这意味着<strong>新加的视图忘了配就会返回全表</strong>——这一点在 <a href="guide-rest-api.html">DRF 指南</a>里详细讨论过。</p></blockquote>
+
+</section><section class="chapter" id="findings">
+<h2>三、八个已验证的问题与修复</h2>
+
+<p>前六条经过实测复现，后两条是代码阅读所得（已在标签里注明）。</p>
+
+<div class="finding"><div class="fhead"><span class="fid">F-01</span><span class="ftitle">OFFSET 深翻页的代价随深度线性增长</span><span class="fmeta">已实测 · 性能</span></div><dl><dt>位置</dt><dd>四处分页全部适用</dd><dt>触发</dt><dd>用户翻到较深的页，或爬虫顺序遍历全部页面</dd><dt>影响</dt><dd>20 万行表上第 10000 页比第 1 页慢 58 倍；数据量越大差距越大</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 430" role="img" aria-label="图 2 · OFFSET 的代价随深度线性增长，键集分页则是常数——差距在第 10000 页达到 58 倍"><defs>
+          <marker id="dp2-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp2-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp2-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">OFFSET 分页：数据库必须先扫过并丢弃前面所有行</text>
+<rect class="box-w" x="20" y="36" width="720" height="56" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="58.0" text-anchor="middle" font-size="12.5">LIMIT 20 OFFSET 199980</text>
+<text class="lbl" x="380.0" y="76.5" text-anchor="middle" font-size="10.5">为了拿到 20 行，引擎要沿索引走过 199,980 行再全部丢掉</text>
+<rect class="box-w" x="20" y="110" width="520" height="40" rx="4"></rect>
+<text class="lbl-strong" x="280.0" y="130.0" text-anchor="middle" font-size="11.5">丢弃 · 丢弃 · 丢弃 ……（199,980 行）</text>
+<rect class="box-a" x="560" y="110" width="180" height="40" rx="4"></rect>
+<text class="lbl-strong" x="650.0" y="130.0" text-anchor="middle" font-size="11.5">返回这 20 行</text>
+<line class="edge-w" x1="540" y1="130" x2="560" y2="130" marker-end="url(#dp2-mw)"></line>
+<line x1="20" y1="178" x2="740" y2="178" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="200" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">键集分页：用上一页最后一行的值直接定位</text>
+<rect class="box-a" x="20" y="214" width="720" height="56" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="236.0" text-anchor="middle" font-size="12">WHERE publish &lt; '上一页最后一行的 publish' ORDER BY publish DESC LIMIT 20</text>
+<text class="lbl" x="380.0" y="254.0" text-anchor="middle" font-size="10.5">索引直接跳到那个位置，扫 20 行就走</text>
+<rect class="box-a" x="20" y="288" width="180" height="40" rx="4"></rect>
+<text class="lbl-strong" x="110.0" y="308.0" text-anchor="middle" font-size="11.5">索引跳转</text>
+<rect class="box-a" x="560" y="288" width="180" height="40" rx="4"></rect>
+<text class="lbl-strong" x="650.0" y="308.0" text-anchor="middle" font-size="11.5">返回这 20 行</text>
+<line class="edge-a" x1="200" y1="308" x2="560" y2="308" marker-end="url(#dp2-ma)"></line>
+<text class="lbl" x="380.0" y="303.0" text-anchor="middle" font-size="10">不扫描中间任何行</text>
+<line x1="20" y1="352" x2="740" y2="352" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<rect class="box-w" x="20" y="366" width="340" height="56" rx="4"></rect>
+<text class="lbl-strong" x="190.0" y="388.0" text-anchor="middle" font-size="12.5">实测 · 20 万行，第 10000 页</text>
+<text class="lbl" x="190.0" y="406.5" text-anchor="middle" font-size="10.5">OFFSET：16.03 ms（第 1 页的 58 倍）</text>
+<rect class="box-a" x="400" y="366" width="340" height="56" rx="4"></rect>
+<text class="lbl-strong" x="570.0" y="388.0" text-anchor="middle" font-size="12.5">同样深度的键集分页</text>
+<text class="lbl" x="570.0" y="406.5" text-anchor="middle" font-size="10.5">0.35 ms —— 与第 1 页持平</text>
+<line class="edge-a" x1="360" y1="394" x2="400" y2="394" marker-end="url(#dp2-ma)"></line></svg><figcaption class="cap">图 2 · OFFSET 的代价随深度线性增长，键集分页则是常数——差距在第 10000 页达到 58 倍</figcaption></figure>
+<div class="term"><div class="thead">实测 · 20 万行，publish 上有索引，每页 20 条</div><pre>     页码    OFFSET       中位耗时    相对第 1 页
+--------------------------------------------------
+        1         0       0.28 ms       1.0×
+       10       180       0.28 ms       1.0×
+      100     1,980       0.34 ms       1.2×
+    1,000    19,980       1.01 ms       3.7×
+    5,000    99,980       7.10 ms      25.8×
+   10,000   199,980      <b>16.03 ms      58.2×</b>
+
+改用键集分页（WHERE publish &lt; ? ORDER BY publish DESC LIMIT n）：
+    等效深度        中位耗时
+         1 页       0.39 ms
+     1,000 页       <i>0.35 ms</i>
+    10,000 页       <i>0.35 ms</i></pre></div>
+<p><strong>根因。</strong> <code>OFFSET n</code> 不是「跳到第 n 行」，而是「读出前 n 行然后全部丢掉」。数据库没有办法直接定位到第 n 行——即使有索引，也得沿着索引一个一个数过去。所以代价是 <code>O(offset)</code>，而不是 <code>O(page_size)</code>。</p>
+<p><strong>修复。</strong> 见<a href="#keyset">第四节</a>的键集分页。对模板视图的一个折中办法是<strong>限制最大页码</strong>，把深翻页挡在门外：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>MAX_PAGE = 100
+
+paginator = Paginator(post_list, 20)
+page_number = request.GET.get(&#x27;page&#x27;, 1)
+try:
+    if int(page_number) &gt; MAX_PAGE:
+        raise Http404(&#x27;页码超出范围，请使用搜索或筛选缩小结果&#x27;)
+except (TypeError, ValueError):
+    pass
+posts = paginator.get_page(page_number)</code></pre></div>
+<blockquote><p>「限制最大页码」听起来粗暴，但它符合真实用户行为：几乎没有人会手工翻到第 100 页，翻那么深的基本是爬虫。Google 搜索结果最多给你翻到大约第 40 页，也是同样的取舍。</p></blockquote>
+
+<div class="finding"><div class="fhead"><span class="fid">F-02</span><span class="ftitle">翻页期间数据变动导致记录重复或被跳过</span><span class="fmeta">已实测 · 正确性</span></div><dl><dt>位置</dt><dd>四处分页全部适用；bookmarks 无限滚动最容易触发</dd><dt>触发</dt><dd>用户从第 1 页翻到第 2 页的间隙，有人插入或删除了排在前面的记录</dd><dt>影响</dt><dd>同一条记录在两页里都出现；或某条记录一次都不出现</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 440" role="img" aria-label="图 3 · 翻页期间数据变动：OFFSET 会重复或漏掉记录，键集分页不受影响（三种情形均已实测复现）"><defs>
+          <marker id="dp3-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp3-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp3-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<text class="lbl" x="20" y="22" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">场景 A · 用户看完第 1 页后，有人发布了新文章</text>
+<rect class="box" x="20" y="36" width="200" height="44" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="52.0" text-anchor="middle" font-size="11.5">第 1 页（插入前）</text>
+<text class="lbl" x="120.0" y="69.5" text-anchor="middle" font-size="10.5">10 · 09 · 08</text>
+<rect class="box-w" x="280" y="36" width="180" height="44" rx="4"></rect>
+<text class="lbl-strong" x="370.0" y="58.0" text-anchor="middle" font-size="11.5">★ 新文章插入到最前</text>
+<rect class="box-w" x="520" y="36" width="220" height="44" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="52.0" text-anchor="middle" font-size="11.5">第 2 页（插入后）</text>
+<text class="lbl" x="630.0" y="69.5" text-anchor="middle" font-size="10.5">08 · 07 · 06</text>
+<line class="edge" x1="220" y1="58" x2="280" y2="58" marker-end="url(#dp3-m)"></line>
+<line class="edge-w" x1="460" y1="58" x2="520" y2="58" marker-end="url(#dp3-mw)"></line>
+<text class="lbl-warn" x="520" y="96.0" text-anchor="start" font-size="10.5">文章 08 在两页里都出现了 —— 整体后移了一位</text>
+<line x1="20" y1="122" x2="740" y2="122" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="144" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">场景 B · 用户看完第 1 页后，第 1 页里有一篇被删除</text>
+<rect class="box" x="20" y="158" width="200" height="44" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="174.0" text-anchor="middle" font-size="11.5">第 1 页（删除前）</text>
+<text class="lbl" x="120.0" y="191.5" text-anchor="middle" font-size="10.5">10 · 09 · 08</text>
+<rect class="box-w" x="280" y="158" width="180" height="44" rx="4"></rect>
+<text class="lbl-strong" x="370.0" y="180.0" text-anchor="middle" font-size="11.5">文章 10 被删除</text>
+<rect class="box-w" x="520" y="158" width="220" height="44" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="174.0" text-anchor="middle" font-size="11.5">第 2 页（删除后）</text>
+<text class="lbl" x="630.0" y="191.5" text-anchor="middle" font-size="10.5">06 · 05 · 04</text>
+<line class="edge" x1="220" y1="180" x2="280" y2="180" marker-end="url(#dp3-m)"></line>
+<line class="edge-w" x1="460" y1="180" x2="520" y2="180" marker-end="url(#dp3-mw)"></line>
+<text class="lbl-warn" x="520" y="218.0" text-anchor="start" font-size="10.5">文章 07 被整体前移挤过了分界线，用户永远看不到它</text>
+<line x1="20" y1="244" x2="740" y2="244" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="266" font-size="10" style="letter-spacing:.08em;text-transform:uppercase;opacity:.8">同样的插入，改用键集分页</text>
+<rect class="box-a" x="20" y="280" width="200" height="44" rx="4"></rect>
+<text class="lbl-strong" x="120.0" y="296.0" text-anchor="middle" font-size="11.5">第 1 页</text>
+<text class="lbl" x="120.0" y="313.5" text-anchor="middle" font-size="10.5">10 · 09 · 08</text>
+<rect class="box-a" x="280" y="280" width="180" height="56" rx="4"></rect>
+<text class="lbl-strong" x="370.0" y="302.0" text-anchor="middle" font-size="10.5">游标 = 文章 08 的 publish</text>
+<text class="lbl" x="370.0" y="318.5" text-anchor="middle" font-size="10.5">记住的是「值」不是「位置」</text>
+<rect class="box-a" x="520" y="280" width="220" height="44" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="296.0" text-anchor="middle" font-size="11.5">第 2 页</text>
+<text class="lbl" x="630.0" y="313.5" text-anchor="middle" font-size="10.5">07 · 06 · 05</text>
+<line class="edge-a" x1="220" y1="302" x2="280" y2="302" marker-end="url(#dp3-ma)"></line>
+<line class="edge-a" x1="460" y1="302" x2="520" y2="302" marker-end="url(#dp3-ma)"></line>
+<text class="lbl" x="520" y="348.0" text-anchor="start" font-size="10.5">无重复、无遗漏</text>
+<line x1="20" y1="378" x2="740" y2="378" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="400.0" text-anchor="start" font-size="10.5">根因：OFFSET 记的是「跳过多少行」这个位置，而位置会随着前面的行增减而漂移；</text>
+<text class="lbl" x="20" y="415.5" text-anchor="start" font-size="10.5">键集记的是「从哪个值之后开始」，这个值不会因为别处插入删除而改变。</text></svg><figcaption class="cap">图 3 · 翻页期间数据变动：OFFSET 会重复或漏掉记录，键集分页不受影响（三种情形均已实测复现）</figcaption></figure>
+<div class="term"><div class="thead">实测 · 10 篇文章、每页 3 条、按 -publish 排序</div><pre>初始状态：
+  第 1 页: ['文章 10', '文章 09', '文章 08']
+  第 2 页: ['文章 07', '文章 06', '文章 05']
+
+场景 A · 看完第 1 页后有人发布了新文章
+  第 1 页（插入前读的）: ['文章 10', '文章 09', '文章 08']
+  第 2 页（插入后读的）: ['<b>文章 08</b>', '文章 07', '文章 06']
+  -> 重复出现的文章: <b>['文章 08']</b>
+
+场景 B · 看完第 1 页后第 1 页里有一篇被删除
+  第 1 页（删除前读的）: ['文章 10', '文章 09', '文章 08']
+  第 2 页（删除后读的）: ['文章 06', '文章 05', '文章 04']
+  -> 用户从未见过的文章: <b>['文章 07']</b>
+
+场景 C · 同样的插入，改用键集分页
+  第 1 页: ['文章 10', '文章 09', '文章 08']
+  第 2 页（游标 = 上一页最后一条的 publish）: ['文章 07', '文章 06', '文章 05']
+  -> 重复出现的文章: <i>无</i></pre></div>
+<p><strong>根因。</strong> <code>OFFSET</code> 记录的是「跳过多少行」这个<strong>位置</strong>，而位置会随着前面的行增减而漂移。键集记录的是「从哪个<strong>值</strong>之后开始」，这个值不会因为别处的插入删除而改变。</p>
+<blockquote class="callout-warn"><p><strong>本仓库最容易踩到的是 bookmarks 的无限滚动。</strong> <code>Image.Meta.ordering = ['-created']</code>——最新的在最前面，而新收藏的图片正是从最前面插入的。一个活跃的站点上，用户一边往下滚、别人一边在收藏新图，重复项几乎是必然出现的。而无限滚动的界面又恰好会把重复项<strong>并排显示在同一屏里</strong>，比传统翻页更容易被用户直接看到。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-03</span><span class="ftitle">排序键不唯一，并列行的顺序不由 SQL 决定</span><span class="fmeta">已实测 · 正确性</span></div><dl><dt>位置</dt><dd><code>Post.Meta.ordering = ['-publish']</code>、<code>Image.Meta.ordering = ['-created']</code>、<code>post_search</code> 的 <code>order_by('-similarity')</code></dd><dt>触发</dt><dd>存在排序值相同的记录（批量导入、定时发布、相似度并列）</dd><dt>影响</dt><dd>并列行的相对顺序由执行计划决定，换计划就可能变，进而导致翻页重复或漏项</dd></dl></div>
+<div class="term"><div class="thead">实测 · 6 行 publish 完全相同，只按 publish DESC 排序</div><pre>  计划 A（走 -publish 索引）
+    计划: SCAN blog_post USING INDEX blog_post_publish_bb7600_idx
+    顺序: ['并列文章 0', '并列文章 1', ..., '并列文章 5']
+  计划 B（额外用 rowid 决胜）
+    计划: SCAN ... | USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+    顺序: ['并列文章 5', '并列文章 4', ..., '并列文章 0']
+
+  A 与 B 顺序相同? <b>False</b></pre></div>
+<blockquote><p>说明一下这条实测的边界：本次 SQLite 在<strong>同一个执行计划</strong>下的多次读取是稳定的，我没有观察到同一查询自发变序。真正的问题在于 <strong>SQL 层面没有为并列行规定任何顺序</strong>，数据库返回什么都算合法——上面 A 与 B 的对比说明，只要执行计划变了，顺序就变了。换成 PostgreSQL、启用并行扫描、加一个改变计划的过滤条件，都可能触发。这是<strong>契约层面的不确定</strong>，不该赌某个引擎当前的实现细节。</p></blockquote>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：单一非唯一排序键</div><pre>class Meta:
+    ordering = [&#x27;-publish&#x27;]</pre></div>
+<div class="pane good"><div class="ph">✓ 补一个主键做决胜键</div><pre>class Meta:
+    ordering = [&#x27;-publish&#x27;, &#x27;-id&#x27;]
+    indexes = [
+        models.Index(fields=[&#x27;-publish&#x27;, &#x27;-id&#x27;]),
+    ]</pre></div>
+</div>
+<p>索引也要跟着改成复合索引，否则新增的排序键会让数据库多做一次排序。<strong>凡是要分页的 queryset，排序键必须能唯一确定每一行的位置</strong>——最省事的做法就是在末尾追加主键。</p>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-04</span><span class="ftitle">pagination.html 与 PostListView 不兼容，且失败时无声无息</span><span class="fmeta">已实测 · 功能</span></div><dl><dt>位置</dt><dd><code>Chapter02~03/mysite/blog/templates/pagination.html</code></dd><dt>触发</dt><dd>把 URL 切换到注释里那行 <code>PostListView</code></dd><dt>影响</dt><dd>翻页控件整体消失，页面显示「Page  of .」，没有任何报错</dd></dl></div>
+<p>模板期待的是一个 <code>Page</code> 对象：</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code>{% if page.has_previous %}
+  &lt;a href=&quot;?page={{ page.previous_page_number }}&quot;&gt;Previous&lt;/a&gt;
+{% endif %}
+&lt;span class=&quot;current&quot;&gt;
+  Page {{ page.number }} of {{ page.paginator.num_pages }}.
+&lt;/span&gt;</code></pre></div>
+<div class="codewrap"><div class="langtag">html</div><pre><code>&lt;!-- list.html 里是这样传的 --&gt;
+{% include &quot;pagination.html&quot; with page=posts %}</code></pre></div>
+<p>函数视图 <code>post_list</code> 里 <code>posts = paginator.page(n)</code> 确实是 <code>Page</code>，所以能用。但 <code>PostListView</code> 设了 <code>context_object_name = 'posts'</code>，而 <code>ListView</code> 把这个名字绑到的是 <strong><code>object_list</code></strong>——也就是当前页的数据集合，不是 <code>Page</code>：</p>
+<div class="term"><div class="thead">实测 · 同一个模板，两种视图</div><pre>=== A) 函数视图：posts = paginator.page(2)，是 Page 对象 ===
+   传入对象类型: <i>Page</i>
+   渲染结果:
+      &lt;a href="?page=1"&gt;Previous&lt;/a&gt;
+      Page 2 of 4.
+      &lt;a href="?page=3"&gt;Next&lt;/a&gt;
+
+=== B) 类视图 PostListView ===
+   context 里的 key : ['is_paginated', 'object_list', 'page_obj', 'paginator', 'posts']
+   posts 的类型     : <b>QuerySet</b>
+   page_obj 的类型   : Page
+
+   把 posts 当 page 传给 pagination.html（模板里就是这么写的）：
+      <b>Page  of .</b>          &lt;- 翻页链接全部消失，且没有任何报错
+
+   正确写法是传 page_obj：
+      &lt;a href="?page=1"&gt;Previous&lt;/a&gt;
+      <i>Page 2 of 4.</i>
+      &lt;a href="?page=3"&gt;Next&lt;/a&gt;</pre></div>
+<p><strong>为什么不报错？</strong> Django 模板对不存在的属性是<strong>静默失败</strong>的——<code>page.has_previous</code> 解析不出来就返回空字符串，<code>{% if %}</code> 判为假，链接直接不渲染。这类问题不会出现在日志里，只能靠肉眼看页面发现。</p>
+<div class="codewrap"><div class="langtag">html</div><pre><code>&lt;!-- 修复：让模板同时兼容两种传法 --&gt;
+{% include &quot;pagination.html&quot; with page=page_obj %}</code></pre></div>
+<blockquote><p>更稳妥的做法是在开发环境把 <code>string_if_invalid</code> 设成一个显眼的标记，让这类静默失败变得可见：</p>
+<pre style="margin:.6em 0 0;font-family:var(--font-mono);font-size:.8rem;overflow-x:auto;">TEMPLATES[0]['OPTIONS']['string_if_invalid'] = '【模板变量缺失: %s】'</pre>
+<p style="margin-top:.6em;">注意这只适合本地开发——它会让所有正常的空值也显示出标记。</p></blockquote>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-05</span><span class="ftitle">每翻一页都 COUNT 一次全表，而无限滚动根本不需要总数</span><span class="fmeta">已实测 · 性能</span></div><dl><dt>位置</dt><dd>三处手写 <code>Paginator</code> + DRF 的 <code>PageNumberPagination</code></dd><dt>触发</dt><dd>每一次分页请求</dd><dt>影响</dt><dd>20 万行时 COUNT 占单次请求耗时的 90%；无限滚动场景下完全是浪费</dd></dl></div>
+<div class="term"><div class="thead">实测 · 20 万行表</div><pre>COUNT(*) 全表             :    3.28 ms
+取第 1 页 20 行（无 COUNT）:    0.38 ms
+-> COUNT 占一次「第 1 页」请求总耗时的 <b>90%</b></pre></div>
+<p>页码分页需要总数来算「共 N 页」，这笔开销有其价值。但 <strong>bookmarks 的无限滚动从头到尾没有用过总数</strong>——前端只关心「还有没有下一批」，而这个问题用「多取一条看看有没有」就能回答，成本几乎为零：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>@login_required
+def image_list(request):
+    page = int(request.GET.get(&#x27;page&#x27;, 1))
+    per_page = 8
+    offset = (page - 1) * per_page
+    # 多取一条：能取到第 9 条就说明还有下一页
+    images = list(Image.objects.all()[offset:offset + per_page + 1])
+    has_next = len(images) &gt; per_page
+    images = images[:per_page]
+
+    if request.GET.get(&#x27;images_only&#x27;):
+        if not images:
+            return HttpResponse(&#x27;&#x27;)
+        return render(request, &#x27;images/image/list_images.html&#x27;,
+                      {&#x27;section&#x27;: &#x27;images&#x27;, &#x27;images&#x27;: images})
+    return render(request, &#x27;images/image/list.html&#x27;,
+                  {&#x27;section&#x27;: &#x27;images&#x27;, &#x27;images&#x27;: images, &#x27;has_next&#x27;: has_next})</code></pre></div>
+<p>DRF 侧对应的做法是换成 <code>CursorPagination</code>，它的响应里就没有 <code>count</code> 字段：</p>
+<div class="term"><div class="thead">实测 · DRF 三种分页类的 SQL 开销</div><pre>=== PageNumberPagination ===   响应字段: ['count', 'next', 'previous', 'results']
+  SQL 条数: 2  (其中 COUNT 查询 <b>1</b> 条)
+
+=== LimitOffsetPagination ===  响应字段: ['count', 'next', 'previous', 'results']
+  SQL 条数: 2  (其中 COUNT 查询 <b>1</b> 条)
+
+=== CursorPagination ===       响应字段: ['next', 'previous', 'results']
+  SQL 条数: 1  (其中 COUNT 查询 <i>0</i> 条)</pre></div>
+
+<div class="finding mid"><div class="fhead"><span class="fid">F-06</span><span class="ftitle">无限滚动的 fetch 没有 catch 分支，一次网络失败就永久卡死</span><span class="fmeta">代码阅读 · 健壮性</span></div><dl><dt>位置</dt><dd><code>Chapter06~07/bookmarks/images/templates/images/image/list.html</code></dd><dt>触发</dt><dd>任意一次 fetch 失败：网络抖动、服务端 5xx、请求超时</dd><dt>影响</dt><dd><code>blockRequest</code> 永远保持 <code>true</code>，此后再怎么滚动都不会加载；且 <code>page</code> 已自增，重试会跳过一页</dd></dl></div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 420" role="img" aria-label="图 5 · 无限滚动的状态机：fetch 没有 catch 分支，一次网络失败就会让它永久卡死"><defs>
+          <marker id="dp5-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp5-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp5-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="40" width="170" height="62" rx="4"></rect>
+<text class="lbl-strong" x="105.0" y="65.0" text-anchor="middle" font-size="12.5">scroll 事件</text>
+<text class="lbl" x="105.0" y="83.5" text-anchor="middle" font-size="10.5">page / emptyPage /</text>
+<text class="lbl" x="105.0" y="95.5" text-anchor="middle" font-size="10.5">blockRequest 三个状态位</text>
+<rect class="box" x="250" y="40" width="190" height="62" rx="4"></rect>
+<text class="lbl-strong" x="345.0" y="65.0" text-anchor="middle" font-size="12.5">闸门判断</text>
+<text class="lbl" x="345.0" y="83.5" text-anchor="middle" font-size="10.5">!emptyPage &amp;&amp; !blockRequest</text>
+<text class="lbl" x="345.0" y="95.5" text-anchor="middle" font-size="10.5">且滚动到底部附近</text>
+<line class="edge" x1="190" y1="71" x2="250" y2="71" marker-end="url(#dp5-m)"></line>
+<rect class="box-a" x="500" y="40" width="240" height="62" rx="4"></rect>
+<text class="lbl-strong" x="620.0" y="57.75" text-anchor="middle" font-size="11.5">blockRequest = true</text>
+<text class="lbl-strong" x="620.0" y="72.25" text-anchor="middle" font-size="11.5">page += 1</text>
+<text class="lbl" x="620.0" y="89.75" text-anchor="middle" font-size="10.5">先上锁再发请求</text>
+<line class="edge" x1="440" y1="71" x2="500" y2="71" marker-end="url(#dp5-m)"></line>
+<rect class="box" x="500" y="140" width="240" height="50" rx="4"></rect>
+<text class="lbl-strong" x="620.0" y="165.0" text-anchor="middle" font-size="11">fetch('?images_only=1&amp;page=N')</text>
+<line class="edge" x1="620" y1="102" x2="620" y2="140" marker-end="url(#dp5-m)"></line>
+<line x1="20" y1="216" x2="740" y2="216" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<rect class="box-a" x="20" y="252" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="130.0" y="277.0" text-anchor="middle" font-size="12.5">① 返回 HTML 片段</text>
+<text class="lbl" x="130.0" y="295.5" text-anchor="middle" font-size="10.5">插入 DOM</text>
+<text class="lbl" x="130.0" y="307.5" text-anchor="middle" font-size="10.5">blockRequest = false</text>
+<rect class="box-a" x="270" y="252" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="380.0" y="277.0" text-anchor="middle" font-size="12.5">② 返回空字符串</text>
+<text class="lbl" x="380.0" y="295.5" text-anchor="middle" font-size="10.5">emptyPage = true</text>
+<text class="lbl" x="380.0" y="307.5" text-anchor="middle" font-size="10.5">（永久停止，符合预期）</text>
+<rect class="box-w" x="520" y="252" width="220" height="62" rx="4"></rect>
+<text class="lbl-strong" x="630.0" y="277.0" text-anchor="middle" font-size="12.5">③ 请求失败 / 超时</text>
+<text class="lbl" x="630.0" y="295.5" text-anchor="middle" font-size="10.5">没有 .catch()</text>
+<text class="lbl" x="630.0" y="307.5" text-anchor="middle" font-size="10.5">两个标志位都不复位</text>
+<path class="edge" d="M620,190 Q300,225 130,252" marker-end="url(#dp5-m)"></path>
+<path class="edge" d="M620,190 Q500,225 380,252" marker-end="url(#dp5-m)"></path>
+<line class="edge-w" x1="620" y1="190" x2="630" y2="252" marker-end="url(#dp5-mw)"></line>
+<rect class="box-w" x="430" y="344" width="310" height="56" rx="4"></rect>
+<text class="lbl-strong" x="585.0" y="366.0" text-anchor="middle" font-size="11.5">blockRequest 永远是 true → 无限滚动静默死亡</text>
+<text class="lbl" x="585.0" y="383.5" text-anchor="middle" font-size="10.5">此后再怎么滚都不会发请求</text>
+<line class="edge-w" x1="630" y1="314" x2="630" y2="344" marker-end="url(#dp5-mw)"></line>
+<text class="lbl-warn" x="20" y="344.0" text-anchor="start" font-size="10.5">三条返回路径只处理了两条。</text>
+<text class="lbl-warn" x="20" y="359.5" text-anchor="start" font-size="10.5">而且 page 已经自增过了，即使</text>
+<text class="lbl-warn" x="20" y="375.0" text-anchor="start" font-size="10.5">用户刷新重试也会跳过一页。</text></svg><figcaption class="cap">图 5 · 无限滚动的状态机：fetch 没有 catch 分支，一次网络失败就会让它永久卡死</figcaption></figure>
+<div class="codewrap"><div class="langtag">javascript</div><pre><code>window.addEventListener(&#x27;scroll&#x27;, function(e) {
+  var margin = document.body.clientHeight - window.innerHeight - 200;
+  if(window.pageYOffset &gt; margin &amp;&amp; !emptyPage &amp;&amp; !blockRequest) {
+    blockRequest = true;          // 上锁
+    page += 1;                    // 页码先自增
+
+    fetch(&#x27;?images_only=1&amp;page=&#x27; + page)
+    .then(response =&gt; response.text())
+    .then(html =&gt; {
+      if (html === &#x27;&#x27;) {
+        emptyPage = true;         // 路径②：正常终止
+      }
+      else {
+        var imageList = document.getElementById(&#x27;image-list&#x27;);
+        imageList.insertAdjacentHTML(&#x27;beforeEnd&#x27;, html);
+        blockRequest = false;     // 路径①：解锁
+      }
+    })
+    // 路径③：没有 .catch()，失败时锁永远不解开
+  }
+});</code></pre></div>
+<div class="pair two">
+<div class="pane bad"><div class="ph">✗ 现状：只有成功路径解锁</div><pre>fetch(&#x27;?images_only=1&amp;page=&#x27; + page)
+.then(response =&gt; response.text())
+.then(html =&gt; {
+  if (html === &#x27;&#x27;) { emptyPage = true; }
+  else {
+    imageList.insertAdjacentHTML(&#x27;beforeEnd&#x27;, html);
+    blockRequest = false;
+  }
+})</pre></div>
+<div class="pane good"><div class="ph">✓ 失败时回滚页码并解锁</div><pre>fetch(&#x27;?images_only=1&amp;page=&#x27; + page)
+.then(response =&gt; {
+  if (!response.ok) throw new Error(response.status);
+  return response.text();
+})
+.then(html =&gt; {
+  if (html === &#x27;&#x27;) { emptyPage = true; }
+  else {
+    imageList.insertAdjacentHTML(&#x27;beforeEnd&#x27;, html);
+    blockRequest = false;
+  }
+})
+.catch(() =&gt; {
+  page -= 1;           // 回滚，避免跳页
+  blockRequest = false; // 解锁，允许重试
+});</pre></div>
+</div>
+<p>另外 <code>scroll</code> 监听没有节流——虽然 <code>blockRequest</code> 挡住了并发请求，但处理函数本身在滚动时会被高频调用。生产代码通常会配合 <code>requestAnimationFrame</code> 节流，或者干脆改用 <code>IntersectionObserver</code> 观察一个哨兵元素，这样浏览器只在元素进入视口时回调一次。</p>
+
+<div class="finding lo"><div class="fhead"><span class="fid">F-07</span><span class="ftitle">post_search 完全没有分页</span><span class="fmeta">代码阅读 · 功能</span></div><dl><dt>位置</dt><dd><code>Chapter03/mysite/blog/views.py</code> · <code>post_search()</code></dd><dt>触发</dt><dd>搜索一个常见词</dd><dt>影响</dt><dd>命中多少返回多少，全部渲染进一个页面</dd></dl></div>
+<p><code>similarity__gt=0.1</code> 的阈值相当宽松，命中数会随文章总量增长。修复就是把前面几处的分页逻辑照搬过来（注意排序键 <code>-similarity</code> 是浮点数，并列概率不低，更需要决胜键）：</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code>results = (
+    Post.published.annotate(similarity=TrigramSimilarity(&#x27;title&#x27;, query))
+    .filter(similarity__gt=0.1)
+    .order_by(&#x27;-similarity&#x27;, &#x27;-id&#x27;)      # 补决胜键
+)
+paginator = Paginator(results, 10)
+results = paginator.get_page(request.GET.get(&#x27;page&#x27;))</code></pre></div>
+
+<div class="finding lo"><div class="fhead"><span class="fid">F-08</span><span class="ftitle">分页链接会丢掉其他查询参数</span><span class="fmeta">代码阅读 · 潜在缺陷</span></div><dl><dt>位置</dt><dd><code>Chapter02~03/mysite/blog/templates/pagination.html</code></dd><dt>触发</dt><dd>在列表页加入任何 GET 形式的筛选/搜索参数之后</dd><dt>影响</dt><dd>点「下一页」会丢失筛选条件，回到未筛选的全量列表</dd></dl></div>
+<p><code>&lt;a href="?page=2"&gt;</code> 会<strong>整体替换</strong>查询字符串。目前仓库侥幸没出问题——标签筛选走的是 URL 路径（<code>/tag/&lt;slug&gt;/</code>）而不是查询参数，而唯一用查询参数的搜索页恰好没有分页。但只要给列表页加一个 <code>?author=</code> 或给搜索页补上分页（F-07），这个缺陷立刻就会显现。</p>
+<div class="codewrap"><div class="langtag">python</div><pre><code># templatetags/blog_tags.py —— 保留现有参数，只替换 page
+from django import template
+register = template.Library()
+
+@register.simple_tag(takes_context=True)
+def url_replace(context, **kwargs):
+    query = context[&#x27;request&#x27;].GET.copy()
+    for k, v in kwargs.items():
+        query[k] = v
+    return query.urlencode()</code></pre></div>
+<div class="codewrap"><div class="langtag">html</div><pre><code>{% load blog_tags %}
+&lt;a href=&quot;?{% url_replace page=page.previous_page_number %}&quot;&gt;Previous&lt;/a&gt;
+&lt;a href=&quot;?{% url_replace page=page.next_page_number %}&quot;&gt;Next&lt;/a&gt;</code></pre></div>
+
+</section><section class="chapter" id="keyset">
+<h2>四、键集分页：F-01 与 F-02 的共同解</h2>
+
+<p>前面两个最严重的问题——深翻页变慢、翻页期间重复漏项——<strong>根因是同一个</strong>：<code>OFFSET</code> 用「位置」定位，而位置是会漂移的。键集分页（keyset pagination，也叫游标分页、seek method）改用「值」定位，两个问题一起解决。</p>
+
+<h3>4.1 原理</h3>
+<div class="pair two">
+<div class="pane bad"><div class="ph">OFFSET：记住跳过多少行</div><pre>-- 第 1 页
+SELECT * FROM blog_post
+ORDER BY publish DESC
+LIMIT 20;
+
+-- 第 2 页：跳过 20 行（要先读出来再丢掉）
+SELECT * FROM blog_post
+ORDER BY publish DESC
+LIMIT 20 OFFSET 20;</pre></div>
+<div class="pane good"><div class="ph">键集：记住上一页最后一行的值</div><pre>-- 第 1 页
+SELECT * FROM blog_post
+ORDER BY publish DESC, id DESC
+LIMIT 20;
+
+-- 第 2 页：从那个值之后继续（索引直接定位）
+SELECT * FROM blog_post
+WHERE (publish, id) &lt; (&#x27;2026-08-01 10:00&#x27;, 12345)
+ORDER BY publish DESC, id DESC
+LIMIT 20;</pre></div>
+</div>
+<p>注意右边用的是<strong>复合游标</strong> <code>(publish, id)</code>，不是单独的 <code>publish</code>。原因正是 <a href="#findings">F-03</a>：<code>publish</code> 可能并列，只用它做游标会在并列处跳过或重复记录。行值比较 <code>(a, b) &lt; (x, y)</code> 是 PostgreSQL 支持的写法，能直接用上 <code>(publish, id)</code> 复合索引。</p>
+
+<h3>4.2 Django ORM 里怎么写</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>from django.db.models import Q
+
+def get_page_after(cursor_publish=None, cursor_id=None, limit=20):
+    qs = Post.published.order_by(&#x27;-publish&#x27;, &#x27;-id&#x27;)
+    if cursor_publish is not None:
+        qs = qs.filter(
+            Q(publish__lt=cursor_publish)
+            | Q(publish=cursor_publish, id__lt=cursor_id)
+        )
+    # 多取一条判断有没有下一页，省掉 COUNT
+    rows = list(qs[:limit + 1])
+    has_next = len(rows) &gt; limit
+    rows = rows[:limit]
+    next_cursor = (rows[-1].publish, rows[-1].id) if has_next and rows else None
+    return rows, next_cursor</code></pre></div>
+<blockquote><p>PostgreSQL 上还可以用行值比较，让数据库更容易走复合索引：</p>
+<pre style="margin:.6em 0 0;font-family:var(--font-mono);font-size:.8rem;overflow-x:auto;">qs = qs.extra(where=["(publish, id) &lt; (%s, %s)"], params=[cursor_publish, cursor_id])</pre>
+<p style="margin-top:.6em;"><code>extra()</code> 是老 API 且官方不推荐，更现代的等价写法是用 <code>django.db.models.expressions</code> 里的 <code>RowRange</code> 或直接 <code>RawSQL</code>。多数场景下上面那个 <code>Q</code> 组合已经够快，先测再优化。</p></blockquote>
+
+<h3>4.3 DRF 里一行就能换</h3>
+<div class="codewrap"><div class="langtag">python</div><pre><code>from rest_framework.pagination import CursorPagination
+
+class FeedPagination(CursorPagination):
+    page_size = 20
+    ordering = &#x27;-publish&#x27;        # 必须是稳定、带索引的排序
+    cursor_query_param = &#x27;cursor&#x27;
+
+
+class PostViewSet(viewsets.ReadOnlyModelViewSet):
+    pagination_class = FeedPagination</code></pre></div>
+<div class="term"><div class="thead">实测 · CursorPagination 的实际行为</div><pre>GET /api/cursor/
+  响应字段: ['next', 'previous', 'results']     <- 没有 count
+  SQL 条数: <i>1</i>  (COUNT 查询 <i>0</i> 条)
+  next: /api/cursor/?cursor=cD0yMDI2LTA4LTIzKzEwJTNBMTYlM0E1Mi45NjY2NzM...
+
+翻到第 2 页
+  返回: ['文章 03', '文章 04', '文章 05']
+  SQL: 1 条，COUNT 查询 0 条
+  实际 SQL: ...<i>WHERE ("blog_post"."publish" &lt; '2026-08-23 10:16:52.966673' ...</i></pre></div>
+<p>游标是 base64 编码的，客户端应当把它当成<strong>不透明字符串</strong>原样回传。编码不是为了安全（它可以被解开），而是为了明确「这是实现细节，别去解析它」——这样服务端将来换排序字段时不会破坏客户端。</p>
+
+<h3>4.4 键集分页的代价</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>能力</th><th>OFFSET 分页</th><th>键集分页</th></tr></thead>
+<tbody>
+<tr><td>跳到任意第 N 页</td><td><strong>可以</strong></td><td><strong>不行</strong>，只能一页页往前后走</td></tr>
+<tr><td>显示「共 N 页 / 共 M 条」</td><td>可以（代价是 COUNT）</td><td>不行，除非额外查一次</td></tr>
+<tr><td>深翻页性能</td><td>线性退化</td><td><strong>常数</strong></td></tr>
+<tr><td>数据变动时的正确性</td><td>会重复 / 漏项</td><td><strong>稳定</strong></td></tr>
+<tr><td>排序字段要求</td><td>无（但应当唯一）</td><td><strong>必须唯一且带索引</strong></td></tr>
+<tr><td>能否任意换排序</td><td>可以</td><td>换排序等于换游标语义，旧游标失效</td></tr>
+</tbody>
+</table>
+</div>
+<figure class="diagram"><span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span><svg viewBox="0 0 760 400" role="img" aria-label="图 6 · 四种策略的适用边界：能不能跳页、要不要总数，决定了你只能选其中一类"><defs>
+          <marker id="dp6-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp6-ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-a">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+          <marker id="dp6-mw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" class="m-w">
+            <path d="M0,0 L10,5 L0,10 z"></path>
+          </marker>
+        </defs>
+<rect class="box-a" x="20" y="34" width="165" height="44" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="56.0" text-anchor="middle" font-size="13">页码分页</text>
+<rect class="box" x="20" y="92" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="114.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="102.5" y="130.5" text-anchor="middle" font-size="10.5">PageNumber</text>
+<text class="lbl" x="102.5" y="142.5" text-anchor="middle" font-size="10.5">Pagination</text>
+<rect class="box" x="20" y="162" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="187.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="102.5" y="203.5" text-anchor="middle" font-size="10.5">要显示「共 N 页」、</text>
+<text class="lbl" x="102.5" y="215.5" text-anchor="middle" font-size="10.5">用户要跳到第 5 页</text>
+<rect class="box" x="20" y="238" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="102.5" y="263.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="102.5" y="279.5" text-anchor="middle" font-size="10.5">深翻页、</text>
+<text class="lbl" x="102.5" y="291.5" text-anchor="middle" font-size="10.5">数据频繁变动</text>
+<rect class="box-a" x="205" y="34" width="165" height="44" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="56.0" text-anchor="middle" font-size="13">限制/偏移</text>
+<rect class="box" x="205" y="92" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="114.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="287.5" y="130.5" text-anchor="middle" font-size="10.5">LimitOffset</text>
+<text class="lbl" x="287.5" y="142.5" text-anchor="middle" font-size="10.5">Pagination</text>
+<rect class="box" x="205" y="162" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="187.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="287.5" y="203.5" text-anchor="middle" font-size="10.5">需要任意起点，</text>
+<text class="lbl" x="287.5" y="215.5" text-anchor="middle" font-size="10.5">如「从第 137 条起」</text>
+<rect class="box" x="205" y="238" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="287.5" y="263.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="287.5" y="279.5" text-anchor="middle" font-size="10.5">同上，且更容易</text>
+<text class="lbl" x="287.5" y="291.5" text-anchor="middle" font-size="10.5">被构造成深偏移</text>
+<rect class="box-a" x="390" y="34" width="165" height="44" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="56.0" text-anchor="middle" font-size="13">游标 / 键集</text>
+<rect class="box" x="390" y="92" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="114.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="472.5" y="130.5" text-anchor="middle" font-size="10.5">Cursor</text>
+<text class="lbl" x="472.5" y="142.5" text-anchor="middle" font-size="10.5">Pagination</text>
+<rect class="box" x="390" y="162" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="187.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="472.5" y="203.5" text-anchor="middle" font-size="10.5">信息流、无限滚动、</text>
+<text class="lbl" x="472.5" y="215.5" text-anchor="middle" font-size="10.5">大表、导出全量</text>
+<rect class="box" x="390" y="238" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="472.5" y="263.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="472.5" y="279.5" text-anchor="middle" font-size="10.5">需要「共 N 页」</text>
+<text class="lbl" x="472.5" y="291.5" text-anchor="middle" font-size="10.5">或跳页的界面</text>
+<rect class="box-w" x="575" y="34" width="165" height="44" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="56.0" text-anchor="middle" font-size="13">不分页</text>
+<rect class="box" x="575" y="92" width="165" height="56" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="114.0" text-anchor="middle" font-size="10.5">机制</text>
+<text class="lbl" x="657.5" y="130.5" text-anchor="middle" font-size="10.5">返回全部</text>
+<rect class="box" x="575" y="162" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="187.0" text-anchor="middle" font-size="10.5">适合</text>
+<text class="lbl" x="657.5" y="203.5" text-anchor="middle" font-size="10.5">结果集有硬上限</text>
+<text class="lbl" x="657.5" y="215.5" text-anchor="middle" font-size="10.5">（如枚举字典表）</text>
+<rect class="box" x="575" y="238" width="165" height="62" rx="4"></rect>
+<text class="lbl-strong" x="657.5" y="263.0" text-anchor="middle" font-size="10.5">不适合</text>
+<text class="lbl" x="657.5" y="279.5" text-anchor="middle" font-size="10.5">任何可能增长</text>
+<text class="lbl" x="657.5" y="291.5" text-anchor="middle" font-size="10.5">到成百上千的集合</text>
+<line x1="20" y1="322" x2="740" y2="322" style="stroke:var(--line);stroke-width:1" stroke-dasharray="3 3"></line>
+<text class="lbl" x="20" y="344.0" text-anchor="start" font-size="10.5">一个实用折中：列表页用页码分页（用户要看总数、要跳页），信息流和无限滚动用游标分页。</text>
+<text class="lbl" x="20" y="359.5" text-anchor="start" font-size="10.5">本仓库四处全部用了 OFFSET 系，其中 bookmarks 的无限滚动是最该换成游标的一处。</text></svg><figcaption class="cap">图 6 · 四种策略的适用边界：能不能跳页、要不要总数，决定了你只能选其中一类</figcaption></figure>
+<p>所以这不是「键集分页更好」，而是<strong>两者服务于不同的界面形态</strong>：需要页码、需要跳页、需要总数的传统列表页只能用 OFFSET；信息流、无限滚动、「加载更多」、后台批量导出则应该用键集。本仓库的 bookmarks 无限滚动是<strong>最典型的、也最该改的</strong>一处——它的界面从来没提供过跳页和总数，却付着 OFFSET 的全部代价。</p>
+
+</section><section class="chapter" id="checklist">
+<h2>五、上线前检查清单</h2>
+
+<ul class="check">
+<li><span class="mk">01</span><span><b>分页的 queryset 必须有排序，且排序键必须唯一</b>。最省事的做法是在末尾追加主键：<code>order_by('-publish', '-id')</code>。见 F-03。</span></li>
+<li><span class="mk">02</span><span><b>排序键要有匹配的索引</b>，复合排序就要复合索引，顺序和方向都要对上。</span></li>
+<li><span class="mk">03</span><span><b>用 <code>get_page()</code> 代替手写三分支 <code>try/except</code></b>。语义相同，少三行且不会漏掉分支。</span></li>
+<li><span class="mk">04</span><span><b>给最大页码设上限</b>，或者干脆换键集分页。不设限等于给爬虫开了一个能拖垮数据库的接口。见 F-01。</span></li>
+<li><span class="mk">05</span><span><b>无限滚动、信息流、「加载更多」一律用键集分页</b>。这类界面既不需要总数也不需要跳页，用 OFFSET 是纯亏。见第四节。</span></li>
+<li><span class="mk">06</span><span><b>不需要总数时就别 COUNT</b>。「多取一条判断有无下一页」的成本几乎为零。见 F-05。</span></li>
+<li><span class="mk">07</span><span><b>允许客户端调整每页条数时必须设上限</b>（<code>max_page_size</code>）。本仓库 DRF 那处做对了。</span></li>
+<li><span class="mk">08</span><span><b>分页链接要保留现有查询参数</b>，别用裸的 <code>?page=N</code>。见 F-08。</span></li>
+<li><span class="mk">09</span><span><b>模板里传 <code>page_obj</code> 而不是 <code>object_list</code></b>。Django 模板对不存在的属性静默失败，这类错误不会进日志。见 F-04。</span></li>
+<li><span class="mk">10</span><span><b>前端分页/滚动的失败路径要处理</b>：解锁、回滚页码、给用户一个重试入口。见 F-06。</span></li>
+<li><span class="mk">11</span><span><b>任何可能增长的列表都要分页</b>，包括搜索结果、关联对象列表、导出接口。见 F-07。</span></li>
+<li><span class="mk">12</span><span><b>游标对客户端是不透明字符串</b>。编码它，并在文档里写明不要解析——这样你以后换排序字段时不会破坏调用方。</span></li>
+<li><span class="mk">13</span><span><b>DRF 配 <code>DEFAULT_PAGINATION_CLASS</code> 全局默认值</b>，别指望每个新视图都记得配。</span></li>
+<li><span class="mk">14</span><span><b>用 <code>assertNumQueries</code> 给列表端点上查询数断言</b>，顺便就能发现分页里混进来的 N+1。</span></li>
+</ul>
+
+</section><section class="chapter" id="compare">
+<h2>六、同样的分页：Spring 与 Hono.js 怎么做</h2>
+<p>仍用本仓库的真实场景对比：<strong>「按发布时间倒序的文章列表，每页 20 条」</strong>，以及它在数据量变大后必然要面对的<strong>「换成游标分页」</strong>。</p><h3>6.1 基础分页</h3><div class="cmp three"><div class="fw"><h4>Django 5.2 / DRF</h4><div class="fwbody"><p>三套并存：手写 <code>Paginator</code>、CBV 的 <code>paginate_by</code>、DRF 的 <code>pagination_class</code>。都是 OFFSET 系。</p><pre># 手写：Django 5.2 的 Paginator
+paginator = Paginator(Post.objects.order_by(&#x27;-publish&#x27;, &#x27;-id&#x27;), 20)
+page = paginator.get_page(request.GET.get(&#x27;page&#x27;))
+# get_page 已内建三分支容错，无需自己 try/except
+
+# CBV：一个属性搞定
+class PostListView(ListView):
+    paginate_by = 20
+
+# DRF
+class StandardPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = &#x27;page_size&#x27;
+    max_page_size = 50</pre><ul><li><code>get_page()</code> 内建容错，比本仓库的三分支 <code>try/except</code> 更省事</li><li>分页与排序是<strong>两件独立的事</strong>，框架不会提醒你排序键必须唯一</li><li><code>CursorPagination</code> 只在 DRF 里有，模板视图没有对应物</li></ul></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><p><code>Pageable</code> / <code>Page&lt;T&gt;</code> 是框架一等公民，从 Controller 参数一路贯通到 Repository。</p><pre>// Repository 直接接受 Pageable，返回 Page&lt;T&gt;
+public interface PostRepository
+        extends JpaRepository&lt;Post, Long&gt; {
+    Page&lt;Post&gt; findByPublishedTrue(Pageable pageable);
+}
+
+@GetMapping(&quot;/api/posts&quot;)
+Page&lt;PostDto&gt; list(
+    @PageableDefault(size = 20, sort = &quot;publish&quot;,
+                     direction = DESC) Pageable pageable) {
+    return repo.findByPublishedTrue(pageable)
+               .map(mapper::toDto);
+}
+// GET /api/posts?page=1&amp;size=20&amp;sort=publish,desc</pre><ul><li>排序作为参数<strong>随分页一起传递</strong>，两者天然绑在一起</li><li><code>Page&lt;T&gt;</code> 带 count，<code>Slice&lt;T&gt;</code> 不带——一个类型切换就能省掉 COUNT</li><li>分页参数的解析、校验、默认值全部由框架负责</li></ul></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><p>没有任何分页抽象。查询参数校验交给 Zod，分页逻辑自己写。</p><pre>// 全手写；用 Zod 校验分页参数
+const Query = z.object({
+  limit: z.coerce.number().min(1).max(50).default(20),
+  cursor: z.string().optional(),
+})
+
+app.get(&#x27;/api/posts&#x27;, zValidator(&#x27;query&#x27;, Query),
+  async (c) =&gt; {
+    const { limit, cursor } = c.req.valid(&#x27;query&#x27;)
+    const rows = await db.select().from(posts)
+      .where(cursor ? lt(posts.publish, cursor) : undefined)
+      .orderBy(desc(posts.publish), desc(posts.id))
+      .limit(limit + 1)          // 多取一条判断有没有下一页
+
+    const hasMore = rows.length &gt; limit
+    return c.json({
+      items: rows.slice(0, limit),
+      nextCursor: hasMore
+        ? rows[limit - 1].publish : null,
+    })
+  })</pre><ul><li>「多取一条判断有无下一页」是手写分页的标准技巧，省掉 COUNT</li><li>游标天然就是键集式的——手写反而不容易掉进 OFFSET 的坑</li><li>每个端点都要重写一遍，除非自己抽一个辅助函数</li></ul></div></div></div><h3>6.2 换成游标 / 键集分页</h3><div class="cmp three"><div class="fw"><h4>Django 5.2 / DRF</h4><div class="fwbody"><pre># DRF 内置游标分页，开箱即用
+class FeedPagination(CursorPagination):
+    page_size = 20
+    ordering = &#x27;-publish&#x27;        # 必须是稳定且带索引的排序
+    cursor_query_param = &#x27;cursor&#x27;
+
+class PostViewSet(viewsets.ReadOnlyModelViewSet):
+    pagination_class = FeedPagination
+
+# 响应里没有 count 字段，只有 next / previous 两个不透明游标
+# 实测：单次请求 1 条 SQL，0 条 COUNT</pre><p>DRF 的 <code>CursorPagination</code> 是三者里<strong>唯一开箱即用</strong>的游标实现，实测单请求 1 条 SQL、0 条 COUNT。</p><p>但它只服务于 DRF 视图。模板渲染的列表页（本仓库的 blog 和 bookmarks）要用键集分页，只能自己写 <code>WHERE</code> 条件。</p></div></div><div class="fw"><h4>Spring Boot 3.x</h4><div class="fwbody"><pre>// Spring Data 没有内置游标分页。两个选择：
+
+// ① Slice&lt;T&gt;：去掉 count 查询，但仍是 OFFSET
+Slice&lt;Post&gt; findByPublishedTrue(Pageable pageable);
+
+// ② 键集：自己写查询条件
+@Query(&quot;SELECT p FROM Post p &quot;
+     + &quot;WHERE p.publish &lt; :cursor &quot;
+     + &quot;ORDER BY p.publish DESC, p.id DESC&quot;)
+List&lt;Post&gt; findAfter(@Param(&quot;cursor&quot;) Instant cursor,
+                     Pageable limit);
+
+// Spring Data 3.1+ 另有 ScrollPosition / keyset API：
+Window&lt;Post&gt; findFirst20By(
+    ScrollPosition position, Sort sort);</pre><p><code>Slice&lt;T&gt;</code> 是个很实用的中间态：仍是 OFFSET，但去掉了 COUNT 查询，改动成本只有一个返回类型。</p><p>Spring Data 3.1 起提供了 <code>ScrollPosition</code> / <code>Window&lt;T&gt;</code> 的键集 API，是三者里对键集分页支持最正式的。</p></div></div><div class="fw"><h4>Hono.js</h4><div class="fwbody"><pre>// Hono 没有分页抽象，游标就是上面那段代码本身。
+// 游标通常要编码，避免暴露内部字段：
+const encode = (v: Date, id: number) =&gt;
+  btoa(JSON.stringify([v.toISOString(), id]))
+
+const decode = (s: string) =&gt;
+  JSON.parse(atob(s)) as [string, number]
+
+// 复合游标（值 + 主键）才能处理并列行：
+.where(or(
+  lt(posts.publish, pv),
+  and(eq(posts.publish, pv), lt(posts.id, pid)),
+))</pre><p>游标要<strong>编码后再暴露</strong>，否则等于把内部排序字段和数据分布泄露给客户端。DRF 的游标是 base64 编码的，同理。</p><p>并列行必须用<strong>复合游标</strong>（排序值 + 主键）才能正确处理——这正是本文 F-03 讲的决胜键问题在游标场景下的对应版本。</p></div></div></div><h3>6.3 逐项对照</h3>
+<div class="matrix">
+<table>
+<thead><tr><th>维度</th><th>Django 5.2 / DRF 3.15</th><th>Spring Boot 3.x</th><th>Hono.js</th></tr></thead>
+<tbody>
+<tr><td>分页抽象</td><td>三套并存：Paginator / paginate_by / DRF</td><td><code>Pageable</code> + <code>Page&lt;T&gt;</code>，全栈统一</td><td>无，全手写</td></tr>
+<tr><td>模板视图分页</td><td><strong>有</strong>，<code>paginate_by</code> 一个属性</td><td>需模板引擎配合，无专门支持</td><td>不适用</td></tr>
+<tr><td>排序与分页的关系</td><td><strong>相互独立</strong>，容易忘记排序</td><td>排序是 <code>Pageable</code> 的一部分</td><td>手写，必然要显式指定</td></tr>
+<tr><td>去掉 COUNT 的成本</td><td>DRF 换 <code>CursorPagination</code>；模板视图要自己写</td><td>返回类型换成 <code>Slice&lt;T&gt;</code>，一行</td><td>默认就没有 COUNT</td></tr>
+<tr><td>内置游标 / 键集分页</td><td><strong>有</strong>（仅 DRF）<code>CursorPagination</code></td><td><strong>有</strong>（3.1+）<code>ScrollPosition</code></td><td>无，但手写即键集</td></tr>
+<tr><td>分页参数校验</td><td>DRF 有 <code>max_page_size</code>；手写 Paginator 无</td><td><code>@PageableDefault</code> + <code>spring.data.web.pageable.max-page-size</code></td><td>Zod schema，<code>.max(50)</code></td></tr>
+<tr><td>深翻页防护</td><td><strong>无</strong></td><td><strong>无</strong></td><td>无（但游标写法天然规避）</td></tr>
+<tr><td>翻页期间数据漂移</td><td>OFFSET 系全部受影响</td><td>OFFSET 系全部受影响</td><td>游标写法不受影响</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>三句话概括</h4>
+<ul>
+<li><strong>Django 的分页覆盖面最广但最零散。</strong>它是三者里唯一同时照顾了「模板渲染的列表页」和「JSON API」的——<code>paginate_by</code> 一个属性就能给 <code>ListView</code> 分页，这在 Spring 和 Hono 里都没有对应物。代价是三套机制各自独立：<code>Paginator</code>、<code>paginate_by</code>、DRF 的 <code>pagination_class</code> 互不相通，本仓库就同时用了前两套的手写变体和第三套，四个地方写了四遍。而且排序和分页在 Django 里是完全独立的两件事，框架不会在你分页一个无序 queryset 时拦住你。</li>
+<li><strong>Spring 把排序绑进了分页契约里。</strong><code>Pageable</code> 同时承载页码、页大小和排序，从 HTTP 参数一路传到 Repository，这个设计让「分页时忘了排序」几乎不可能发生。<code>Page&lt;T&gt;</code> 与 <code>Slice&lt;T&gt;</code> 的区分也很务实——想省掉 COUNT 只需改返回类型。3.1 起的 <code>ScrollPosition</code> 让键集分页也进了官方 API。</li>
+<li><strong>Hono 什么都不给，反而不容易写错。</strong>没有 <code>Paginator</code> 可以顺手一调，你必须自己想清楚排序键、游标编码、有没有下一页怎么判断——而认真想过这几件事的人，写出来的基本就是键集分页。这正是本文的核心观点：OFFSET 分页之所以到处都是，很大程度上是因为框架把它做成了阻力最小的那条路。</li>
+</ul>
+
+</section>
+    <div class="footdoc">
+      由 Claude 对照本仓库源码与 Django 5.2 源码整理生成 · 性能实测基于本机 SQLite 20 万行数据 · 图示为教学示意
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc nav a[href^="#"]'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  if(!sections.length) return;
+  var byId = {};
+  links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var link = byId[e.target.id];
+      if(!link) return;
+      if(e.isIntersecting){
+        links.forEach(function(l){ l.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+});
+</script>
+</body>
+</html>
